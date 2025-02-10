@@ -160,3 +160,5 @@ cython_debug/
 #.idea/
 .DS_Store
 /notebooks/grids
+notebooks/figures/figure2_VIM_profiles.png
+notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
