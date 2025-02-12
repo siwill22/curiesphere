@@ -1,6 +1,9 @@
 # curiesphere
 Python code to perform forward modelling of lithospheric magnetization using vector spherical harmonics
 
+[![DOI](https://zenodo.org/badge/859125725.svg)](https://doi.org/10.5281/zenodo.14854132)
+
+
 ## Summary
 This repository contains a python implementation of the method originally described in:
 ```
