@@ -217,7 +217,7 @@ def parse_netcdf_coordinates(data_array):
 def make_dataarray(lon,lat,data,name='z'):
 
     da = xr.DataArray(data, coords=[('lat',lat), ('lon',lon)], name=name)
-    da.rio.set_crs("epsg:4326")
+    da.rio.write_crs("epsg:4326")
     da.rio.set_spatial_dims('lon', 'lat')
     return da
 
