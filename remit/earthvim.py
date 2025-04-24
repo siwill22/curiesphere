@@ -45,6 +45,10 @@ class SeafloorGrid(object):
         self.declination = grids[1]
         self.paleolatitude = grids[2]
 
+        self.nlat,self.nlon = self.age.shape
+        self.dlat = 180./self.nlat
+        self.dlon = 360./self.nlon
+
 
     @classmethod
     def from_netcdfs(cls, age_netcdf, declination_netcdf, paleolatitude_netcdf):
@@ -156,6 +160,11 @@ class GlobalVIS(object):
         self.lat = lat
         self.vis = vis
 
+        self.nlat,self.nlon = self.vis.shape
+        self.dlat = 180./self.nlat
+        self.dlon = 360./self.nlon
+
+
     @classmethod
     def from_netcdf(cls, vis_netcdf):
         """
@@ -236,6 +245,10 @@ class GlobalVIS(object):
          self.lat, 
          self.vis) = resample(self.lon, self.lat, self.vis, 
                               resolution=resolution, shape=shape, match=match) 
+        
+        self.nlat,self.nlon = self.vis.shape
+        self.dlat = 180./self.nlat
+        self.dlon = 360./self.nlon
 
 
 
