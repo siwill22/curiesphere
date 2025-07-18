@@ -222,6 +222,67 @@ def make_dataarray(lon,lat,data,name='z'):
     return da
 
 
+def convert_longitude_convention(ds, lon_name='lon'):
+    """
+    Convert a global xarray dataset/dataarray between [-180, 180] and [0, 360] longitude conventions.
+    
+    Parameters:
+    -----------
+    ds : xarray.Dataset or xarray.DataArray
+        The input dataset with global coverage
+    lon_name : str, optional
+        The name of the longitude dimension/coordinate, default 'lon'
+        
+    Returns:
+    --------
+    xarray.Dataset or xarray.DataArray
+        The converted dataset with the opposite longitude convention
+    """
+    # Ensure we're working with the right dimension name
+    if lon_name not in ds.coords and 'longitude' in ds.coords:
+        lon_name = 'longitude'
+    elif lon_name not in ds.coords and 'lon' in ds.coords:
+        lon_name = 'lon'
+    
+    # Get longitude values
+    lons = ds[lon_name].values
+    
+    # Detect the current convention by checking if there are negative values
+    has_negative = np.any(lons < 0)
+    
+    if has_negative:
+        # Current convention is [-180, 180], convert to [0, 360]
+        print(f"Converting from [-180, 180] to [0, 360] convention")
+        
+        # Split the dataset at Greenwich Meridian
+        west = ds.where(ds[lon_name] < 0, drop=True)
+        east = ds.where(ds[lon_name] >= 0, drop=True)
+        
+        # Convert negative longitudes to their [0, 360] equivalent
+        if len(west[lon_name]) > 0:
+            west = west.assign_coords({lon_name: west[lon_name] + 360})
+        
+        # Concatenate and sort by the new longitude values
+        result = xr.concat([east, west], dim=lon_name).sortby(lon_name)
+        
+    else:
+        # Current convention is [0, 360], convert to [-180, 180]
+        print(f"Converting from [0, 360] to [-180, 180] convention")
+        
+        # Split at the International Date Line equivalent (180°)
+        west = ds.where(ds[lon_name] > 180, drop=True)
+        east = ds.where(ds[lon_name] <= 180, drop=True)
+        
+        # Convert longitudes > 180 to their [-180, 0] equivalent
+        if len(west[lon_name]) > 0:
+            west = west.assign_coords({lon_name: west[lon_name] - 360})
+        
+        # Concatenate and sort by the new longitude values
+        result = xr.concat([west, east], dim=lon_name).sortby(lon_name)
+    
+    return result
+
+
 def resample(lon,lat,data,resolution=None,shape=None,match=None):
     
     if not (resolution or shape or match):
