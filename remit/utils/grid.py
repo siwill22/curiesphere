@@ -6,6 +6,8 @@ import pygmt
 #import rioxarray
 import geopandas as gpd
 from rasterio.enums import Resampling
+from rasterio.features import rasterize, Affine
+
 
 #EARTH_RADIUS = pyshtools.constants.Earth.
 EARTH_RADIUS = 6371000.
@@ -220,6 +222,29 @@ def make_dataarray(lon,lat,data,name='z'):
     da.rio.write_crs("epsg:4326", inplace=True)
     da.rio.set_spatial_dims('lon', 'lat')
     return da
+
+
+def polygons_to_vis(vis, polygons_gdf, roll_coordinates=True):
+    
+    dims = (vis.nlat, vis.nlon)
+    transform = Affine(vis.dlon, 0.0, 
+                       -180, 0.0, 
+                       vis.dlat, -90)
+    
+    geometry_zval_tuples = [(x.geometry, 1) for i, x in polygons_gdf.iterrows()]
+
+    mask = rasterize(
+        geometry_zval_tuples,
+        transform=transform,
+        out_shape=dims)
+    mask[:,0] = mask[:,-1]
+
+    mask = make_dataarray(vis.lon-180., vis.lat, np.flipud(mask))
+
+    if roll_coordinates:
+        mask = convert_longitude_convention(mask)
+        
+    return mask
 
 
 def convert_longitude_convention(ds, lon_name='lon'):
