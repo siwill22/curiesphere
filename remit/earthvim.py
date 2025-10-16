@@ -250,6 +250,18 @@ class GlobalVIS(object):
         self.dlat = 180./self.nlat
         self.dlon = 360./self.nlon
 
+    def to_xarray(self):
+        """
+        method to convert the VIS grid to an xarray object
+        """
+        return _xr.DataArray(data=self.vis,
+                             coords={'lat': (['lat'], self.lat),
+                                     'lon': (['lon'], self.lon)},
+                             dims=['lat', 'lon'],
+                             name='vis',
+                             attrs={'long_name': 'Vertically Integrated Susceptibility',
+                                    'units': 'SI'})
+
 
 
 class PolarityTimescale(object):
