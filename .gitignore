@@ -163,3 +163,4 @@ cython_debug/
 notebooks/figures/figure2_VIM_profiles.png
 notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
 /notebooks/figures
+/manual/grids
