@@ -169,11 +169,11 @@ def slepian_localisation(model, mask, lmax):
 
 
 # Functions for spherical caps
-def get_spectrum_for_cap(capwin, center_point, coeffs, min_concentration=0.7):
+def get_spectrum_for_cap(capwin, center_point, coeffs, min_concentration=0.7, nwinrot=50):
     
     capwin.rotate(clat=center_point[1],
                   clon=center_point[0],
-                  nwinrot=50)
+                  nwinrot=nwinrot)
 
     k = capwin.number_concentrated(min_concentration)
     #print(k)
@@ -195,11 +195,11 @@ def get_correlation_for_cap(capwin, center_point, coeffs1, coeffs2, min_concentr
     return corr
 
 
-def get_chi_square_fit(capwin, center_point, coeffs_obs, coeffs_model, min_concentration=0.7):
+def get_chi_square_fit(capwin, center_point, coeffs_obs, coeffs_model, min_concentration=0.7, nwinrot=50):
 
     capwin.rotate(clat=center_point[1],
                   clon=center_point[0],
-                  nwinrot=50)
+                  nwinrot=nwinrot)
 
     k = capwin.number_concentrated(min_concentration)
 
