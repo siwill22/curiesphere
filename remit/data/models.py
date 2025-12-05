@@ -9,6 +9,94 @@ from remit.earthvim import GlobalVIS
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '.')
 
 
+DAH981 = {'seafloor_layer':'1d',
+       'layer_thickness': 500,
+       'MagMax': 80,
+       'lmbda': 3,
+       'Mtrm': 1,
+       'Mcrm': 0}
+
+LR85 = {'seafloor_layer':'2d',
+       'layer_boundary_depths':[0,1000], 
+       'layer_weights': [8.7/5], 
+       'MagMax':None, 
+       'P':5, 
+       'lmbda':3,
+       'Mtrm':1,
+       'Mcrm':4}
+
+HM05 = {'seafloor_layer':'2d',
+       'layer_boundary_depths':[0,500,500+1610,500+1610+4970], 
+       'layer_weights': [4,0,0.25], 
+       'MagMax':None, 
+       'P':5, 
+       'lmbda':5,
+       'Mtrm':1,
+       'Mcrm':4}
+
+M12 = {'seafloor_layer':'1d',
+       'layer_thickness':None,
+       'MagMax':0.5, 
+       'P':5, 
+       'lmbda':3,
+       'Mtrm':1,
+       'Mcrm':4}
+
+GK07 = {'seafloor_layer':'2d',
+        'layer_boundary_depths':[0,500,1500,6500], 
+        'layer_weights':[5,2.3,1.2], 
+        'MagMax':None, 
+        'P':5, 
+        'lmbda':3,
+        'Mtrm':1, 
+        'Mcrm':0}
+
+DAH982 = {'seafloor_layer':'2d',
+            'layer_boundary_depths':[0,500,2000,6000,12000], 
+            'layer_weights':[4,0,1,0.8333], 
+            'MagMax':None, 
+            'P':5, 
+            'lmbda':3, 
+            'Mtrm':1, 
+            'Mcrm':0,
+            'blocking_temperatures':(400,600)}
+
+DAH983 = {'seafloor_layer':'2d',
+            'layer_boundary_depths':[0,500,2000,6000,30000], 
+            'layer_weights':[2.75,0,2.75/4,2.75/6], 
+            'MagMax':None, 
+            'P':5, 
+            'lmbda':3,
+            'Mtrm':1, 
+            'Mcrm':0,
+            'blocking_temperatures':(400,600)}
+
+TEST = {'seafloor_layer':'2d',
+            'layer_boundary_depths':[0,1000,12000], 
+            'layer_weights':[5,1.5], 
+            'MagMax':None, 
+            'P':2, 
+            'lmbda':0.1, 
+            'Mtrm':1, 
+            'Mcrm':0}
+
+
+VIS = {'seafloor_layer': None}
+        
+    
+OCEAN_MODEL_LIST = {
+    'DAH981': DAH981,
+    'LR85': LR85,
+    'HM05': HM05,
+    'M12': M12,
+    'GK07': GK07,
+    'DAH982': DAH982,
+    'DAH983': DAH983,
+    'VIS': VIS,
+    }
+
+
+
 def load_ocean_age_model(name='Seton2020_Muller2019_Merdith2021'):
 
     if name=='Muller2016':
@@ -39,6 +127,25 @@ def load_vis_model(name='Hemant2005', match=None):
         
     return vis
 
+
+def load_rvim_model(name='GK07', ocean=None):
+    
+    if ocean is None:
+        ocean = load_ocean_age_model()
+    
+    layer_params = OCEAN_MODEL_LIST[name].copy()
+
+    layer_dims = layer_params.pop('seafloor_layer')
+    layer_params, layer_dims
+
+    if layer_dims=='1d':
+        rvim1d = SeafloorAgeProfile.layer1d(**layer_params)
+    elif layer_dims=='2d':
+        rvim1d = SeafloorAgeProfile.layer2d(**layer_params)
+    
+    rvim = ocean.vim(rvim1d)
+    
+    return rvim
         
 
 def create_vim(ocean=None, vis=None, seafloor_layer='1d', **kwargs):
