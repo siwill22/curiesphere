@@ -2,7 +2,9 @@
 
 *Written 2026-09-29 during work on the Geode Curiesphere viewer (Geode `docs/plans/curiesphere-viewer.md`). Nothing in remit has been changed. This document records what was found, how, and what to do next. The follow-up work is meant to happen on its own branch in a separate session.*
 
-*Update: A, B and C are now fixed on branch `fix/forward-amplitudes` (uncommitted at time of writing), with regression tests in `tests/test_forward_transform.py`. Results in §11.*
+*Update: A, B and C are now fixed on branch `fix/forward-amplitudes` (commit 3da6a39), with regression tests in `tests/test_forward_transform.py`. Results in §11.*
+
+*Update 3 (2026-09-30): follow-up work on the same branch covers ocean-model tuning, realistic source depth, an LCS-1 resolution filter and a retuned near-ridge enhancement (P = 0.94, λ = 3 Ma). See §14.*
 
 *Update 2: the fixes were checked against the maths of Gubbins et al. (2011, GJI 187, 99–117), the formalism `vhtools.py` implements (§13). A and C agree with it exactly. The paper's maths is silent on B; its Fig. 7 shows that the Leeds group used the same VIS × B_nT shortcut as remit's old code, which is not evidence about H&M's calibration, so B stands.*
 
@@ -296,7 +298,7 @@ Comparison with LCS-1, degrees 16–133, old → new:
 
 ---
 
-## 12. Decisions left to Simon
+## 12. Decisions left to the user
 
 - **What the viewer ships.** Corrected forward models; as published, labelled "as in Williams et al. 2025"; or both as separate models.
 - **Viewer geometry.** Keep the sphere; a geodetic grid with ellipsoidal height (each row evaluated at its geocentric colatitude and radius, components rotated to the local vertical); or fix only the latitude registration.
@@ -549,3 +551,129 @@ for yr in (2005, 2020):
     for lab, a in [('Mr', g.mrad), ('Mt', g.mtheta), ('Mp', g.mphi)]:
         print(yr, lab, 'fixed', np.nanmin(a), np.nanmax(a), 'old', np.nanmin(a)/k, np.nanmax(a)/k)
 ```
+
+
+---
+
+## 14. Follow-up: tuning, source depth, LCS-1 filter, near-ridge enhancement (2026-09-30)
+
+With A–C fixed, GK07 at 0 km (degrees 16–100, the 10 ocean regions of the paper excluding the Pacific Triangles) was about 1.30× the RMS of LCS-1, while at 300 km it matched (1.00). The excess grows with degree, so it is a spectral tilt rather than a scale error. This section records what was tried.
+
+The code is in `notebooks/tune_ocean_model.py`, `notebooks/depth_models.py`, `notebooks/tune_near_ridge.py`, with tests in `tests/test_source_depth.py`. Results are in `notebooks/tuning/`.
+
+### 14.1 Pattern tuning of GK07 (`tune_ocean_model.py`)
+
+GK07 correlates best with LCS-1 among the candidate models. It was tuned for pooled spatial correlation of Br at equal-area (HEALPix) points in the 10 regions (0 km, degrees 16–100). The free parameters were the three layer magnetizations, P, λ and one effective source depth.
+
+The fit was staged:
+
+- crust ≥ 20 Ma lying more than 100 km (great circle) from younger crust, for the layer values and depth;
+- the remaining points, for λ and P.
+
+Results:
+
+- **Correlation.** Pooled r rose only from 0.542 to 0.556. Leave-one-region-out gains were within their scatter.
+- **Poorly constrained parameters.** Layers 1 and 2 are not separable (the GDH1 Curie delay is zero in the top 1.5 km). λ is unresolved, and the depth ran to the edge of its grid.
+- **Near-ridge P.** The only robust signal was P ≈ 2 instead of 5.
+- **Decision.** GK07's layer values (Gee & Kent 2007) were kept.
+
+### 14.2 Realistic source depth (`depth_models.py`, `DEPTH_VARIANT=depth`)
+
+Each source sits at its geocentric radius:
+
+    r_s = r_WGS84(lat) − water depth − sediment thickness − depth below basement
+
+- **Water depth:** SRTM15 v2.7, as GMT `earth_relief_06m`.
+- **Sediment thickness:** NGDC merged with CRUST2.0 (2011). The grid is read from `$CURIESPHERE_SEDIMENT_GRID`.
+- **Remanence:** uses each model's own magnetisation–depth cross-section, in 100 m slices.
+- **Oceanic VIS:** spread over Hemant & Maus's (2005) oceanic crust: 0–2.11 km at 0.066 SI and 2.11–7.08 km at 0.049 SI.
+- **Continental VIS:** stays on the ellipsoid.
+- **Resulting depth:** the top of oceanic crust has a median of 4.8 km below the ellipsoid (5–95%: 2.9–7.1 km).
+- **Comparison radius:** LCS-1 and the models are both evaluated on the r0 = 6371.0 km sphere, as in the notebooks.
+- **Latitudes:** grid latitudes are still used as geocentric (item D is not addressed).
+
+The factor (r_s/r0)^(l+1) is applied exactly, as a power series in ln(r_s/r0) with one remit transform per term. Checks:
+
+- an independent point-dipole sum with the sources at variable radius (rtol 1e-4);
+- equality with a transform at constant r_s followed by `change_ref`;
+- a zero-depth run reproducing `basis_models` to 1e-8.
+
+**The effect depends on latitude because of the ellipsoid.**
+
+- **Near the equator** the true surface lies up to 7 km above r0, which largely cancels the burial. Wharton-Bay of Bengal, East Pacific Ridge N and South Atlantic N lose only about 3%.
+- **At high southern latitudes** the burial and the ellipsoid add. Pacific-Antarctic Ridge, SW and SE Indian Ocean fall to 0.80–0.85 at degree 100.
+
+### 14.3 LCS-1 resolution filter (`DEPTH_VARIANT=filter`)
+
+The damping of LCS-1 (Olsen et al. 2017, *GJI*) is approximated as an analytic per-degree filter:
+
+    F(l) = 1/(1 + ((a+h)/a)^(2(l − l_h)))
+
+The calibration:
+
+- **h = 300 km**, set by the CHAMP 2006–2010 data (their Fig. 2).
+- **l_h = 186.8**, fitted to the LCS-1/EMM2015 power ratio over degrees 133–185 (their Fig. 8). EMM2015 is taken as flat at 32 nT²; values of 28–36 nT² give l_h = 184–190.
+
+This gives F(100) = 1.000, F(130) = 0.995, F(160) = 0.92 and F(185) = 0.54. On this calibration LCS-1's damping plays no part in degrees 16–130.
+
+LCS-1 is in fact L1-damped. The paper states that an L2 model with the same global power has nearly the same oceanic power.
+
+There is one inconsistency. The paper's Central Australia comparison gives an amplitude ratio of 0.86 against aeromagnetic data, which would imply stronger damping. This is to be discussed with the LCS-1 authors.
+
+### 14.4 Near-ridge enhancement (`tune_near_ridge.py`)
+
+Remanence is TRM = Mtrm·tp·(1 + P·e^(−t/λ)). With depth included, the model is linear in P, so Br = B(P = 0) + P·B_P(λ).
+
+Method (agreed 2026-09-30):
+
+- **Points:** young crust (< 20 Ma plus the 100 km buffer) in the 10 regions.
+- **Band:** 0 km, degrees 16–100.
+- **Objective:** for each λ in 0.25–5 Ma, P is set so that RMS(model) = RMS(LCS-1). The (P, λ) pair with the highest correlation is chosen.
+- **Rejected alternative:** least squares, because with r ≈ 0.5 it rewards shrinking the amplitude.
+
+Results:
+
+- **Chosen values:** λ = 3 Ma, P = 0.94.
+- **λ:** correlation varies by only 0.007 over the whole range, so λ is not constrained. The RMS-matched P runs from 2.05 at 0.25 Ma to 0.74 at 5 Ma.
+- **Leave-one-region-out:** P ranges from 0.6 to 1.2, with λ = 3 Ma in 7 of 9 cases.
+
+**Comparison with Gee & Kent (2007, *Treatise on Geophysics* 5.12):**
+
+- Zero-age lavas carry about 4× the magnetisation of crust aged ≥ 0.4 Ma. Gee & Kent attribute about half of that factor to alteration and the rest to a recent high field.
+- Their anomaly models exclude a 4× decay at intermediate and fast spreading rates for any time constant, but cannot exclude 2×.
+- P = 0.94 (a ridge enhancement of 1 + P ≈ 1.9×) sits inside that range. The paper's P = 5 (6×) does not.
+- Gee & Kent favour a faster decay (under about 0.4 Myr). λ = 3 Ma is kept because it lies within the range their models cannot exclude, and the fit does not distinguish the two.
+
+The tuned values are the preset `GK07_NR` in `notebooks/basis_models.py`. `DEPTH_VARIANT=depth+nr` applies the same P and λ to every remanent model. Two models need adjusting for this:
+
+- **HM05:** λ changes from 5 to 3 Ma.
+- **DAH981:** MagMax is rescaled by (1 + 0.94)/(1 + 5), so that old crust keeps its magnetisation.
+
+### 14.5 Results (GK07; 10 regions; degrees 16–100)
+
+| | Fixes A–C | + filter | + depth | + depth + P 0.94 |
+|---|---|---|---|---|
+| R(l), l 16–40 (localised spectra, fig 8) | 1.10 | 1.10 | 1.06 | — |
+| R(l), l 41–70 | 1.43 | 1.43 | 1.34 | — |
+| R(l), l 71–100 | 1.45 | 1.45 | 1.31 | — |
+| RMS ratio, all points, 0 km | 1.30 | 1.30 | 1.21 | 1.15 |
+| RMS ratio, all points, 300 km | 1.01 | 1.01 | 0.97 | 0.97 |
+| RMS ratio, young crust, 0 km | 1.60 | — | 1.49 | 1.00 |
+| RMS ratio, young crust, 300 km | 0.82 | — | 0.80 | 0.75 |
+| Pearson r, all points, 0 km | 0.538 | 0.538 | 0.541 | 0.547 |
+
+The table uses two sets of points and weights:
+
+- **Fixes A–C, all points:** the RMS ratio and r come from the `show-me` reruns, over the same HEALPix points.
+- **Young crust:** from `tune_ocean_model.py` (A–C) and `tune_near_ridge.py`.
+- **R(l):** regions weighted equally, from the fig 8 localised spectra. It was not recomputed for the last column.
+
+### 14.6 What remains
+
+- **The tilt.** After depth and the new P, GK07 is still 1.15× LCS-1 at 0 km and 0.97× at 300 km. Within young crust, a model matched at 0 km is 25% weak at 300 km, so P changes the level but not the slope. Old crust carries the rest of the 0 km excess.
+- **Candidate explanations:**
+  - LCS-1 damping stronger than the calibration of §14.3 (to discuss with the authors).
+  - Old-crust magnetisation: a ±50% range on the lava value is defensible (Gee & Kent 2007: in-situ vs sample values, alteration of 10–40 Ma basalts, arithmetic vs geometric means). This is nearly uniform in degree, so it would not remove the tilt.
+  - Palaeointensity: the Cretaceous Normal Superchron field was probably high, and the Jurassic field low. With a single old-crust magnetisation, a strong superchron field would make the current model too *weak* there, not too strong.
+  - Polarity mixing across isochrons (the contamination coefficient of Tisseau & Patriat 1981): published transition widths of 1–3 km change power by under 2% at these wavelengths. A width large enough to fix the tilt would be hard to justify.
+- **Not yet applied:** item D (geodetic → geocentric registration) remains unaddressed.
