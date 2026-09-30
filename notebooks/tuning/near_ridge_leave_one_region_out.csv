@@ -1,0 +1,10 @@
+held_out,lmbda,P,r_train,r_held,rms_held,r_held_chosen
+CentralAtlantic,3.0000,0.9481,0.4720,0.4893,1.0431,0.4893
+SouthAtlanticN,3.0000,0.8282,0.4766,0.3916,0.7679,0.3908
+SouthAtlanticS,2.0000,1.0212,0.4772,0.3362,0.8227,0.3517
+SouthwestIndianOcean,3.0000,1.0522,0.4666,0.5961,1.1110,0.5966
+SoutheastIndianOcean,2.0000,0.9929,0.4774,0.4563,0.9765,0.4592
+PacificAntarcticRidge,3.0000,1.1987,0.4683,0.5416,1.1717,0.5298
+EastPacificRidgeS,3.0000,1.2246,0.4823,0.4588,1.1783,0.4584
+EastPacificRidgeN,0.2500,0.5957,0.4473,0.5237,0.7865,0.5435
+NEPacific,3.0000,1.0866,0.4996,0.2783,1.1744,0.2773

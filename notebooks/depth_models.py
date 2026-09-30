@@ -9,6 +9,8 @@ chosen with the environment variable DEPTH_VARIANT:
     'depth'         sources at their geocentric radius (see below)
     'filter'        'none' passed through the LCS-1 resolution filter F(l)
     'depth+filter'  both
+    'depth+nr'      'depth' with the tuned near-ridge enhancement (P = 0.94, lambda = 3 Ma,
+                    notebooks/tune_near_ridge.py) applied to every remanent model
 
 Source radius
     r_s = r_WGS84(lat) - water depth - sediment thickness - depth below basement
@@ -50,6 +52,7 @@ from basis_models import MODEL_LIST
 from remit.earthvim import SeafloorAgeProfile, GlobalVIS
 from remit.vhtools import GlobalMagnetizationModel
 from remit.data.models import load_ocean_age_model, load_vis_model, load_lcs
+from remit.utils.profile import DEFAULT_P
 from remit.utils.grid import agearray2magnetisation, paleoIncDec2field, DH2, coeffs2map
 
 R0 = 6371000.
@@ -239,7 +242,22 @@ def apply_filter(coeffs, l_h):
 
 # ---------------------------------------------------------------- models
 
-def depth_model_coeffs(model_names, lmax=LMAX, zero_depth=False):
+NEAR_RIDGE = dict(P=0.94, lmbda=3.)
+
+
+def with_near_ridge(params, P=NEAR_RIDGE['P'], lmbda=NEAR_RIDGE['lmbda']):
+    """A MODEL_LIST entry with the near-ridge enhancement replaced. Models that
+    fix the ridge value with MagMax (DAH981, M12) have MagMax rescaled so that
+    old crust keeps its magnetisation and only the enhancement changes."""
+    p = dict(params)
+    P_old = p.get('P', DEFAULT_P)
+    if p.get('MagMax') is not None and p.get('blocking_temperatures') is None:
+        p['MagMax'] = p['MagMax']*(1 + P)/(1 + P_old)
+    p['P'], p['lmbda'] = P, lmbda
+    return p
+
+
+def depth_model_coeffs(model_names, lmax=LMAX, zero_depth=False, near_ridge=False):
     """Depth-resolved Gauss coefficients (lmax 185, r0 = R0) for MODEL_LIST names,
     cached in notebooks/depth/cache"""
     os.makedirs(CACHE, exist_ok=True)
@@ -266,7 +284,9 @@ def depth_model_coeffs(model_names, lmax=LMAX, zero_depth=False):
         if params['seafloor_layer'] is None:
             out[name] = (pyshtools.SHMagCoeffs.from_array(cvis.copy(), r0=R0), None)
             continue
-        f = os.path.join(CACHE, f'{name}{tag}_{lmax}.npy')
+        if near_ridge:
+            params = with_near_ridge(params)
+        f = os.path.join(CACHE, f'{name}{tag}{"_nr" if near_ridge else ""}_{lmax}.npy')
         if not os.path.exists(f):
             ocean_, _, r_top_ = inputs()
             c, _ = remanent_coeffs(ocean_, r_top_, params, lmax=lmax, zero_depth=zero_depth)
@@ -278,13 +298,14 @@ def depth_model_coeffs(model_names, lmax=LMAX, zero_depth=False):
 def load_vim_models(model_names, lmax=185, altitude=0):
     """Same interface and output as basis_models.load_vim_models"""
     variant = os.environ.get('DEPTH_VARIANT', 'depth+filter')
-    assert variant in ('none', 'depth', 'filter', 'depth+filter'), variant
+    assert variant in ('none', 'depth', 'filter', 'depth+filter', 'depth+nr'), variant
 
     if variant in ('none', 'filter'):
         models = basis_models.load_vim_models(model_names, lmax=lmax, altitude=altitude)
         coeffs = {name: m['coeffs'] for name, m in models.items()}
     else:
-        coeffs = {name: c.pad(lmax) for name, (c, _) in depth_model_coeffs(model_names).items()}
+        coeffs = {name: c.pad(lmax) for name, (c, _) in
+                  depth_model_coeffs(model_names, near_ridge=(variant == 'depth+nr')).items()}
 
     if 'filter' in variant:
         l_h = fit_lh()
