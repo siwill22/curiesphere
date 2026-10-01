@@ -47,6 +47,11 @@ GK07 = {'seafloor_layer':'2d',
         'Mtrm':1, 
         'Mcrm':0}
 
+# GK07 with the near-ridge enhancement tuned for amplitude and pattern against LCS-1
+# (notebooks/tune_near_ridge.py, 2026-09-30): P = 0.94, i.e. a ~2x enhancement at the
+# ridge, within the range supported by Gee & Kent (2007, Treatise 5.12, Fig. 22)
+GK07_NR = dict(GK07, P=0.94)
+
 DAH982 = {'seafloor_layer':'2d',
             'layer_boundary_depths':[0,500,2000,6000,12000], 
             'layer_weights':[4,0,1,0.8333], 
@@ -86,6 +91,7 @@ MODEL_LIST = {'DAH981': DAH981,
               'M12': M12,
               'GK07': GK07,
               'GK07_noLIPs': GK07,
+              'GK07_NR': GK07_NR,
               'DAH982': DAH982,
               'DAH983': DAH983,
               'VIS': VIS,

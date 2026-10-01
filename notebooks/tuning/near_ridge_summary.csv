@@ -1,0 +1,17 @@
+model,points,altitude,r,rms_ratio
+"paper (P 5, lambda 3)",young,0km,0.4619,1.4888
+"paper (P 5, lambda 3)",young,300km,0.6324,0.8015
+"paper (P 5, lambda 3)",all,0km,0.5448,1.2094
+"paper (P 5, lambda 3)",all,300km,0.7294,0.9698
+"P 2.3, lambda 3",young,0km,0.4816,1.1339
+"P 2.3, lambda 3",young,300km,0.6600,0.7589
+"P 2.3, lambda 3",all,0km,0.5513,1.1678
+"P 2.3, lambda 3",all,300km,0.7327,0.9653
+"tuned (P 0.94, lambda 3.0)",young,0km,0.4748,1.0000
+"tuned (P 0.94, lambda 3.0)",young,300km,0.6676,0.7458
+"tuned (P 0.94, lambda 3.0)",all,0km,0.5510,1.1547
+"tuned (P 0.94, lambda 3.0)",all,300km,0.7335,0.9641
+P 0,young,0km,0.4551,0.9350
+P 0,young,300km,0.6698,0.7402
+P 0,all,0km,0.5492,1.1489
+P 0,all,300km,0.7338,0.9636

@@ -47,11 +47,11 @@ class GlobalMagnetizationModel(object):
         """
         add two magnetization models together
         """
-        
-        if not self.mrad.shape==model2.mrad.shape:
-            return ValueError('inconsistent dimensions of input grids')
 
-        return GlobalMagnetizationModel(np.degrees(self.lon), 
+        if not self.mrad.shape==model2.mrad.shape:
+            raise ValueError('inconsistent dimensions of input grids')
+
+        return GlobalMagnetizationModel(np.degrees(self.lon),
                                         90-np.degrees(self.colat),
                                         self.mrad + model2.mrad,
                                         self.mtheta + model2.mtheta,
@@ -199,6 +199,27 @@ def _setup_transform(th, lmax):
     return plm, dplm, fe, fi, ft
 
 
+def _dh_weights(th):
+    """
+    Driscoll and Healy (1994) latitude quadrature weights for an N x 2N grid
+    whose first row is the north pole and whose last row is one step short
+    of the south pole (the pyshtools DH2 layout).
+
+    Returns (w, wsin), where sum(w*f) = integral of f(theta)*sin(theta) over
+    [0, pi], and wsin = w/sin(theta), with zero weight at the pole.
+    """
+    nth = th.shape[0]
+    if _is_odd(nth) or not np.allclose(th, np.arange(nth)*np.pi/nth):
+        raise ValueError('forward_transform needs a Driscoll-Healy grid with an even '
+                         'number of rows, starting at the north pole and excluding '
+                         'the south pole (see remit.utils.grid.DH2)')
+    k = np.arange(nth//2)
+    w = (4./nth)*np.sin(th)*(np.sin(np.outer(th, 2*k+1))/(2*k+1)).sum(axis=1)
+    wsin = np.zeros(nth)
+    wsin[1:] = w[1:]/np.sin(th[1:])
+    return w, wsin
+
+
 def _is_odd(num):
     return num & 0x1
 
@@ -234,27 +255,17 @@ def forward_transform(gmm, lmax, lmin=None):
     mp1=np.fft.fft(gmm.mphi)
     mphat=mp1[:,:fftind]
     
+    # Latitude quadrature weights for the DH2 grid (north pole included,
+    # south pole excluded). w integrates f(theta)*sin(theta)*dtheta and
+    # wsin = w/sin(theta) integrates f(theta)*dtheta; both are exact for
+    # band-limited integrands (replaces the earlier trapezium end-corrections,
+    # which assumed both pole rows and leaked power into zonal terms)
+    w, wsin = _dh_weights(th)
+
     plm, dplm, fe, fi, ft = _setup_transform(th, lmax=lmax)
 
-    #scale end points for trapezium rule
-    mrhat[0,:]=(9.0/8.0)*mrhat[0,:]
-    mthat[0,:]=(9.0/8.0)*mthat[0,:]
-    mphat[0,:]=(9.0/8.0)*mphat[0,:]
-
-    mrhat[1,:]=(7.0/8.0)*mrhat[1,:]
-    mthat[1,:]=(7.0/8.0)*mthat[1,:]
-    mphat[1,:]=(7.0/8.0)*mphat[1,:]
-
-    mrhat[-1,:]=(9.0/8.0)*mrhat[-1,:]
-    mthat[-1,:]=(9.0/8.0)*mthat[-1,:]
-    mphat[-1,:]=(9.0/8.0)*mphat[-1,:]
-
-    mrhat[-2,:]=(7.0/8.0)*mrhat[-2,:]
-    mthat[-2,:]=(7.0/8.0)*mthat[-2,:]
-    mphat[-2,:]=(7.0/8.0)*mphat[-2,:]
-
     #Do l=0 term
-    E00 = -np.dot(np.sin(th),mrhat[:,0])*dth*dph/4/np.pi
+    E00 = -np.dot(w,mrhat[:,0])*dph/4/np.pi
 
     Er = np.zeros(int(ldim),dtype='complex')
     Et = np.zeros(int(ldim),dtype='complex')
@@ -287,16 +298,16 @@ def forward_transform(gmm, lmax, lmin=None):
             k=int(l*(l+1)/2+m)
             #  evaluate independent integrals separately
             
-            Er[k-1] = -(l+1)*np.dot(plm[k,:]*np.sin(th),mrhat[:,m])  *dth*dph
-            Et[k-1] =  np.dot(dplm[k,:]*np.sin(th),mthat[:,m])       *dth*dph
-            Ep[k-1] = -ai*m*np.dot(plm[k,:],mphat[:,m])              *dth*dph
+            Er[k-1] = -(l+1)*np.dot(plm[k,:]*w,mrhat[:,m])           *dph
+            Et[k-1] =  np.dot(dplm[k,:]*w,mthat[:,m])                *dph
+            Ep[k-1] = -ai*m*np.dot(plm[k,:]*wsin,mphat[:,m])         *dph
 
             Ir[k-1] = -Er[k-1] *l/(l+1)
-            It[k-1] =  Et[k-1] 
-            Ip[k-1] =  Ep[k-1] 
+            It[k-1] =  Et[k-1]
+            Ip[k-1] =  Ep[k-1]
 
-            Tt[k-1] = -m*np.dot(plm[k,:],mthat[:,m])                 *dth*dph 
-            Tp[k-1] =  ai*np.dot(dplm[k,:]*np.sin(th),mphat[:,m])    *dth*dph
+            Tt[k-1] = -m*np.dot(plm[k,:]*wsin,mthat[:,m])            *dph
+            Tp[k-1] =  ai*np.dot(dplm[k,:]*w,mphat[:,m])             *dph
 
             #  evaluate vector harmonic coefficients  
             Elm[k-1]=fe[l-1]*(Er[k-1]+Et[k-1]+Ep[k-1])*fnorm/4/np.pi
@@ -305,8 +316,12 @@ def forward_transform(gmm, lmax, lmin=None):
 
             # evaluate scalar coefficients of internal field  
 
-            # Equation 32
-            clm[k-1]=mu0*Ilm[k-1]*1e9/fi[l-1]/gmm.r0
+            # Equation 32-34 (Gubbins et al. 2011): g + ih* = (mu0/r0) sqrt(l*eps_m) I,
+            # eps_m = 2 - delta_m0. 1/fi = sqrt(l) and 1/fnorm = sqrt(eps_m); the
+            # latter undoes the complex normalisation of the vector harmonics (A7),
+            # giving Schmidt semi-normalised Gauss coefficients
+            # (without it, every m>0 coefficient is sqrt(2) too small)
+            clm[k-1]=mu0*Ilm[k-1]*1e9/fi[l-1]/gmm.r0/fnorm
             if m==0:
                 glm[k-1] = np.real(clm[k-1])
                 hlm[k-1] = 0

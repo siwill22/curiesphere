@@ -32,10 +32,10 @@ class SeafloorGrid(object):
     # TODO move the trimming of the extended points somewhere else
     def __init__(self, lon, lat, age, declination, paleolatitude):
 
-        # to use these grids 
-        if not _np.logical_and(age.shape==declination.shape,  
+        # to use these grids
+        if not _np.logical_and(age.shape==declination.shape,
                               age.shape==paleolatitude.shape):
-            return ValueError('inconsistent dimensions of input grids')
+            raise ValueError('inconsistent dimensions of input grids')
 
         lon,lat,grids = force_global_bounds(lon,lat,[age,declination,paleolatitude])
 
@@ -219,9 +219,13 @@ class GlobalVIS(object):
         else:
             raise ValueError('Invalid inducing field')
 
-        mrad = self.vis * inducing_field.rad.data
-        mtheta = self.vis * inducing_field.theta.data
-        mphi = self.vis * inducing_field.phi.data
+        # VIS is in SI.km and the inducing field B in nT (Hemant and Maus, 2005).
+        # Induced VIM [A] = VIS * H = VIS [SI.km] * 1e3 [m/km] * B [nT] * 1e-9 [T/nT] / mu0
+        vis_to_vim = 1e3 * 1e-9 / pyshtools.constants.mu0.value
+
+        mrad = self.vis * inducing_field.rad.data * vis_to_vim
+        mtheta = self.vis * inducing_field.theta.data * vis_to_vim
+        mphi = self.vis * inducing_field.phi.data * vis_to_vim
 
         # Force the magnetization model to match pyshtools convention
         (lon,lat,grids) = DH2(self.lon, self.lat, 
