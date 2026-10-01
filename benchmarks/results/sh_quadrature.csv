@@ -1,0 +1,25 @@
+case,part,method,rel_err_target,rel_max_other,rel_max_per_degree,rel_median_per_degree,rel_max_per_lm
+1 closed form,radial l=150 m=77,remit,4.659e-15,7.173e-15,,,
+1 closed form,radial l=150 m=77,reference,3.812e-15,1.365e-15,,,
+1 closed form,poloidal l=150 m=77,remit,5.602e-13,1.133e-12,,,
+1 closed form,poloidal l=150 m=77,reference,8.674e-13,2.018e-13,,,
+1 closed form,toroidal l=150 m=77,remit,4.641e-18,1.517e-13,,,
+1 closed form,toroidal l=150 m=77,reference,2.771e-18,1.532e-13,,,
+1 closed form,radial l=185 m=185,remit,5.362e-15,1.845e-14,,,
+1 closed form,radial l=185 m=185,reference,5.221e-15,4.022e-15,,,
+1 closed form,poloidal l=185 m=185,remit,9.030e-13,3.556e-12,,,
+1 closed form,poloidal l=185 m=185,reference,6.863e-13,7.985e-13,,,
+1 closed form,toroidal l=185 m=185,remit,1.852e-17,5.622e-14,,,
+1 closed form,toroidal l=185 m=185,reference,4.845e-18,9.424e-14,,,
+1 closed form,radial l=400 m=250,remit,2.536e-15,2.500e-14,,,
+1 closed form,radial l=400 m=250,reference,4.227e-16,6.844e-15,,,
+1 closed form,poloidal l=400 m=250,remit,7.214e-14,1.003e-11,,,
+1 closed form,poloidal l=400 m=250,reference,2.164e-13,2.514e-12,,,
+1 closed form,toroidal l=400 m=250,remit,5.987e-17,1.232e-12,,,
+1 closed form,toroidal l=400 m=250,reference,2.785e-18,1.251e-12,,,
+"2 real, sphere",remanent,remit vs reference,,,7.771e-14,3.430e-14,6.241e-13
+"2 real, sphere",induced,remit vs reference,,,2.507e-13,7.987e-14,2.530e-12
+"2 real, sphere",combined,remit vs reference,,,1.371e-13,6.165e-14,1.479e-12
+"3 real, depth",remanent,remit vs reference,,,4.543e-14,1.105e-14,3.711e-13
+"3 real, depth",induced,remit vs reference,,,9.016e-14,1.355e-14,8.998e-13
+"3 real, depth",combined,remit vs reference,,,8.419e-14,1.335e-14,8.338e-13

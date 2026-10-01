@@ -76,6 +76,6 @@ The depth series is consistent across lmax: a separate run at lmax 150 equals th
 ## Not covered
 
 - The thin-shell approximation itself: magnetic tesseroids were ruled out for now.
-- An independent spherical-harmonic quadrature at full lmax: the planned follow-up benchmark 2.
+- An independent spherical-harmonic quadrature, coefficient by coefficient: see `docs/benchmark-sh-quadrature.md` (benchmark 2).
 - Altitudes below 100 km.
 - The latitude registration (review item D).

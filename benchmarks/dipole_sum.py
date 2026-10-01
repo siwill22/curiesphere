@@ -36,41 +36,24 @@ a subset of cases, e.g. for maps; the dipole sum costs ~1.5e9 source-point pairs
 Outputs: benchmarks/results/dipole_sum.csv, benchmarks/results/dipole_sum.png
 """
 import os
-import time
 
 import numba
 import numpy as np
 import pandas as pd
 import pyshtools
 
-import depth_models as dm
-from basis_models import MODEL_LIST
-from remit.data.models import load_ocean_age_model, load_vis_model
-from remit.earthvim import GlobalVIS, SeafloorAgeProfile
-from remit.utils.grid import agearray2magnetisation
+from common import (R0, MU0, RESULTS, log, cached, unit_vectors, LAT, LON, COLAT, RH, TH, PH, W_DH,
+                    VIS, induced_vim, gv, rem_gmm, depth_setup)
 from remit.utils.region import generate_healpix_points
 from remit.vhtools import GlobalMagnetizationModel
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-CACHE = os.path.join(HERE, 'cache')
-RESULTS = os.path.join(HERE, 'results')
-os.makedirs(CACHE, exist_ok=True)
-os.makedirs(RESULTS, exist_ok=True)
-
-R0 = dm.R0
-MU0 = pyshtools.constants.mu0.value
 NSIDE = int(os.environ.get('BENCH_NSIDE', '16'))    # HEALPix resolution of the observation points
 CASES = os.environ.get('BENCH_CASES', '0123')       # which cases to run
 TAG = '' if NSIDE == 16 else f'_n{NSIDE}'           # dipole caches depend on the point set
 ALTITUDES = [100e3, 300e3]
 LMAX_EXACT = 150
 LMAX_SERIES = [150, 300, 400]
-SLICE_BENCH = 500.                       # m, vertical slice thickness for case 3
 COMPONENTS = ['Br', 'Btheta', 'Bphi']
-
-
-def log(msg):
-    print(f'[{time.strftime("%H:%M:%S")}] {msg}', flush=True)
 
 
 # ================================================================ 1. dipole sum
@@ -102,14 +85,6 @@ def _dipole_sum(obs, src, mom, out):
             out[i, 2] += acc[i - i0, 2]
 
 
-def unit_vectors(colat, lon):
-    st, ct, sp, cp = np.sin(colat), np.cos(colat), np.sin(lon), np.cos(lon)
-    rh = np.stack([st*cp, st*sp, ct], -1)
-    th = np.stack([ct*cp, ct*sp, -st], -1)
-    ph = np.stack([-sp, cp, np.zeros_like(sp)], -1)
-    return rh, th, ph
-
-
 class DipoleSum:
     """Accumulates the field of gridded VIM layers at the observation points"""
 
@@ -139,31 +114,9 @@ def remit_components(coeffs, lmax):
     return np.concatenate([np.asarray(c.expand(a=R0+h, lat=OBS_LAT, lon=OBS_LON)) for h in ALTITUDES])
 
 
-def cached(name, fn):
-    f = os.path.join(CACHE, name + '.npy')
-    if not os.path.exists(f):
-        t = time.time()
-        np.save(f, fn())
-        log(f'  {name}: computed in {time.time()-t:.0f} s')
-    return np.load(f)
-
-
 # ================================================================ 2. grids and points
 
-log('loading inputs')
-ocean = load_ocean_age_model()
-vis = load_vis_model(name='Hemant2005+slabs', match=(ocean.lon, ocean.lat, ocean.age))
-assert np.allclose(vis.lat, ocean.lat) and np.allclose(vis.lon, ocean.lon)
-LAT, LON = ocean.lat[:-1], ocean.lon[:-1]              # DH2: drop the south pole and lon 360
-assert LAT[0] == 90 and len(LAT) == 1800 and len(LON) == 3600
-COLAT, LONR = np.meshgrid(np.radians(90 - LAT), np.radians(LON), indexing='ij')
-RH, TH, PH = unit_vectors(COLAT, LONR)
-# solid angle per node. Driscoll & Healy (1994) weights for nodes theta_j = pi j/N,
-# j = 0..N-1: sum_j w_j f(theta_j) = int_0^pi f sin(theta) dtheta, exact for band-limited f
-_th = np.pi*np.arange(1800)/1800
-_k = np.arange(900)
-W_DH = (4./1800)*np.sin(_th)*(np.sin(np.outer(_th, 2*_k + 1))/(2*_k + 1)).sum(1)
-assert np.isclose(W_DH.sum(), 2.) and np.isclose((W_DH*np.cos(_th)**2).sum(), 2/3)
+# solid angle per node: Driscoll & Healy (1994) latitude weights (common.dh_weights)
 CELL_DH = W_DH[:, None]*np.radians(360/3600)*np.ones((1, 3600))
 CELL_SIN = np.sin(COLAT)*np.radians(180/1800)*np.radians(360/3600)
 CELL = CELL_DH
@@ -176,17 +129,6 @@ OBS_XYZ = np.concatenate([(R0 + h)*o_rh for h in ALTITUDES])
 OBS_RH, OBS_TH, OBS_PH = [np.concatenate([u]*len(ALTITUDES)) for u in (o_rh, o_th, o_ph)]
 NOBS = len(OBS_LAT)
 log(f'{NOBS} HEALPix points x {len(ALTITUDES)} altitudes; source grid {COLAT.shape}')
-
-# independent induced VIM: VIS [SI km] x 1e3 [m/km] x B [nT] x 1e-9 [T/nT] / mu0
-igrf = pyshtools.datasets.Earth.IGRF_13().expand(lmax=899, extend=True)
-assert np.allclose(igrf.rad.lats(), ocean.lat) and np.allclose(igrf.rad.lons(), ocean.lon)
-IGRF = [g.data[:-1, :-1] for g in (igrf.rad, igrf.theta, igrf.phi)]
-VIS = vis.vis[:-1, :-1].astype(float)                 # the VIS grid is stored as float32
-
-
-def induced_vim(vis_grid):
-    return [vis_grid*1e3*b*1e-9/MU0 for b in IGRF]
-
 
 rows = []
 
@@ -207,7 +149,6 @@ def compare(case, part, lmax, dip, rem, tail=None):
 
 # ================================================================ case 0: induced units
 
-gv = vis.vim()
 mine = induced_vim(VIS)
 rel = max(np.abs(a - b).max()/np.abs(b).max() for a, b in zip((gv.mrad, gv.mtheta, gv.mphi), mine))
 log(f'case 0: induced VIM, remit vs independent: max relative difference {rel:.1e}')
@@ -216,9 +157,6 @@ rows.append(dict(case='0 induced units', part='VIM grid', component='all', rel_m
 # ================================================================ case 1: exact band-limited test
 
 log('case 1: band-limited GK07 + VIS on the r0 sphere')
-p = dict(MODEL_LIST['GK07'])
-p.pop('seafloor_layer')
-rem_gmm = ocean.vim(SeafloorAgeProfile.layer2d(**p))
 mr, mt, mp = rem_gmm.mrad + gv.mrad, rem_gmm.mtheta + gv.mtheta, rem_gmm.mphi + gv.mphi
 if '1' in CASES:
     mxyz = [mr*RH[..., k] + mt*TH[..., k] + mp*PH[..., k] for k in range(3)]
@@ -280,75 +218,33 @@ if '2' in CASES:
 
 if '3' in CASES:
     log('case 3: realistic depth, GK07_NR, 500 m slices')
-    r_top_full = dm.top_of_crust_radius(ocean)
-    r_top = r_top_full[:-1, :-1]
-    is_ocean_full = ~np.isnan(ocean.age)
-    r_ell_full = dm.ellipsoid_radius(ocean.lat)[:, None]*np.ones_like(r_top_full)
-
-    # remanent slices: the 100 m cross-section of GK07_NR summed into 500 m bins
-    prof, z100, rm100 = dm.profile_slices(MODEL_LIST['GK07_NR'])
-    bins = np.floor(z100/SLICE_BENCH).astype(int)
-    z_rem = (np.unique(bins) + 0.5)*SLICE_BENCH
-    rm_rem = np.array([rm100[bins == b].sum(0) for b in np.unique(bins)])
-    rem_slices = [(zi, agearray2magnetisation(ocean.age, prof.age, rmi)) for zi, rmi in zip(z_rem, rm_rem)]
-    to_gmm_rem = dm.remanent_to_gmm(ocean)
-
-    # induced slices: H&M 2005 oceanic layers in ~500 m slices; continents on the ellipsoid
-    ind_layers = []
-    for top, bottom, chi in dm.HM05_OCEAN_VIS_LAYERS:
-        n = max(1, int(round((bottom - top)/SLICE_BENCH)))
-        dz = (bottom - top)/n
-        ind_layers += [(top + (i + 0.5)*dz, chi*dz) for i in range(n)]
-    z_ind = np.array([z for z, _ in ind_layers])
-    f_ind = np.array([f for _, f in ind_layers])
-    f_ind /= f_ind.sum()
-    log(f'  {len(z_rem)} remanent slices ({z_rem.min():.0f}-{z_rem.max():.0f} m), '
-        f'{len(z_ind)} induced slices ({z_ind.min():.0f}-{z_ind.max():.0f} m)')
-
-
-    def ind_weight(k):
-        return np.where(is_ocean_full, f_ind[k], 1./len(z_ind))*vis.vis.astype(float)
-
-
-    def ind_radius(k):
-        return np.where(is_ocean_full, r_top_full - z_ind[k], r_ell_full)
+    d = depth_setup()
 
 
     def dip_case3_rem():
         ds = DipoleSum(OBS_XYZ)
-        for zi, w in rem_slices:
-            g = to_gmm_rem(w)
-            ds.add(g.mrad, g.mtheta, g.mphi, r_top - zi)
+        for zi, w in d.rem_slices:
+            g = d.to_gmm_rem(w)
+            ds.add(g.mrad, g.mtheta, g.mphi, d.r_top - zi)
         return ds.components()
 
 
     def dip_case3_ind():
         ds = DipoleSum(OBS_XYZ)
-        for k in range(len(z_ind)):
-            ds.add(*induced_vim(ind_weight(k)[:-1, :-1]), ind_radius(k)[:-1, :-1])
+        for k in range(len(d.z_ind)):
+            ds.add(*induced_vim(d.ind_weight(k)[:-1, :-1]), d.ind_radius(k)[:-1, :-1])
         return ds.components()
-
-
-    def rem_case3(part, lmax):
-        if part == 'remanent':
-            slices = [(w, np.log((r_top_full - zi)/R0)) for zi, w in rem_slices]
-            to_gmm = to_gmm_rem
-        else:
-            slices = [(ind_weight(k), np.log(ind_radius(k)/R0)) for k in range(len(z_ind))]
-            to_gmm = lambda v: GlobalVIS(vis.lon, vis.lat, v).vim()
-        umax = max(np.nanmax(np.abs(u)) for _, u in slices)
-        return dm.depth_weighted_coeffs(slices, to_gmm, lmax, dm.n_terms(umax, lmax)).coeffs
 
 
     dip3 = {'remanent': cached('case3_dipole_remanent' + TAG, dip_case3_rem),
             'induced': cached('case3_dipole_induced' + TAG, dip_case3_ind)}
     dip3['combined'] = dip3['remanent'] + dip3['induced']
-    rem3 = {part: cached(f'case3_remit_{part}_400', lambda part=part: rem_case3(part, 400))
+    rem3 = {part: cached(f'case3_remit_{part}_400', lambda part=part: d.remit_coeffs(part, 400))
             for part in ('remanent', 'induced')}
     rem3['combined'] = rem3['remanent'] + rem3['induced']
     # the depth series is summed per lmax, so check that truncating the lmax-400 result
     # equals a separate run at lower lmax
-    rem3_150 = cached('case3_remit_remanent_150', lambda: rem_case3('remanent', 150))
+    rem3_150 = cached('case3_remit_remanent_150', lambda: d.remit_coeffs('remanent', 150))
     series_check = np.abs(rem3_150 - rem3['remanent'][:, :151, :151]).max()/np.abs(rem3_150).max()
     log(f'  depth series: lmax-150 run vs truncated lmax-400 run, max relative difference {series_check:.1e}')
     for part in dip3:
