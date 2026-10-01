@@ -129,7 +129,7 @@ def depth_weighted_coeffs(slices, to_gmm, lmax, nterm):
     total = np.zeros((2, lmax+1, lmax+1))
     for k in range(nterm):
         _, c = to_gmm(S[k]).transform(lmax=lmax)
-        total += c.coeffs*((l+1.)**k/factorial(k))[None, :, None]
+        total += c.coeffs*((l+1.)**k/float(factorial(k)))[None, :, None]
     return pyshtools.SHMagCoeffs.from_array(total, r0=R0)
 
 
