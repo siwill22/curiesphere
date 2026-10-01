@@ -18,21 +18,14 @@ Williams et al, 2025, Journal of Geophysical Research
 
 preprint here: https://doi.org/10.22541/essoar.174371621.15559464/v1
 ```
-To reproduce the figures and numbers of that paper, use release v1.0.0.
 
-## Changes since v1.0.0
-v2.0.0 corrects three errors in the forward transform and the induced magnetization, which change the amplitudes of all forward models (details and tests in `docs/review-2026-09-units-and-geometry.md` and `tests/`):
-- Gauss coefficients of order m > 0 were a factor sqrt(2) too small.
-- Induced magnetization used the field B in nT where H = B/mu0 is required, so the induced part was about 1.26x too strong.
-- The latitude quadrature leaked a small amount of power into zonal terms; it now uses exact Driscoll-Healy weights, and `forward_transform` raises `ValueError` for grids that are not Driscoll-Healy (see `remit.utils.grid.DH2`).
+The python interface allows creation of global magnetization models from inputs defined on regular lat-long grids. Included in the repository are input data required to generate results for Earth using global susceptibility models for the continents (Hemant and Maus, 2005) and subduction zones (Williams and Gubbins, 2019) and models for the remanent magnetization of the oceans (Williams et al, 2025). The notebooks folder contains the code used for the analysis of Williams et al (2025).
 
-Together these increase forward-model Br by roughly 1.2-1.4x relative to v1.0.0, with pattern correlations almost unchanged.
-
-The notebooks also add optional extensions (not used by the paper notebooks unless selected):
-- `notebooks/depth_models.py`: forward models with realistic source depth (WGS84 ellipsoid, bathymetry and sediments) and an approximate LCS-1 resolution filter.
-- `GK07_NR` in `notebooks/basis_models.py`: GK07 with the near-ridge enhancement retuned against LCS-1 (P = 0.94, lambda = 3 Ma), from `notebooks/tune_near_ridge.py`.
-
-The python interface allows creation of global magnetization models from inputs defined on regular lat-long grids. Included in the repository are input data required to generate results for Earth using global susceptibility models for the continents (Hemant and Maus, 2005) and subduction zones (Williams and Gubbins, 2019) and models for the remanent magnetization of the oceans (Williams et al, 2025). The notebooks folder contains code necessary to reproduce the analysis of Williams et al (2025).
+## Changes in v2.0.0
+- **Bug fixes.** Errors in the forward transform and in the units of the induced magnetization have been corrected (details in `docs/review-2026-09-units-and-geometry.md`).
+- **Ocean depth.** Optional forward models now place the oceanic sources at a realistic depth: below the sea floor and sediments, on the WGS84 ellipsoid, with each layer of the oceanic lithosphere at its own depth (`notebooks/depth_models.py`).
+- **Benchmarks.** The code has been benchmarked against an independent equivalent-source (dipole sum) calculation and an independent spherical-harmonic quadrature, and agrees with both to rounding error (`docs/benchmark-dipole-sum.md`, `docs/benchmark-sh-quadrature.md`).
+- **Outputs differ from v1.0.0.** As a consequence, forward-model amplitudes are different from those computed with release v1.0.0 (by roughly 1.2-1.4x). To reproduce the published figures and numbers of Williams et al (2025), use release v1.0.0 (https://doi.org/10.5281/zenodo.14854133).
 
 ## Python Requirements
 - numpy
