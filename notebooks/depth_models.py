@@ -98,6 +98,16 @@ def top_of_crust_radius(ocean):
     return ellipsoid_radius(ocean.lat)[:, None] - depth
 
 
+def top_of_basement_radius(ocean):
+    """Radius (m) of the top of basement everywhere on the ocean-age grid:
+    ellipsoid - water depth - sediment thickness, on the continents as well as the oceans"""
+    import pygmt
+    relief = pygmt.datasets.load_earth_relief(resolution='06m', registration='gridline')
+    elev = _to_grid(relief, ocean.lon, ocean.lat, 'lon', 'lat')
+    sed = _to_grid(xr.open_dataarray(SEDIMENT_GRID), ocean.lon, ocean.lat, 'x', 'y')
+    return ellipsoid_radius(ocean.lat)[:, None] - np.maximum(-elev, 0.) - np.nan_to_num(sed)
+
+
 # ---------------------------------------------------------------- depth-weighted transform
 
 def n_terms(umax, lmax, tol=1e-12):
@@ -208,6 +218,34 @@ def vis_coeffs(ocean, vis, r_top, lmax=LMAX, zero_depth=False):
 
     def to_gmm(v):
         return GlobalVIS(vis.lon, vis.lat, v).vim()
+    return depth_weighted_coeffs(slices(), to_gmm, lmax, n_terms(umax, lmax))
+
+
+def induced_to_gmm(lon, lat):
+    """VIS grid (SI.km) -> induced GlobalMagnetizationModel, as GlobalVIS.vim() with IGRF-13,
+    but with the inducing field expanded once rather than on every call"""
+    B = pyshtools.datasets.Earth.IGRF_13().expand(lmax=np.floor(len(lat)/2 - 1), extend=True)
+    k = 1e3*1e-9/pyshtools.constants.mu0.value          # SI.km x nT -> A
+    components = [B.rad.data*k, B.theta.data*k, B.phi.data*k]
+
+    def to_gmm(v):
+        lon2, lat2, grids = DH2(lon, lat, [v*c for c in components])
+        return GlobalMagnetizationModel(lon2, lat2, *grids, R0)
+    return to_gmm
+
+
+def slab_vis_coeffs(vis, r_top, r_base, to_gmm, lmax=LMAX, n_gl=8):
+    """Gauss coefficients (r0 = R0) of a VIS grid (SI.km) spread uniformly in radius between
+    the grids r_top and r_base (m). The radial integral uses n_gl-point Gauss-Legendre
+    quadrature, which is exact to rounding for slabs a few tens of km thick at lmax 185."""
+    x, wq = np.polynomial.legendre.leggauss(n_gl)
+    sel = vis != 0
+    umax = max(np.abs(np.log(r[sel]/R0)).max() for r in (r_top, r_base))
+
+    def slices():
+        for xi, wi in zip(x, wq):
+            r = r_top + (r_base - r_top)*(xi + 1)/2
+            yield vis*wi/2, np.where(sel, np.log(r/R0), 0.)
     return depth_weighted_coeffs(slices(), to_gmm, lmax, n_terms(umax, lmax))
 
 

@@ -1,0 +1,167 @@
+# Domain VIS inversion: Australia (method record)
+
+*Decisions agreed on 2026-10-01, before any code was written. The code is `notebooks/invert_domains.py`; the general background is in `docs/inversion-ideas.md` (question Q2, formulation (c)).*
+
+## Purpose
+
+A shakedown of the method. The deliverables are working inversion machinery and a statement of which domain parameters LCS-1 can and cannot resolve. Any geological reading of the fitted values is a bonus. The code is meant to generalise to other continents and other polygon sets.
+
+## Set-up
+
+| Item | Decision |
+|---|---|
+| Domains | Hasterok et al. (2022) provinces, from `gprm.datasets.Geology.fetch_GlobalTectonicMap()`, with `continent == 'Australia'`. The PNG and Bismarck units also carry that tag and are excluded. |
+| Mapping | `notebooks/inversion/australia_domains.csv` maps each polygon to a parameter. The script writes the table once and then only reads it, so it can be edited by hand. Lumping and unlumping are table edits, not code changes. An empty `param` keeps the background. The key is the GeoDataFrame index, because the Hasterok `id` is not unique. |
+| Margins | Passive margins and offshore plateaus are lumped into four parameters: `margin_W` (W rifted margin, Exmouth, Zenith, Quokka, Batavia, Gulden Draak), `margin_N`, `margin_E` (E rifted margin, Queensland–Marion Plateau) and `margin_S` (S rifted margin, Bass Strait). We are prepared to unlump them. |
+| Parameter | One uniform VIS v_k (SI·km) per parameter. No H&M values are used inside the domains. |
+| Ocean overlap | Cells with an ocean age keep the ocean model; the age grid wins over the polygons. The overlap is at most 8% of any polygon (Zenith Plateau), and 0% for most. |
+| Source depth | v_k is spread uniformly in radius from the top of basement (ellipsoid − water − sediment) to 30 km below the ellipsoid. The 30 km base is a stand-in, not a claim. A Moho-following base is a question for later (magnetic-layer thickness). |
+| Inducing field | IGRF-13, the pyshtools default epoch, evaluated on the r0 sphere, as in the rest of the model. |
+| Background (fixed) | The current depth model everywhere else: H&M + slabs VIS on the other continents and PNG (on the ellipsoid), HM05 oceanic-crust VIS, and GK07_NR remanence. |
+
+## Data and misfit
+
+| Item | Decision |
+|---|---|
+| Target | LCS-1 Br at r0 = 6371.0 km, regional. |
+| Points | HEALPix NSIDE 128 (about 55 km spacing), inside the domains plus a 300 km great-circle buffer. The buffer includes the continent–ocean edge anomalies, which tie the absolute level. |
+| Band | Degrees 16–133. F(l) is applied to the model. With l_h = 186.8, F ≥ 0.99 up to degree 133, so the filter has little effect in this band. Degree 150 is a sweep. |
+| Error model | σ = RMS(LCS-1 − MF7) at the points, uniform and diagonal. The formal covariance is therefore too optimistic, and the error bars come from a noise ensemble: random-phase realisations with the global per-degree spectrum of LCS-1 − MF7. MF7 is read like LCS-1 (r0 = 6371.0 km). |
+
+## Solve
+
+1. **v_ref:** a one-parameter fit, the single uniform VIS for all parameters. It also tests whether the common mode is resolvable. If it is not, v_ref falls back to a literature value of crustal susceptibility × thickness chosen independently of H&M, and every v_k is then relative to it.
+2. **Diagnostic solve:** bounded least squares (v ≥ 0), undamped, with the SVD of G/σ, the resolution matrix and the posterior covariance.
+3. **Working solve:** the same, with Tikhonov damping towards v_ref·**1**. The damping strength comes from the synthetic tests and an L-curve, and v_ref is varied to show which v_k depend on it. Smoothness across boundaries is not used, because it would damp the contrasts that the data resolve.
+
+## Synthetic tests (before real data)
+
+| # | Truth | Tests |
+|---|---|---|
+| T1 | Random v_k (log-normal, median 0.6 SI·km), the inversion's own G, plus noise | Conditioning, noise propagation, which domains resolve |
+| T2 | Equal v_k (0.3, 0.6, 1.0 SI·km) | The common mode and the v_ref fit |
+| T3 | Lognormal internal variation from first principles (no H&M), inverted as uniform | Error from assuming uniform domains |
+| T4 | Sheet on the ellipsoid, or slab base at 15 or 45 km | Depth bias |
+| T5 | Background altered (constant VIS on the other continents; another ocean model) | Background leakage |
+| T6 | T1 plus a compact unmodelled anomaly | Leakage into neighbours; whether a robust misfit is needed |
+
+Sweeps: buffer width (0, 300, 600 km), band (133 or 150), damping, and full against aggregated domains. The criteria for aggregating domains are to be decided after T1–T2.
+
+**Check-ins with the user:** after T1–T2, which settle granularity, and after T3–T6, before any real-data fit.
+
+## Spherical geometry
+
+- **Point in polygon:** pygplates, with great-circle edges. Polygon edges (up to 2° long in the source) are densified to 0.1° steps in lon/lat first, so the great-circle edges follow the GIS straight lines.
+- **Buffer:** great-circle distance.
+- **Data points:** equal-area HEALPix.
+- **Source radii:** taken from the WGS84 ellipsoid.
+- **Latitudes:** the grid latitudes are used as geocentric, as in `depth_models.py`.
+
+## Implementation notes
+
+- `depth_models.slab_vis_coeffs` computes the slab with 8-point Gauss–Legendre quadrature in radius inside the depth series. It agrees with 280 slices of 100 m to within 2×10⁻⁷ at degree 133.
+- `depth_models.induced_to_gmm` is bit-identical to `GlobalVIS.vim()`, but expands the inducing field only once.
+- A 2–30 km slab is 22% weaker than a sheet on the 6371 km sphere at degree 133, and 11% weaker at degree 60.
+- One column takes about 19 s.
+
+## Results
+
+### Set-up as built (2026-10-01)
+
+- **Domains:** 46 polygons map to 39 parameters (35 onshore and 4 margin lumps), covering 13.3 M km² of domain cells.
+  - About 2,700 non-ocean cells in the box belong to no domain.
+  - They are all outside Australia: PNG, the Java and Banda forearcs, and slivers of Hasterok's oceanic polygons where the age grid has no age, along the continent–ocean boundary. They keep the background.
+- **Data points:** 7,649 in total, 5,160 inside the domains and 2,489 in the 300 km buffer.
+- **Field scale:** σ = RMS(LCS-1 − MF7) at the points = 20.4 nT. For comparison, LCS-1 RMS is 61.8 nT, the background 34.3 nT, and uniform 0.6 SI·km domains 29.6 nT.
+- **Noise realisations:** RMS 16.4 nT at the points, so the global LCS-1 − MF7 spectrum underestimates the Australian difference by about 20%. From the second run on (2026-10-02), the realisations are scaled to σ = 20.4 nT. The T1 numbers below come from the first run; with the scaled noise, the RMS std is 0.052 instead of 0.042 SI·km, and v_ref is ±0.013 instead of ±0.011.
+
+### T1 (random v_k, median 0.6 SI·km, 100 noise realisations) and T2 (common mode)
+
+- **Conditioning:** the weighted G is well conditioned, with condition number 8.2. With the exact G and background, every one of the 39 parameters is recovered without bias.
+- **Noise std:** 0.017–0.076 SI·km (3–13% of 0.6). It scales with domain size (log–log correlation −0.80).
+  - Smallest errors: the margin lumps.
+  - Largest: Hay-Booligal (40,000 km²), Mossman, Georgetown–Coen and Darling Basin.
+- **Ensemble against formal error:** the ensemble std is 1.7–2.7× the formal (diagonal-σ) error, as expected for correlated noise. The error bars must come from the ensemble.
+- **Damping:** not needed in T1. α/s_max ≤ 0.01 changes nothing, 0.03 adds a small bias, and 0.1 adds a large bias (RMS 0.06).
+- **Common mode:**
+  - It is the weakest direction, as expected (Runcorn): 83% of it lies on the smallest singular vector.
+  - It is still resolved. The single-parameter v_ref is recovered to ±0.011 SI·km (2%) at levels of 0.3, 0.6 and 1.0. For a finite continent, the edges and the non-dipole inducing field break the annihilator.
+- **What v_ref measures:** it is the best single level weighted by G, not the area mean. On T1 data it returns 0.575, against an area-weighted truth of 0.67.
+
+**Reading:** with exact physics, noise alone does not force any aggregation. The limits will come from model error: non-uniform domains (T3), depth (T4) and the background (T5). Granularity should be decided after T3.
+
+### T3: non-uniform domains (2026-10-02)
+
+**Truth.** H&M is not used.
+- **Formula:** inside each domain, v = v_k · exp(σ_ln·ε − σ_ln²/2), where v_k are the T1 values.
+- **Why lognormal:** rock susceptibility is roughly lognormal.
+- **The random field ε:** one field across the whole continent, zero mean and unit variance, Gaussian, on the sphere. It is self-similar: power per degree ∝ l^(1−β), from degree 2 to 600 (about 30 km).
+- **Cases:**
+  - σ_ln = 0.25, 0.5 or 1.0;
+  - β = 2 (rough) or 3 (smoother);
+  - 5 random fields per case, each inverted with 20 noise realisations, uniform domains, undamped.
+- **Score:** recovered v_k against the actual area-weighted mean of the truth in each domain.
+
+| σ_ln | β | RMS error | RMS bias | noise std | RMS relative error | misfit/σ |
+|---|---|---|---|---|---|---|
+| 0.25 | 2 | 0.122 | 0.110 | 0.053 | 0.30 | 1.44 |
+| 0.25 | 3 | 0.120 | 0.107 | 0.053 | 0.26 | 1.17 |
+| 0.5 | 2 | 0.213 | 0.207 | 0.052 | 0.66 | 2.43 |
+| 0.5 | 3 | 0.219 | 0.213 | 0.052 | 0.56 | 1.64 |
+| 1.0 | 2 | 0.396 | 0.393 | 0.051 | 2.78 | 5.22 |
+| 1.0 | 3 | 0.461 | 0.458 | 0.051 | 2.27 | 3.18 |
+
+Errors are in SI·km. For comparison, T1 with uniform truth gives misfit/σ = 0.98.
+
+**Reading**
+- **Internal variation dominates the error.** It is the main error source even when it is mild: at σ_ln = 0.25, the bias is twice the noise and the relative error is 26–30%. At σ_ln ≥ 0.5, uniform-domain values are not reliable for most domains.
+- **Domain size.** Small domains suffer most (log–log correlation of bias with area −0.3 to −0.6), but size is not the whole story. Some large onshore domains are poor too (Tennant Creek, Capricorn, Darling Orogen, Madura), probably by trading off with their neighbours. The margin lumps (S, E, W) are the most robust.
+- **The misfit gives it away.** Misfit/σ rises clearly with σ_ln, so the real-data misfit can be used to estimate how much internal variation there is.
+
+### Real data: LCS-1, degrees 16–133 (2026-10-02)
+
+The fit is bounded least squares, undamped, with the background fixed.
+
+| Model | misfit/σ | Correlation with LCS-1 |
+|---|---|---|
+| Background only (no VIS in the domains) | 3.46 | – |
+| One uniform VIS for all domains (v_ref = 0.60 SI·km) | 3.14 | – |
+| 39 uniform domains | 2.70 (onshore 2.68, buffer 2.73) | 0.49 |
+| Reference only: existing model (H&M VIS in Australia, GK07_NR) | 3.71 | 0.19 |
+
+- **The 39-domain model fits better than the existing model in this band.** That is expected, since the domain model has 39 parameters fitted to these data.
+- **The residual is large and has structure** at the scale of the anomalies inside the domains. This is the T3 situation: the data hold a great deal of variation within the domains, which uniform domains cannot represent.
+- **The variation the misfit implies:** comparing it with T3 gives σ_ln ≈ 0.55 (β = 2) or 0.84 (β = 3). This is an upper limit, because depth, background and remanence errors are in the misfit too.
+- **Recovered values:**
+  - Precambrian west and centre: about 1.0–1.4 SI·km (Pilbara, Gawler, Coompana, Madura, Curnamona, Albany-Fraser, W Yilgarn, Tennant Creek, Mount Isa).
+  - Phanerozoic east: about 0.1–0.4 SI·km (Lachlan, Delamerian, Thomson, Adelaide Rift, Darling Basin).
+  - No domain is at the v = 0 bound.
+- **Error bars:** noise ensemble combined with the T3 bias at the implied σ_ln, taking the larger of the two β values.
+  - Below 30% for margin_E (14%), margin_S (27%) and Sydney–Surat (28%).
+  - 40–50% for Cape York, margin_W and Pilbara.
+  - Most onshore domains: 60% to over 100%.
+  - The per-domain T3 bias rests on only 5 random fields per case, so these error bars are rough.
+
+**Reading.** Individual domain values are not reliable at this granularity, because internal variation dominates. The west–east contrast is large, though, and may survive at a coarser grouping. That is the next thing to test with the T3 machinery.
+
+### Merged groupings (2026-10-02, `notebooks/invert_domain_groups.py`)
+
+**How it works:**
+- The columns of the members are summed, so no new forward runs are needed.
+- The truth for a group is the area-weighted mean of the T3 truth over the group.
+- The model error is read from T3 at the σ_ln implied by the 39-domain fit (0.55 for β = 2, 0.84 for β = 3), taking the larger of the two.
+- The groupings are in `inversion/australia_groups.csv`:
+  - **13 groups:** Hasterok's `prov_group`, plus Central (Arunta, Musgrave), East (New England, Sydney–Surat, Mossman) and Tasmania, with Albany-Fraser and Darling Orogen in the WAC, and the 4 margins.
+  - **6 groups:** Precambrian, Phanerozoic and the 4 margins.
+
+| Scheme | Parameters | LCS-1 misfit/σ | Relative error |
+|---|---|---|---|
+| Domains | 39 | 2.70 | Median about 80%; only margin_E, margin_S and Sydney–Surat below 30% |
+| Groups | 13 | 3.00 | 19–80%; Tasmania 141%, margin_N 243% |
+| Groups | 6 | 3.04 | Phanerozoic 0.48 ± 0.17 (35%); Precambrian 0.81 ± 0.62 (77%); margin_E 16%, margin_S 31% |
+
+**Reading**
+- Merging helps only modestly. The anomalies inside the domains are still in the data, and fewer parameters are still forced to fit them.
+- On these error bars, the Precambrian–Phanerozoic difference (0.81 against 0.48 SI·km) is not significant.
+- The error bars are conservative: they take the worse of the two β values, and the lognormal at σ_ln ≈ 0.8 has a heavy tail.
+- The E and S margins are robust at every granularity.
