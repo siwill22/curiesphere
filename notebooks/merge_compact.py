@@ -31,6 +31,8 @@ LAM95 = float(np.load(f'{OUT}/merge_real.npz')['lam'])
 LAM_REL = [1., 1/3]
 GAMMAS = [0., 10., 30., 100.]
 V_MINS = [0., 0.33, 0.45]          # SI.km: none, H&M eastern 10th percentile, H&M eastern mean
+if md.REGION != 'australia':       # the same statistics for the region's Phanerozoic provinces (region_setup.py)
+    V_MINS = [0.] + [round(float(v), 2) for v in np.load(f'{OUT}/floor.npz')['v_mins']]
 K_SAVE = 100
 
 
@@ -160,7 +162,7 @@ if __name__ == '__main__':
     # the current model (merge_domains.py) with the lower bounds, for comparison
     cur = np.load(f'{OUT}/merge_real.npz')['label'][0]
     dw = (md.d_lcs - md.b)/md.sigma
-    print(f'current 8-domain model: L = {cut_length(cur)}; misfit/sigma with v >= ' +
+    print(f'current model (merge_domains.py, K = {len(np.unique(cur))}): L = {cut_length(cur)}; misfit/sigma with v >= ' +
           ', '.join(f'{vm}: {values(cur, dw, vm)[1]:.3f}' for vm in V_MINS))
     for r in res:
         print(f'  lambda x{r["lam_rel"]:.2f}, gamma {r["gamma"]:5.0f}: K {r["K"]:2d}, L {r["L"]:4d}, mu {r["mu"]}; '

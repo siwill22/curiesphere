@@ -1,0 +1,176 @@
+key,id,prov_name,prov_type,crust_type,prov_group,lastorogen,include
+159,160,Novosibirsk-Chukhi Fold Belt,orogenic belt,continental,Verkhoyansk Kolyma,Cordilleran,0
+267,268,Bennett-Borrovia Block,shield,transitional,,Caledonian,0
+269,270,North Chuchi Basin,basin,transitional,,,0
+563,564,California Coast Ranges,accretionary complex,transitional,,Cordilleran,1
+564,565,California Central Valley,accretionary complex,continental,,Cordilleran,1
+565,566,Colorado Plateau,shield,continental,,Cordilleran,1
+566,567,Medicine Hat Terrane,craton,continental,,cratonic,1
+567,568,Mid-continent Rift,narrow rift,continental,,failed rift,1
+568,569,Middle Rocky Mountains,orogenic belt,continental,,Cordilleran,1
+569,570,Llano Province,shield,continental,Trans-continental province,Grenvillian,1
+570,571,Trans-Mexican Volcanic Belt,volcanic arc,continental,,Cordilleran,1
+571,572,Northern Rocky Mountains,wide rift,continental,,Cordilleran,1
+572,573,Pacific Coast Ranges,accretionary complex,continental,,Cordilleran,1
+573,574,Rio Grande Rift,narrow rift,continental,Basin and Range,Cordilleran,1
+574,575,Slave Craton,craton,continental,Slave Craton,cratonic,1
+575,576,Sierra Madre del Sur,volcanic arc,continental,,Cordilleran,1
+576,577,Sierra Madre Occidental,magmatic province,continental,,Cordilleran,1
+577,578,Sierra Madre Oriental,wide rift,continental,Basin and Range,Cordilleran,1
+578,579,Southern Rocky Mountains,orogenic belt,continental,,Cordilleran,1
+579,580,Snake River Plain,magmatic province,continental,Columbia/Snake Province,Cordilleran,1
+580,581,Trans-Hudson Orogen,orogenic belt,continental,,Trans Hudson,1
+581,582,Wyoming Craton,craton,continental,,cratonic,1
+582,583,Maya Terrane,passive margin,continental,,Variscan-Hercynian,1
+583,584,East Aleutian Arc,volcanic arc,transitional,,Cordilleran,0
+584,585,Ketilidian Mobile Belt,shield,continental,,Trans Hudson,1
+585,586,North Atlantic Craton,craton,continental,,cratonic,1
+586,587,Nagssugtoqidian Mobile Belt,shield,continental,,Trans Hudson,1
+587,588,Central American Arc,volcanic arc,continental,,Cordilleran,0
+588,589,Chorotega Volcanic Arc,volcanic arc,continental,,Cordilleran,0
+589,590,Central American Forearc,accretionary complex,transitional,,Cordilleran,0
+590,591,Choco Block,accretionary complex,transitional,,Cordilleran,0
+591,592,Baja Borderland,accretionary complex,transitional,,Cordilleran,1
+592,593,West Aleutian Arc,volcanic arc,oceanic,,Cordilleran,0
+593,594,La Range Arc,volcanic arc,continental,Trans Hudson Orogen,Trans Hudson,1
+594,595,Little Belt Arc,volcanic arc,continental,,Trans Hudson,1
+595,596,Hearne Province,shield,continental,Hearne Craton,Trans Hudson,1
+596,597,Southeast Churchill Province,shield,continental,Hearne Craton,Trans Hudson,1
+597,598,Burwell Mobile Belt,shield,continental,Rae Craton,Trans Hudson,1
+598,599,Makkovik Orogen,shield,continental,,Grenvillian,1
+599,600,Foxe Orogen,accretionary complex,continental,Rae Craton,Trans Hudson,1
+600,601,Riviere-Arnauld Terrane,craton,continental,Superior Craton,cratonic,1
+601,602,Nain Province,craton,continental,,cratonic,1
+602,603,Sabine Terrane,volcanic arc,continental,,Grenvillian,1
+603,604,Charleston Arc,volcanic arc,continental,Appalachians,Variscan-Hercynian,1
+604,605,Grenville Orogeny,orogenic belt,continental,Trans-continental province,Grenvillian,1
+605,606,Mesa Central,wide rift,continental,,Cordilleran,1
+606,607,Klamouth Range,volcanic arc,continental,Sierran Arc,Cordilleran,1
+607,608,Hudson Bay Terrane,craton,continental,Superior Craton,cratonic,1
+608,609,North Caribou Terrane,craton,continental,Superior Craton,cratonic,1
+609,610,Winnipeg River Terrane,craton,continental,Superior Craton,cratonic,1
+610,611,Western Wabigoon Terrane,craton,continental,Superior Craton,cratonic,1
+611,612,Marmion Terrane,craton,continental,Superior Craton,cratonic,1
+612,613,Quetico-Opatica Metasedimentary Belt,craton,continental,Superior Craton,cratonic,1
+613,614,Minnesota River Valley Terrane,craton,continental,Superior Craton,cratonic,1
+614,615,Eastern Wabigoon Terrane,craton,continental,Superior Craton,cratonic,1
+615,616,Ashuanipi Metasedimentary Belt,craton,continental,Superior Craton,cratonic,1
+616,617,English River-Opinaca Metasedimentary Belt,craton,continental,Superior Craton,cratonic,1
+617,618,Meta Incognita Terrane,shield,continental,Hearne Craton,Trans Hudson,1
+618,619,Chesterfield Block,orogenic belt,continental,Hearne Craton,Trans Hudson,1
+619,620,Rimbey Arc,volcanic arc,continental,Rae Craton,Trans Hudson,1
+620,621,Buffalo Head Terrane,shield,continental,Wopmay Orogen,Wopmay,1
+621,622,Fort Simpson Arc,volcanic arc,continental,Wopmay Orogen,Wopmay,1
+622,623,Slave Platform,craton,continental,Slave Craton,cratonic,1
+623,624,Ksituan Belt,volcanic arc,continental,Wopmay Province,Wopmay,1
+624,625,Queen Maude Block,craton,continental,Rae Craton,cratonic,1
+625,626,Sugluk Terrane,shield,continental,Hearne Craton,Trans Hudson,1
+626,627,Cumberland Batholith-Torngat and Narsajuaq Arcs,volcanic arc,continental,Rae Craton,Trans Hudson,1
+627,628,Hottah Terrane,shield,continental,Wopmay Orogen,Wopmay,1
+628,629,Mayan Arc,volcanic arc,continental,,Cordilleran,1
+629,630,Mayan Highlands,volcanic arc,continental,,Cordilleran,1
+630,631,Innuitian Orogen,orogenic belt,continental,Innuitian Orogen,Caledonian,1
+631,632,Snowbird Tectonic Zone,orogenic belt,continental,Rae Craton,Trans Hudson,1
+632,633,Canada Basin,passive margin,transitional,,,1
+633,634,Alpha Mendeleev Ridge,magmatic province,transitional,,,0
+634,635,Lomonosov Ridge,narrow rift,transitional,,,0
+635,636,Chukchi Borderland,orogenic belt,transitional,Innuitian Orogen,,1
+636,637,Unnamed Fold Belt,orogenic belt,transitional,,,0
+637,638,Podvodnikov Basin,wide rift,transitional,,,0
+638,639,West Atlantic Rifted Margin,passive margin,transitional,,,1
+639,640,Baffin-Labrador Rifted Margin,passive margin,transitional,,,1
+640,641,Taconic Arc,volcanic arc,continental,Appalachians,Caledonian,1
+641,642,Southern and Central Applachian,accretionary complex,continental,Appalachians,Caledonian,1
+642,643,Granite-Rhyolite Province,magmatic province,continental,Trans-continental province,Picuris,1
+643,644,Granderia,passive margin,continental,Appalachians,Caledonian,1
+644,645,Avalonia Terrane,volcanic arc,continental,Appalachians,Caledonian,1
+645,646,Carolina Terrane,volcanic arc,continental,Appalachians,Caledonian,1
+646,647,Laurentides,passive margin,continental,Appalachians,Caledonian,1
+647,648,Pedmontia,accretionary complex,continental,Appalachians,Caledonian,1
+648,649,Bowers Ridge,volcanic arc,oceanic,,Cordilleran,0
+649,650,Northern Basin and Range,wide rift,continental,Basin and Range,Cordilleran,1
+650,651,Western Aleutian Forearc,accretionary complex,oceanic,,Cordilleran,0
+651,652,East Aleutian Forearc,accretionary complex,transitional,,Cordilleran,0
+652,653,Bahama Platform,passive margin,transitional,,,1
+653,654,East Rae,shield,continental,,cratonic,1
+654,655,Rinkinian Orogen,shield,continental,,Trans Hudson,1
+655,656,Penokean Orogen,craton,continental,Superior Craton,Trans Hudson,1
+656,657,Mazatzal Terrane,volcanic arc,continental,Trans-continental province,Yavapai-Mazatzal,1
+657,658,Columbia Basin and Range,wide rift,continental,,Cordilleran,1
+658,659,Idaho Batholith,volcanic arc,continental,,Cordilleran,1
+659,660,South Greenland Rifted Margin,passive margin,transitional,,,1
+660,661,Yavapai Terrane,volcanic arc,continental,Trans-continental province,Yavapai-Mazatzal,1
+661,662,West Alaskan Complex,accretionary complex,transitional,,Cordilleran,1
+662,663,Wawa-Abitibi Terrane,craton,continental,Superior Craton,cratonic,1
+663,664,Mexican Forearc,accretionary complex,transitional,,Cordilleran,1
+664,665,Southern Basin and Range,wide rift,continental,Basin and Range,Cordilleran,1
+665,666,Sierra Nevada Batholith,volcanic arc,continental,Sierran Arc,Cordilleran,1
+666,667,Peninsular Ranges Batholith,volcanic arc,continental,,Cordilleran,1
+667,668,California Borderland,accretionary complex,transitional,,Cordilleran,1
+668,669,Blake Plateau,passive margin,transitional,,,1
+669,670,Meguma Terrane,passive margin,transitional,,Caledonian,1
+670,671,Taltson-Thelon Arc,volcanic arc,continental,,Trans Hudson,1
+671,672,Northern Gulf of Mexico Margin,passive margin,transitional,,Variscan-Hercynian,1
+672,673,Suwannee Terrane,passive margin,continental,,Variscan-Hercynian,1
+673,674,Greater Antilles Accretionary Complex,ophiolite complex,transitional,,Antilles,0
+674,675,Orphan Knoll,passive margin,continental,West Antlantic Rifted Margin,,1
+675,676,Bering Sea Margin,passive margin,transitional,,Cordilleran,1
+676,677,Gulf of California Coast,wide rift,transitional,,Cordilleran,1
+678,679,Cayman Arc,volcanic arc,transitional,,Antilles,0
+682,683,Nicaragua Plateau,ophiolite complex,transitional,,Antilles,0
+683,684,South Hispaniola Wedge,accretionary complex,transitional,,Antilles,0
+684,685,Chortis Block,accretionary complex,continental,,Cordilleran,0
+686,687,Chorotega Backarc,accretionary complex,transitional,,Cordilleran,0
+687,688,Mosquito Lowlands,ophiolite complex,continental,,Cordilleran,0
+688,689,Greater Antilles Arc,volcanic arc,continental,,Antilles,0
+689,690,Makarov Basin,oceanic crust,oceanic,,,0
+691,692,Beaufort Basin,oceanic crust,oceanic,,,0
+694,695,Coast plutonic complex,volcanic arc,continental,Coastal Belt,Cordilleran,1
+695,696,Chugach,accretionary complex,transitional,Insular Belt,Cordilleran,1
+696,697,Alexander Terrane,volcanic arc,continental,Insular Belt,Cordilleran,1
+697,698,Cache Creek,accretionary complex,continental,Intermontane Belt,Cordilleran,1
+698,699,Quesnellia Terrane,volcanic arc,continental,Intermontane Belt,Cordilleran,1
+699,700,Slide Mountain,oceanic back-arc basin,continental,Omineca Belt,Cordilleran,1
+700,701,Wrangellia,volcanic arc,continental,Insular Belt,Cordilleran,1
+701,702,Yukon-Tanana,volcanic arc,continental,Omineca Belt,Cordilleran,1
+702,703,Okanagan Terrane,ophiolite complex,continental,Intermontane Belt,Cordilleran,1
+703,704,Stikinia,volcanic arc,continental,Intermontane Belt,Cordilleran,1
+704,705,Methow,accretionary complex,continental,Intermontane Belt,Cordilleran,1
+705,706,Harrison,basin,continental,Coastal Belt,Cordilleran,1
+706,707,Chilliwack,volcanic arc,continental,Coastal Belt,Cordilleran,1
+707,708,Cadwallader,volcanic arc,continental,Intermontane Belt,Cordilleran,1
+708,709,Bridge River,accretionary complex,continental,Intermontane Belt,Cordilleran,1
+709,710,Shuksan Terrane,accretionary complex,continental,,Cordilleran,1
+710,711,Cascade Arc,volcanic arc,continental,,Cordilleran,1
+711,712,Crescent,ophiolite complex,continental,Alaska Exotic Terranes,Cordilleran,1
+712,713,Pacific Rim,accretionary complex,continental,,Cordilleran,1
+713,714,Yakutat,ophiolite complex,transitional,,Cordilleran,1
+714,715,Prince William,accretionary complex,transitional,,Cordilleran,1
+715,716,Cassiar Terrane,passive margin,continental,Omineca Belt,Cordilleran,1
+716,717,North America Platform,passive margin,continental,Omineca Belt,Cordilleran,1
+717,718,Monashee Terrane,orogenic belt,continental,Omineca Belt,Cordilleran,1
+718,719,Cordillera Front and Thrust,orogenic belt,continental,Cordillera Front and Thrust,Cordilleran,1
+719,720,Farewell Terrane,passive margin,continental,Dillinger,Cordilleran,1
+720,721,Farewell Foredeep,foredeep basin,continental,Mystic,Cordilleran,1
+721,722,Ruby Terrane,accretionary complex,continental,,Cordilleran,1
+722,723,Koyukuk Arcs,volcanic arc,continental,,Cordilleran,1
+723,724,Kluane schist,volcanic arc,continental,,Cordilleran,1
+724,725,Seventymile Terrane,oceanic back-arc basin,continental,,Cordilleran,1
+725,726,Windy,foredeep basin,continental,,Cordilleran,1
+726,727,Yukon Flats,basin,continental,,Cordilleran,1
+727,728,North America Platform,passive margin,continental,Yukon-Tanana Uplands,Cordilleran,1
+728,729,Arctic Alaska,passive margin,continental,Arctic,Cordilleran,1
+729,730,Angayucham Terrane,accretionary complex,continental,Western Alaska,Cordilleran,1
+730,731,Brooks Range,volcanic arc,continental,Arctic,Cordilleran,1
+731,732,Nome Complex,accretionary complex,continental,Arctic,Cordilleran,1
+732,733,North Slope,passive margin,continental,Arctic,Caledonian,1
+733,734,Peninsular Terrane,volcanic arc,continental,,Cordilleran,1
+734,735,Rae Province,shield,continental,Rae Craton,Trans Hudson,1
+796,797,Great Bear Arc,volcanic arc,continental,Bear Province,Wopmay,1
+797,798,Coronation Fold Belt,orogenic belt,continental,Slave Craton,Wopmay,1
+835,836,Labrador Basin,oceanic crust,oceanic,Atlantic Ocean,,0
+837,838,North Arctic Basin,oceanic crust,oceanic,Arctic Ocean,,0
+893,894,West Iceland Rift,narrow rift,oceanic,Greenland-Iceland-Faroe Ridge,,0
+905,906,Greenland-Iceland Ridge,wide rift,oceanic,Greenland-Iceland-Faroe Ridge,,0
+907,908,Caledonian Fold Belt,orogenic belt,continental,,Caledonian,1
+910,911,North Greenland Rifted Margin,passive margin,transitional,,,1

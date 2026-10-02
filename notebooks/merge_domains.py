@@ -56,18 +56,20 @@ from scipy.optimize import lsq_linear
 from scipy.spatial import cKDTree
 from scipy.special import comb
 
-OUT = 'inversion'
+REGION = os.environ.get('REGION', 'australia')     # another region: set up by region_setup.py
+OUT = 'inversion' if REGION == 'australia' else f'inversion_{REGION}'
 RIDGE = 1e-6                  # relative to the mean diagonal of G'G
 RESYNC = 100
 MIN_CELLS = 3
 MUS = [0.03, 0.1, 0.3]
 N_NULL = 20
-SYN_K, SYN_CASES, NOISE_LEVELS = 8, 3, [0., 0.25, 0.5, 1.]
-N_REAL = 20
+SYN_K, NOISE_LEVELS = 8, [0., 0.25, 0.5, 1.]
+SYN_CASES = int(os.environ.get('SYN_CASES', 3))       # 0 skips the synthetic blocks
+N_REAL = int(os.environ.get('N_REAL', 20))
 K_SAVE = 100
 V0 = 0.6
 SEED = 20261002
-N_WORKERS = 8
+N_WORKERS = int(os.environ.get('N_WORKERS', 8))
 
 cells = np.load(f'{OUT}/cells.npz')
 cell, cell_ids, area_km2, nside = cells['cell'], cells['cell_ids'], cells['area_km2'], int(cells['nside'])
@@ -95,7 +97,7 @@ noise *= sigma/np.sqrt(np.mean(noise**2))
 Gw = G/sigma
 GtG = Gw.T @ Gw
 ridge = RIDGE*np.mean(np.diag(GtG))
-print(f'{n_cell} cells, {G.shape[0]} points, target {TARGET}, sigma {sigma:.2f} nT')
+print(f'{REGION}: {n_cell} cells, {G.shape[0]} points, target {TARGET}, sigma {sigma:.2f} nT')
 
 # cell adjacency from the 0.1 deg grid: cells touching along a grid edge
 pairs = []
@@ -355,34 +357,35 @@ if __name__ == '__main__':
     print(f'null calibration: lambda_95 = {LAM:.1f} ({time.time()-t:.0f} s)', flush=True)
 
     # 2. synthetic blocks at several noise levels
-    rng = np.random.default_rng(SEED)
-    xyz = unit(clon, clat)
-    truths, jobs = [], []
-    for case in range(SYN_CASES):
-        seeds = rng.choice(n_cell, SYN_K, replace=False)
-        _, tb = cKDTree(xyz[seeds]).query(xyz)
-        vb = V0*np.exp(0.5*rng.standard_normal(SYN_K))
-        truths.append((tb, vb))
-        for f in NOISE_LEVELS:
-            jobs.append(('syn', (G @ vb[tb] + f*noise[case])/sigma, LAM))
-    t = time.time()
-    syn = pool.map(task, jobs)
-    print(f'synthetic runs: {time.time()-t:.0f} s', flush=True)
-    lab_syn = np.array([r['label'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS), n_cell)
-    v_syn = np.array([r['v'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS), n_cell)
-    K_syn = np.array([r['K'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS))
-    chi_syn = np.array([r['misfit_over_sigma'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS))
-    chi_true = np.array([[np.sqrt(misfit(tb, jobs[c*len(NOISE_LEVELS)+n][1])/len(b))
-                          for n in range(len(NOISE_LEVELS))] for c, (tb, vb) in enumerate(truths)])
-    ari_syn = np.array([[ari(truths[c][0], lab_syn[c, n]) for n in range(len(NOISE_LEVELS))] for c in range(SYN_CASES)])
-    np.savez(f'{OUT}/merge_synthetic.npz', true_label=np.array([t_[0] for t_ in truths]),
-             true_v=np.array([t_[1] for t_ in truths]), label=lab_syn, v=v_syn, K=K_syn,
-             misfit_over_sigma=chi_syn, misfit_true_over_sigma=chi_true, ari=ari_syn,
-             noise_levels=NOISE_LEVELS, lam=LAM)
-    for c, (tb, vb) in enumerate(truths):
-        print(f'  case {c} (block contrast std/mean {vb.std()/vb.mean():.2f}): ' + '; '.join(
-            f'noise x{f}: K {K_syn[c, n]}, ARI {ari_syn[c, n]:.2f}, misfit {chi_syn[c, n]:.3f} (truth {chi_true[c, n]:.3f})'
-            for n, f in enumerate(NOISE_LEVELS)), flush=True)
+    if SYN_CASES:
+        rng = np.random.default_rng(SEED)
+        xyz = unit(clon, clat)
+        truths, jobs = [], []
+        for case in range(SYN_CASES):
+            seeds = rng.choice(n_cell, SYN_K, replace=False)
+            _, tb = cKDTree(xyz[seeds]).query(xyz)
+            vb = V0*np.exp(0.5*rng.standard_normal(SYN_K))
+            truths.append((tb, vb))
+            for f in NOISE_LEVELS:
+                jobs.append(('syn', (G @ vb[tb] + f*noise[case])/sigma, LAM))
+        t = time.time()
+        syn = pool.map(task, jobs)
+        print(f'synthetic runs: {time.time()-t:.0f} s', flush=True)
+        lab_syn = np.array([r['label'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS), n_cell)
+        v_syn = np.array([r['v'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS), n_cell)
+        K_syn = np.array([r['K'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS))
+        chi_syn = np.array([r['misfit_over_sigma'] for r in syn]).reshape(SYN_CASES, len(NOISE_LEVELS))
+        chi_true = np.array([[np.sqrt(misfit(tb, jobs[c*len(NOISE_LEVELS)+n][1])/len(b))
+                              for n in range(len(NOISE_LEVELS))] for c, (tb, vb) in enumerate(truths)])
+        ari_syn = np.array([[ari(truths[c][0], lab_syn[c, n]) for n in range(len(NOISE_LEVELS))] for c in range(SYN_CASES)])
+        np.savez(f'{OUT}/merge_synthetic.npz', true_label=np.array([t_[0] for t_ in truths]),
+                 true_v=np.array([t_[1] for t_ in truths]), label=lab_syn, v=v_syn, K=K_syn,
+                 misfit_over_sigma=chi_syn, misfit_true_over_sigma=chi_true, ari=ari_syn,
+                 noise_levels=NOISE_LEVELS, lam=LAM)
+        for c, (tb, vb) in enumerate(truths):
+            print(f'  case {c} (block contrast std/mean {vb.std()/vb.mean():.2f}): ' + '; '.join(
+                f'noise x{f}: K {K_syn[c, n]}, ARI {ari_syn[c, n]:.2f}, misfit {chi_syn[c, n]:.3f} (truth {chi_true[c, n]:.3f})'
+                for n, f in enumerate(NOISE_LEVELS)), flush=True)
 
     # 3. real data, and real data plus noise realisations
     t = time.time()
@@ -398,5 +401,6 @@ if __name__ == '__main__':
     r0 = real[0]
     print(f'  LCS-1: K = {r0["K"]}, misfit/sigma {r0["misfit_over_sigma"]:.3f}, mu {r0["mu"]}')
     Kp = [r['K'] for r in real[1:]]
-    print(f'  LCS-1 + noise: K median {np.median(Kp):.0f} (range {min(Kp)}-{max(Kp)})')
+    if Kp:
+        print(f'  LCS-1 + noise: K median {np.median(Kp):.0f} (range {min(Kp)}-{max(Kp)})')
     pool.close()

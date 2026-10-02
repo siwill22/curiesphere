@@ -260,3 +260,38 @@ For reference, LCS-1 itself is 61.9 nT RMS.
 **Reading**
 - The robust structure (high VIS in the south-west and along the south coast and Gawler, against a uniform background) does not depend on the target model.
 - The stopping rule has to allow for model error, not just data noise, for example with σ_total² = σ_noise² + σ_model², with σ_model estimated from the data. Without that, a smaller σ produces more domains.
+
+## North America: quick test of the free-domain method (2026-10-03)
+
+**Scripts:** `notebooks/region_setup.py`, then `cell_basis.py`, `merge_domains.py` (with `SYN_CASES=0 N_REAL=0`) and `merge_compact.py`, each with `REGION=north_america`. Outputs go to `notebooks/inversion_north_america/`.
+
+**Set-up**
+- **Method:** as for Australia.
+- **Extent:** Hasterok North America polygons on continental and transitional crust, west of 180°. Central America, the Caribbean arcs, the Aleutian arc, the Arctic Ocean ridges and the Siberian units are excluded (`domains.csv`, editable).
+- **Size:** 33 M km², 3,446 cells and 17,204 points.
+- **Noise:** σ = 22.4 nT.
+- **VIS floor:** 0.50 SI·km, the H&M area-mean over the Phanerozoic continental provinces (10th percentile 0.26).
+- **Stopping rule:** λ_95 = 2122.
+- **Run time:** cells 2 h; null calibration 25 min; compact settings 17 min.
+
+**Results**
+
+| Model | K | Residual (nT) | misfit/σ |
+|---|---|---|---|
+| H&M (existing) | – | 69.0 | 3.08 |
+| Free, λ_95, v ≥ 0 | 10 | 39.9 | 1.78 |
+| λ×1, γ 10, v ≥ 0.5 | 7 | 43.7 | 1.95 |
+| λ×1/3, γ 10, v ≥ 0.5 | 19 | 37.6 | 1.68 |
+| λ×1/3, γ 30, v ≥ 0.5 | 12 | 48.0 | 2.15 |
+| λ×1, γ 30, v ≥ 0.5 | 3 | 52.5 | 2.35 |
+
+**The 7-domain model (λ×1, γ 10)**
+- low (0.56 SI·km): the Cordillera, Alaska, the Arctic islands, Greenland, the Appalachians, and a central band from Hudson Bay through the Great Lakes into the central US;
+- 1.16: the northern Canadian Shield and the Grenville/Labrador east;
+- 1.01: the southern US and Mexico;
+- 1.89: the southern midcontinent;
+- 2.1–2.2: two Great Bear/Wopmay bodies.
+
+The floor is not active for this model: v ≥ 0 gives the same misfit.
+
+**Not run:** the synthetic blocks, the noise-added runs and the self-consistency test. Figures: `show-me/2026-10-02-north-america/`.

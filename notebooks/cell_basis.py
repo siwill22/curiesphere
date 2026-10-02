@@ -14,6 +14,7 @@ domains reproduce that domain's column.
 
 Run from notebooks/ (conda env pygmt17), after invert_domains.py:
     PYTHONPATH=..:$PYTHONPATH python cell_basis.py
+For another region, after region_setup.py: REGION=north_america ... python cell_basis.py
 """
 import os
 os.environ.setdefault('OMP_NUM_THREADS', '1')
@@ -29,7 +30,8 @@ import depth_models as dm
 from remit.data.models import load_ocean_age_model
 from remit.utils.region import generate_healpix_points
 
-OUT = 'inversion'
+REGION = os.environ.get('REGION', 'australia')     # another region: set up by region_setup.py
+OUT = 'inversion' if REGION == 'australia' else f'inversion_{REGION}'
 CELL_DIR = f'{OUT}/cells'
 os.makedirs(CELL_DIR, exist_ok=True)
 NSIDE_CELL = 64
@@ -37,7 +39,7 @@ LMAX_CELL = 150
 LMIN, LMAX_FIT = 16, 133
 BASE_DEPTH = 30e3
 BUFFER_KM, NSIDE_DATA = 300., 128           # data points, as in invert_domains.py
-N_WORKERS = 8
+N_WORKERS = int(os.environ.get('N_WORKERS', 8))
 R0 = dm.R0
 
 ocean = load_ocean_age_model()
