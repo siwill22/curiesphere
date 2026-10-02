@@ -165,3 +165,57 @@ The fit is bounded least squares, undamped, with the background fixed.
 - On these error bars, the Precambrian–Phanerozoic difference (0.81 against 0.48 SI·km) is not significant.
 - The error bars are conservative: they take the worse of the two β values, and the lognormal at σ_ln ≈ 0.8 has a heavy tail.
 - The E and S margins are robust at every granularity.
+
+## Free domains: formed from the data (2026-10-02)
+
+**Motivation.** Fixed polygons impose surface-geology boundaries, and the field sees the whole magnetic lithosphere. Polygons are a comparison, never a truth. The aim is the smallest number of domains, with sharp boundaries and geologically plausible shapes, that the data require.
+
+**Basis (`notebooks/cell_basis.py`).**
+- **Cells:** 1,402 HEALPix NSIDE-64 cells (equal area, about 100 km) over the same outer extent as the fixed-polygon inversion. Each cell's column is a 1 SI·km slab from the top of basement to 30 km, at degree 150.
+- **Check:** the cells summed over all the domains of the fixed-polygon inversion reproduce those domains' coefficients to 3×10⁻¹⁵.
+- **Evaluation at the data points:** done with an explicit synthesis matrix, checked against pyshtools.
+
+**Merging (`notebooks/merge_domains.py`).**
+- **Start:** every cell is a domain.
+- **Merging:** merging two touching domains has an exact closed-form cost in least squares. The merge path is guided by a small smoothness term (μ ∈ {0.03, 0.1, 0.3}, as restarts), but layouts are scored by the plain data misfit.
+- **Number of domains K:** minimises χ² + λK, with λ calibrated on null data (one uniform domain + correlated noise) so that K = 1 in 95% of realisations: λ_95 = 1313.
+- **Clean-up:** boundary cells move between domains if that lowers the score.
+- **Connectivity:** two bridges join Tasmania and the offshore plateaus to the mainland graph.
+- **Version 1** (merging from the unregularised cell fit) failed: the starting cell values are mostly noise.
+
+**Boundary length and floor (`notebooks/merge_compact.py`).**
+- **Shape cost:** γ per cell edge on a domain boundary, in the merge order, in the choice of K and in the clean-up.
+- **VIS floor:** 0.45 SI·km, the H&M (+ slabs) area-mean over Hasterok's Phanerozoic group (10th percentile 0.33). H&M's values are a surface sheet, so for our slab this is a gentle floor.
+
+### Results
+
+| Model (LCS-1) | K | Boundary edges | misfit/σ |
+|---|---|---|---|
+| 39 fixed polygons | 39 | – | 2.70 |
+| Free, λ_95, γ 0, v ≥ 0 | 8 | 1139 | 1.99 (two domains at v = 0) |
+| Same layout, v ≥ 0.45 | 8 | 1139 | 2.18 |
+| Free, λ_95, γ 10, v ≥ 0.45 | 7 | 511 | 2.12 |
+| Free, λ_95/3, γ 10, v ≥ 0.45 | 17 | 714 | 2.00 |
+| Free, λ_95/3, γ 30, v ≥ 0.45 | 14 | 296 | 2.32 |
+
+- **Synthetic random 8-block truths** (3 cases): only 2–5 domains are recovered, even without noise.
+  - The stopping rule, not the search, is the limit: the true layout always scores worse than the one found (`show-me/2026-10-02-free-domains/13-…`).
+  - Blocks whose signal improves χ² by less than λ_95 are below detection at this noise level.
+  - The boundary penalty helps in one case, loses a real block in another, and is unstable in the third.
+- **Self-consistency.** Real-data models were used as truths, each inverted with its own setting, with noise at the LCS-1 − MF7 level or at the real-fit misfit level (about 2σ):
+
+| Truth | Median ARI, noise | Median ARI, misfit level | Domains recovered |
+|---|---|---|---|
+| 8 domains, γ 0 | 0.36 | 0.23 | 5–10 |
+| **7 domains, γ 10** | **0.83** | **0.70** | 5–8, value error 13–15% |
+| 17 domains, λ/3, γ 10 | 0.34 | 0.32 | 9–16 |
+
+**Reading**
+- **The reproducible model** is the 7-domain compact one: high-VIS domains in the south-west and along the south coast (Yilgarn, Gawler, south coast, about 1.0–1.8 SI·km), within a uniform background. The background sits at the floor (0.45), so its level comes from the floor, not the data.
+- **The data support about 6–8 compact domains** at the current noise estimate. The spindly unpenalised model and the 17-domain model are not reproducible.
+- **This tests stability, not truth.** A method that prefers compact shapes reproducing a compact model is expected. Compactness is an assumption, a geologically reasonable one.
+
+**Open:**
+- the sensitivity of the 7-domain model to the floor, the ocean background south of Australia (its stripes are stronger than in LCS-1) and the slab base;
+- the noise level, which sets the detection threshold;
+- a Bayesian (transdimensional) version.
