@@ -22,7 +22,7 @@ import merge_compact as mc
 OUT = md.OUT
 TRUTHS = [((1., 0.), 0.), ((1., 10.), 0.45), ((1/3, 10.), 0.45)]    # (lambda_rel, gamma), v floor
 N_REAL, FIRST_NOISE = 10, 40
-cmp_ = dict(np.load(f'{OUT}/merge_compact.npz'))     # into memory: workers must not share the open file
+cmp_ = dict(np.load(f'{OUT}/merge_compact{md.TAG}.npz'))     # into memory: workers must not share the open file
 dw_real = (md.d_lcs - md.b)/md.sigma
 
 
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     print(f'{len(jobs)} runs: {time.time()-t0:.0f} s')
     shape = (len(TRUTHS), 2, N_REAL)
     get = lambda k: np.array([r[k] for r in res]).reshape(shape + np.shape(res[0][k]))
-    np.savez(f'{OUT}/merge_selfconsistency.npz', label=get('label'), v=get('v'), K=get('K'), ari=get('ari'),
+    np.savez(f'{OUT}/merge_selfconsistency{md.TAG}.npz', label=get('label'), v=get('v'), K=get('K'), ari=get('ari'),
              chi=get('chi'), rel_err=get('rel_err'), score_found=get('score_found'), score_true=get('score_true'),
              true_label=np.array([truth(t)[0] for t in range(len(TRUTHS))]),
              true_v=np.array([truth(t)[1] for t in range(len(TRUTHS))]),

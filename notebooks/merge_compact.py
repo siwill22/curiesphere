@@ -165,7 +165,7 @@ if __name__ == '__main__':
     for r in res:
         print(f'  lambda x{r["lam_rel"]:.2f}, gamma {r["gamma"]:5.0f}: K {r["K"]:2d}, L {r["L"]:4d}, mu {r["mu"]}; '
               'misfit/sigma ' + ', '.join(f'v>={vm}: {r[f"chi_{vm}"]:.3f}' for vm in V_MINS), flush=True)
-    np.savez(f'{OUT}/merge_compact.npz', lam_rel=[r['lam_rel'] for r in res], gamma=[r['gamma'] for r in res],
+    np.savez(f'{OUT}/merge_compact{md.TAG}.npz', lam_rel=[r['lam_rel'] for r in res], gamma=[r['gamma'] for r in res],
              K=[r['K'] for r in res], L=[r['L'] for r in res], label=np.array([r['label'] for r in res]),
              **{f'v_{vm}': np.array([r[f'v_{vm}'] for r in res]) for vm in V_MINS},
              **{f'chi_{vm}': np.array([r[f'chi_{vm}'] for r in res]) for vm in V_MINS},

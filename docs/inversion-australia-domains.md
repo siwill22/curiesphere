@@ -244,3 +244,19 @@ For reference, LCS-1 itself is 61.9 nT RMS.
 - **The LCS-1 error over Australia** is probably about 11–17 nT RMS in degrees 16–133, against the 20.4 nT used so far. That makes σ about 1.2–1.9× too large.
 - **The error is anisotropic**, with north–south track stripes. The isotropic random-phase noise model does not represent it.
 - **Model error dominates the real fit.** The fits leave about 40 nT RMS, roughly 2× the old σ and 2.5–3.5× these estimates. Reducing σ would therefore lower the detection threshold for data noise, but it would not reduce that model error.
+
+### Three-model mean as the target (2026-10-02)
+
+**Target:** the equal-weight mean of LCS-1, MF7 and MLI_SHA_2D (`inversion/target_mean3.npz`).
+- **Estimated error:** 7.7 nT, i.e. √0.5 × the RMS deviation of the models from their mean, assuming independent errors of equal size.
+- **Power relative to LCS-1:** 1.01 in degrees 16–60, 0.95 in 60–100 and 0.85 in 100–133. Part of the drop is noise averaging out; part is the other models' extra damping.
+
+**Switches:** `TARGET=mean3` and `SIGMA=<nT>` in `merge_domains.py`; outputs get a suffix.
+
+**Results**
+- **Same σ as LCS-1 (20.4 nT):** the domains are almost unchanged. λ×1, γ 10 gives 6 domains with a residual of 41.3 nT RMS, against 7 domains and 43.3 nT for LCS-1. λ/3, γ 10 gives 13 domains against 17.
+- **σ = 7.7 nT** (with λ_95 unchanged in normalised units): 21–69 domains, with residuals of about 30–38 nT RMS, i.e. misfit/σ of about 4–5. Model error, not data noise, dominates the residual.
+
+**Reading**
+- The robust structure (high VIS in the south-west and along the south coast and Gawler, against a uniform background) does not depend on the target model.
+- The stopping rule has to allow for model error, not just data noise, for example with σ_total² = σ_noise² + σ_model², with σ_model estimated from the data. Without that, a smaller σ produces more domains.

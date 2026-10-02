@@ -134,3 +134,19 @@ for n, (a, b) in enumerate([('LCS-1', 'MF7'), ('LCS-1', 'MLI_2D'), ('MF7', 'MLI_
 fig.colorbar(frame='xa20f10+lBr difference (nT), r = 6371 km, degrees 16-133', position='JBC+w10c+o0c/1c')
 fig.savefig(f'{OUT}/noise_difference_maps.png', dpi=200)
 print('wrote', f'{OUT}/noise_difference_maps.png')
+
+# combined target: equal-weight mean of LCS-1, MF7 and MLI_2D (degrees 16-133). If the three errors
+# are independent with equal variance s^2, the deviation of each model from the mean has variance
+# 2 s^2 / 3 and the mean has error variance s^2 / 3, i.e. half the mean squared deviation.
+names3 = ['LCS-1', 'MF7', 'MLI_2D']
+mean3 = np.mean([br[k] for k in names3], axis=0)
+dev2 = np.mean([np.mean((br[k] - mean3)**2) for k in names3])
+sigma_mean3 = np.sqrt(0.5*dev2)
+np.savez(f'{OUT}/target_mean3.npz', d=mean3, sigma=sigma_mean3, plon=plon, plat=plat,
+         **{k.replace('-', ''): br[k] for k in names3})
+print(f'mean of {names3}: RMS {np.sqrt(np.mean(mean3**2)):.2f} nT; estimated error {sigma_mean3:.2f} nT '
+      f'(RMS deviation of a model from the mean {np.sqrt(dev2):.2f} nT)')
+spec = {k: lowes(pad(models[k], 133)) for k in names3}
+pm = lowes(np.mean([pad(models[k], 133) for k in names3], axis=0))
+for l0, l1 in [(16, 60), (60, 100), (100, 133)]:
+    print(f'  degrees {l0}-{l1}: power of the mean / power of LCS-1 = {pm[l0:l1+1].sum()/spec["LCS-1"][l0:l1+1].sum():.2f}')

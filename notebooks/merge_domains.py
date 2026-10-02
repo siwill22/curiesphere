@@ -78,12 +78,24 @@ z = np.load(f'{OUT}/columns.npz')
 assert np.array_equal(z['plon'], cc['plon'])
 b, d_lcs, d_mf7 = z['b'], z['d_lcs'], z['d_mf7']
 sigma = np.sqrt(np.mean((d_lcs - d_mf7)**2))
+# data target: LCS-1 (default) or, with TARGET=mean3, the mean of LCS-1, MF7 and MLI_SHA_2D
+# (noise_models.py) with its estimated error. The variable keeps the name d_lcs.
+TARGET = os.environ.get('TARGET', 'lcs1')
+TAG = '' if TARGET == 'lcs1' else f'_{TARGET}'
+if TARGET == 'mean3':
+    tm = np.load(f'{OUT}/target_mean3.npz')
+    assert np.array_equal(tm['plon'], cc['plon'])
+    d_lcs, sigma = tm['d'], float(tm['sigma'])
+# SIGMA (nT) overrides the noise level, e.g. to change the target with everything else equal
+if 'SIGMA' in os.environ:
+    sigma = float(os.environ['SIGMA'])
+    TAG += f'_sigma{sigma:g}'
 noise = np.load(f'{OUT}/noise.npz')['noise']
 noise *= sigma/np.sqrt(np.mean(noise**2))
 Gw = G/sigma
 GtG = Gw.T @ Gw
 ridge = RIDGE*np.mean(np.diag(GtG))
-print(f'{n_cell} cells, {G.shape[0]} points, sigma {sigma:.2f} nT')
+print(f'{n_cell} cells, {G.shape[0]} points, target {TARGET}, sigma {sigma:.2f} nT')
 
 # cell adjacency from the 0.1 deg grid: cells touching along a grid edge
 pairs = []
