@@ -219,3 +219,28 @@ The fit is bounded least squares, undamped, with the background fixed.
 - the sensitivity of the 7-domain model to the floor, the ocean background south of Australia (its stripes are stronger than in LCS-1) and the slab base;
 - the noise level, which sets the detection threshold;
 - a Bayesian (transdimensional) version.
+
+## Noise level: comparison with Swarm models (2026-10-02, `notebooks/noise_models.py`)
+
+**Models compared:** LCS-1, MF7, and two ESA Swarm lithospheric models, MLI_SHA_2D 0501 (Thébault, degrees 16–133) and MLI_SHA_2C 1101 (comprehensive inversion, degrees 16–120). The MLI files are kept outside the repo in `~/Data/Swarm/MLI`, and their coefficients are converted from 6371.2 to 6371.0 km.
+
+**RMS Br differences at the 7,649 Australian data points, degrees 16–133:**
+
+| Pair | RMS difference (nT) |
+|---|---|
+| LCS-1 − MF7 | 20.4 |
+| LCS-1 − MLI_2D | 20.2 |
+| MF7 − MLI_2D (independent data: CHAMP against Swarm) | 15.5 |
+
+For reference, LCS-1 itself is 61.9 nT RMS.
+
+**Three-cornered hat** (LCS-1, MF7, MLI_2D): LCS-1 17.1, MF7 11.2, MLI_2D 10.8 nT. In degrees 16–120, with MLI_2C included, the LCS-1 error is 11.5–15.9 nT, depending on which trio is used.
+
+**Spectra** (global): the differences are below 1 nT² per degree up to about degree 50, then rise to about 10 nT² per degree at degrees 100–133, roughly a third of the signal power.
+
+**Maps** (`inversion/noise_difference_maps.png`): LCS-1 − MF7, and LCS-1 − MLI_2D in the west, are dominated by north–south stripes, the signature of satellite-track artefacts. MF7 − MLI_2D is much less striped. A pattern shared by the two LCS-1 differences but missing from MF7 − MLI_2D points to LCS-1 itself. Shared damping between MF7 and MLI_2D (both have less power above degree 60) would also make LCS-1 look worse than it is.
+
+**Reading**
+- **The LCS-1 error over Australia** is probably about 11–17 nT RMS in degrees 16–133, against the 20.4 nT used so far. That makes σ about 1.2–1.9× too large.
+- **The error is anisotropic**, with north–south track stripes. The isotropic random-phase noise model does not represent it.
+- **Model error dominates the real fit.** The fits leave about 40 nT RMS, roughly 2× the old σ and 2.5–3.5× these estimates. Reducing σ would therefore lower the detection threshold for data noise, but it would not reduce that model error.
