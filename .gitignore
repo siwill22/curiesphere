@@ -176,3 +176,4 @@ notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
 /notebooks/inversion_*/*.npz
 /notebooks/inversion_*/*.log
 /notebooks/inversion_*/cells/
+/notebooks/regions/*/cache/

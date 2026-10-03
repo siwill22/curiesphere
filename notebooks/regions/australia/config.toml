@@ -1,0 +1,17 @@
+# Australia: the extent of notebooks/invert_domains.py (non-ocean-age crust of the Hasterok
+# polygons with a parameter in inversion/australia_domains.csv; PNG excluded, margins included)
+outline = "outline.gpkg"
+nside_cell = 64          # ~100 km cells; the coarse basis is NSIDE 32
+nside_data = 128         # data points, ~55 km
+buffer_km = 300.0
+base_depth_km = 30.0     # slab base below the ellipsoid
+lmin = 16
+lmax_fit = 133
+lmax_cell = 150
+n_noise = 100
+seed = 20261001
+
+# the cells of the first Australian build whose nodes are unchanged
+[reuse_cells]
+cells_npz = "../../inversion/cells.npz"
+dir = "../../inversion/cells"
