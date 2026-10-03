@@ -43,8 +43,12 @@ CACHE = f'{REG}/cache'
 MUS = [0.03, 0.1, 0.3]
 N_NULL, N_BOOT = 20, 30
 V0 = 0.6
-SETTINGS = [(lr, g) for lr in (1., 1/3) for g in (0., 0.001, 0.002, 0.005, 0.01)]
-BOOT_SETTINGS = [(1., 0.002)]
+# settings: LAM_RELS and GAMMAS (comma lists, gamma relative to lambda_95), BOOT = 'lam_rel,gamma'; TAG names the output
+LAM_RELS = [float(x) for x in os.environ.get('LAM_RELS', '1,0.333333').split(',')]
+GAMMAS = [float(x) for x in os.environ.get('GAMMAS', '0,0.001,0.002,0.005,0.01').split(',')]
+SETTINGS = [(lr, g) for lr in LAM_RELS for g in GAMMAS]
+BOOT_SETTINGS = [tuple(float(x) for x in os.environ.get('BOOT', '1,0.002').split(','))]
+TAG = os.environ.get('TAG', '')
 WEIGHTING = os.environ.get('WEIGHTING', 'points')
 MODES = os.environ.get('MODES', 'fine').split(',')
 N_WORKERS = int(os.environ.get('N_WORKERS', 8))
@@ -122,7 +126,7 @@ if __name__ == '__main__':
                   f'L {r["L"]:.0f}, mu {r["mu"]}, {r["seconds"]:.0f} s', flush=True)
         boot = {}
         for lr, g in BOOT_SETTINGS:
-            r0 = real[SETTINGS.index((lr, g))]
+            r0 = real[[k for k, x in enumerate(SETTINGS) if np.isclose(x[0], lr) and np.isclose(x[1], g)][0]]
             pred = Gw @ r0['v']
             t = time.time()
             bs = pool.map(task, [(mode, pred + err(2*N_NULL + j), lr*lam95, g*lam95) for j in range(N_BOOT)])
@@ -147,7 +151,7 @@ if __name__ == '__main__':
             save[f'{mode}_boot{i}_prob'] = o['boot'][s]['prob']
             save[f'{mode}_boot{i}_K'] = o['boot'][s]['K']
             save[f'{mode}_boot{i}_label'] = o['boot'][s]['label']
-    np.savez(f'{CACHE}/merge_{WEIGHTING}.npz', **save)
+    np.savez(f'{CACHE}/merge_{WEIGHTING}{TAG}.npz', **save)
 
     # comparison of the two modes
     if len(out) == 2:

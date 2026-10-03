@@ -173,3 +173,21 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
   - 19–21 spindly domains (37–39 nT), and the γ grid is too weak in these units.
   - Its weight sits on the largest scales.
 - **γ does not transfer between weightings as a fraction of λ_95,** because the fit gain per boundary edge scales differently.
+
+**A2 γ sweep, bootstrap and trade-off (2026-10-04; `show-me/2026-10-04-a2-sweep/`)**
+- **λ×1:**
+
+  | γ (λ_95) | K | L (edges) | Residual |
+  |---|---|---|---|
+  | 0.005 | 7 | 653 | 41.1 nT |
+  | 0.01 | 7 | 536 | 43.6 nT |
+  | 0.015 | 5 | 375 | 46.1 nT |
+  | 0.02 | 7 | 369 | 45.7 nT |
+
+  At λ×1/3, γ 0.01 gives 18 domains (40.1 nT) and γ 0.02 gives 12 (43.7 nT).
+- **Bootstrap at λ×1, γ 0.01:**
+  - K = 3–6 (median 5).
+  - Stable boundaries (above 80%): the south coast, the southern edge of the central block, and parts of the Gawler body.
+  - The eastern domain is not stable (20–40%).
+- **Trade-off:** no elbow. The residual falls steadily, from 64 nT at K = 1 to about 45 at K = 7 and about 32 at K = 100. K is set by λ.
+- **Decision:** option A2 is the merging baseline, with γ about 0.01 λ_95. Coarse-then-refine is dropped.
