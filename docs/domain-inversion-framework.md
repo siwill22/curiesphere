@@ -157,3 +157,9 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
 - **The honest error model supports far fewer domains:** 2 at λ_95, against 7–8 before. Correlated, field-shaped model error is no longer counted as signal.
 - **γ:** even 0.01 λ_95 collapses the model to 1–2 domains, so the useful γ range is lower (about 0.001–0.005 λ_95).
 - **Open issue:** the error amplitudes come from the residual of an 8-domain fit. A 2-domain model leaves more residual (χ²/dimension 1.23), so re-estimating the amplitudes would lower K further. The hierarchical Bayesian method (c) estimates them jointly with the model.
+
+**Correction (same day): the "2 domains" conclusion is withdrawn.** Maps (`show-me/2026-10-03-whitened-merging/`):
+- **Residuals:** the uniform model leaves 64 nT RMS, 2 domains 48 nT, 8 domains 41 nT. The fitted data (LCS-1 minus background) are 71 nT RMS.
+- **The error model is the cause.** It was sized from the residual of the 8-domain fit (45 nT RMS in total), and half of it has the spectrum of LCS-1. It counts unexplained geology as error, so every model beyond about 2 domains looks insignificant. The arithmetic is consistent: the compressed space holds 99.9% of the data energy. The error is in the modelling choice.
+- **The 2-domain model is not simple.** Its high domain is a convoluted, interfingering shape whose edges reproduce many anomalies. The domain count understates its complexity at γ = 0.
+- **Consequence:** the model-error term needs an estimate independent of our own fits, or must be left out of the stopping rule. The step 2 and step 3 results that depend on the fitted amplitudes are on hold.
