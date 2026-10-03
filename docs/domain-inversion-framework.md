@@ -94,3 +94,26 @@ A small module `notebooks/domains/` of plain functions (region, basis, errors, m
 **Extent correction**
 - The old code clipped the polygons to a box ending at 5°S, which cut 394 nodes of the North Australian margin polygon (4.3–5°S, 134–140°E).
 - The new region follows the outline: 1,406 cells (1,392 columns reused, 14 computed) and 7,681 points.
+
+### Step 2: error model and whitening (2026-10-03)
+
+**Code:** `notebooks/domains/errors.py` and `notebooks/error_model.py <config>`, which writes `cache/errors.npz` and `<region>/error_model.png`.
+
+**Effective information**
+- At Australia's 7,681 points, 99% of the variance of the noise covariance lies in about 730 eigen-directions, and 99.9% in about 850.
+- The points (about 55 km apart) oversample a field resolved to about 150 km, so treating them as independent overstates the information about tenfold.
+- The data are therefore compressed to the 845 leading directions of the total covariance (99.9% of the trace) and whitened there. Every method works with 845 numbers instead of 7,681.
+
+**Shape of the model error**
+- Taken from the covariance-against-distance of the residual of a reference fit: the old 8-domain model, residual 40.8 nT RMS.
+- A spectrum shaped like LCS-1 itself fits well (curve misfit 23.7 nT²), as does a fitted power law (21.2; exponent 0.38).
+- The LCS-1 − MF7 shape is too narrow (51.0).
+- The LCS-1 shape is used: it has no fitted exponent, and unmodelled magnetisation should produce a field that looks like the field.
+
+**Checks**
+- **Covariance code:** 100 random-phase noise realisations, an independent synthesis, whiten to variance 1.00 per direction (5–95% range 0.76–1.23, as expected from 100 samples).
+- **Amplitudes:** with σ_n fixed at RMS(LCS-1 − MF7) = 20.4 nT, the maximum-likelihood model error is s = 40.9 nT, and χ²/dimension = 1.04 overall. By scale, though, it ranges from 1.49 where noise-shaped errors dominate to 0.74 where field-shaped errors dominate.
+- **Both amplitudes estimated:** σ_n = 31.4 nT and s = 32.5 nT, with χ² by fifths of 1.14, 1.11, 0.72, 0.97, 1.07. The short-wavelength error is larger than the data noise alone, i.e. part of the model error is fine-scale.
+- **Design change:** both amplitudes are estimated from the data, not just s. The whitening is exact for any pair of amplitudes.
+
+**Deferred to step 3:** the null check (noise-only data return K = 1) needs the merging code in the module.

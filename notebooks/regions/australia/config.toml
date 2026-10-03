@@ -11,6 +11,10 @@ lmax_cell = 150
 n_noise = 100
 seed = 20261001
 
+# error model (error_model.py): model-error covariance with the spectral shape of LCS-1
+# ('power' fits the reference residual about as well, with a fitted exponent)
+model_error_shape = "lcs1"
+
 # the cells of the first Australian build whose nodes are unchanged
 [reuse_cells]
 cells_npz = "../../inversion/cells.npz"
