@@ -10,7 +10,15 @@ Steps, for each mode:
      fine edge, ~100 km); g_rel 0.01 is about the old gamma 10 (10/1313 = 0.008)
   4. parametric bootstrap for BOOT_SETTINGS: N_BOOT data sets = the setting's fitted model + a
      whitened error realisation; boundary probability per fine edge
-Errors: the region's error model (error_model.py) with its reference amplitudes.
+Weighting of the data (WEIGHTING):
+  'model'   whitened with the full error model of error_model.py at its reference amplitudes
+            (withdrawn: the fitted field-shaped model error absorbs signal; see the framework doc)
+  'noise'   whitened with the data-noise covariance alone (LCS-1 - MF7 shape, sigma = RMS(LCS-1 - MF7))
+  'points'  no whitening: plain point weighting with sigma (as merge_domains.py), on the data
+            projected onto the compressed subspace (99.9% of the data energy kept)
+With 'noise' and 'points', null and bootstrap errors are the random-phase noise realisations of
+build_region.py (scaled to sigma) passed through the same transform, as in merge_domains.py.
+MODES: 'fine' (default) and/or 'refine'.
 
 Run from notebooks/ (conda env pygmt17):
     PYTHONPATH=..:$PYTHONPATH python run_merge.py regions/australia/config.toml
@@ -35,24 +43,33 @@ CACHE = f'{REG}/cache'
 MUS = [0.03, 0.1, 0.3]
 N_NULL, N_BOOT = 20, 30
 V0 = 0.6
-SETTINGS = [(lr, g) for lr in (1., 1/3) for g in (0., 0.01, 0.03, 0.1)]
-BOOT_SETTINGS = [(1., 0.), (1., 0.01)]
+SETTINGS = [(lr, g) for lr in (1., 1/3) for g in (0., 0.001, 0.002, 0.005, 0.01)]
+BOOT_SETTINGS = [(1., 0.002)]
+WEIGHTING = os.environ.get('WEIGHTING', 'points')
+MODES = os.environ.get('MODES', 'fine').split(',')
 N_WORKERS = int(os.environ.get('N_WORKERS', 8))
 SEED = 20261003
 
-# whitened problem
+# weighted problem
 E = np.load(f'{CACHE}/errors.npz')
-D = float(E['sn2']) + float(E['s2'])*E['lam']
-T = E['T']/np.sqrt(D)[:, None]
 G = np.load(f'{CACHE}/G.npz')['G']
 z = np.load(f'{CACHE}/data.npz')
 cells = np.load(f'{CACHE}/cells.npz')
+sigma = float(np.sqrt(np.mean((z['d_lcs'] - z['d_mf7'])**2)))
+if WEIGHTING == 'model':
+    T = E['T']/np.sqrt(float(E['sn2']) + float(E['s2'])*E['lam'])[:, None]
+elif WEIGHTING == 'noise':
+    T = E['T']/sigma
+else:
+    T = np.linalg.svd(E['T'].T, full_matrices=False)[0].T/sigma      # orthonormal rows spanning the subspace
 Gw = T @ G
 dw_real = T @ (z['d_lcs'] - z['b'])
+noise = np.load(f'{CACHE}/noise.npz')['noise']
+noise_w = (T @ (noise*sigma/np.sqrt(np.mean(noise**2))).T).T          # realisations, transformed
 parent, edges = cells['parent'], cells['edges']
 P = {'fine': merge.setup(Gw, edges), 'coarse': merge.coarse_problem(Gw, edges, parent)}
-print(f'{Gw.shape[1]} fine cells, {P["coarse"]["n"]} coarse cells, {Gw.shape[0]} whitened dimensions; '
-      f'error amplitudes sigma_n {np.sqrt(E["sn2"]):.1f} nT, s {np.sqrt(E["s2"]):.1f} nT', flush=True)
+print(f'{Gw.shape[1]} fine cells, {P["coarse"]["n"]} coarse cells, {Gw.shape[0]} dimensions; weighting {WEIGHTING}, '
+      f'sigma {sigma:.1f} nT', flush=True)
 
 
 def run(mode, dw, lam, gamma):
@@ -81,10 +98,14 @@ def task(args):
 
 if __name__ == '__main__':
     rng = np.random.default_rng(SEED)
-    null_dw = [Gw @ (V0*np.ones(Gw.shape[1])) + rng.standard_normal(Gw.shape[0]) for _ in range(2*N_NULL)]
+    if WEIGHTING == 'model':
+        err = lambda j: rng.standard_normal(Gw.shape[0])
+    else:
+        err = lambda j: noise_w[j]                                      # realisations 0..39 null, 40.. bootstrap
+    null_dw = [Gw @ (V0*np.ones(Gw.shape[1])) + err(j) for j in range(2*N_NULL)]
     out = {}
     pool = multiprocessing.get_context('fork').Pool(N_WORKERS)
-    for mode in ('refine', 'fine'):
+    for mode in MODES:
         t = time.time()
         curves = pool.map(null_paths, [(mode, dw) for dw in null_dw[:N_NULL]])
         lam95 = merge.calibrate_lambda(curves)
@@ -97,18 +118,18 @@ if __name__ == '__main__':
         real = pool.map(task, [(mode, dw_real, lr*lam95, g*lam95) for lr, g in SETTINGS])
         print(f'[{mode}] real data, {len(SETTINGS)} settings ({time.time()-t:.0f} s):', flush=True)
         for (lr, g), r in zip(SETTINGS, real):
-            print(f'    lambda x{lr:.2f}, gamma {g:.2f} lambda_95: K {r["K"]:2d}, chi2 {r["chi2"]:.1f}, '
+            print(f'    lambda x{lr:.2f}, gamma {g:.3f} lambda_95: K {r["K"]:2d}, chi2 {r["chi2"]:.1f}, '
                   f'L {r["L"]:.0f}, mu {r["mu"]}, {r["seconds"]:.0f} s', flush=True)
         boot = {}
         for lr, g in BOOT_SETTINGS:
             r0 = real[SETTINGS.index((lr, g))]
             pred = Gw @ r0['v']
             t = time.time()
-            bs = pool.map(task, [(mode, pred + rng.standard_normal(len(pred)), lr*lam95, g*lam95) for _ in range(N_BOOT)])
+            bs = pool.map(task, [(mode, pred + err(2*N_NULL + j), lr*lam95, g*lam95) for j in range(N_BOOT)])
             labs = np.array([b['label'] for b in bs])
             boot[(lr, g)] = dict(label=labs, K=np.array([b['K'] for b in bs]),
                                  prob=outputs.boundary_probability(labs, edges))
-            print(f'[{mode}] bootstrap lambda x{lr:.2f}, gamma {g:.2f}: K median {np.median(boot[(lr, g)]["K"]):.0f} '
+            print(f'[{mode}] bootstrap lambda x{lr:.2f}, gamma {g:.3f}: K median {np.median(boot[(lr, g)]["K"]):.0f} '
                   f'(range {boot[(lr, g)]["K"].min()}-{boot[(lr, g)]["K"].max()}) ({time.time()-t:.0f} s)', flush=True)
         out[mode] = dict(lam95=lam95, null_K=Kc, real=real, boot=boot, null_curves=curves)
     pool.close()
@@ -126,15 +147,12 @@ if __name__ == '__main__':
             save[f'{mode}_boot{i}_prob'] = o['boot'][s]['prob']
             save[f'{mode}_boot{i}_K'] = o['boot'][s]['K']
             save[f'{mode}_boot{i}_label'] = o['boot'][s]['label']
-    np.savez(f'{CACHE}/merge.npz', **save)
+    np.savez(f'{CACHE}/merge_{WEIGHTING}.npz', **save)
 
     # comparison of the two modes
-    print('\nrefine against fine, real data:')
-    for i, (lr, g) in enumerate(SETTINGS):
-        a, b = out['refine']['real'][i], out['fine']['real'][i]
-        print(f'    lambda x{lr:.2f}, gamma {g:.2f}: K {a["K"]} / {b["K"]}, chi2 {a["chi2"]:.1f} / {b["chi2"]:.1f}, '
-              f'ARI {outputs.ari(a["label"], b["label"]):.2f}, time {a["seconds"]:.0f} / {b["seconds"]:.0f} s')
-    for i, s in enumerate(BOOT_SETTINGS):
-        pa, pb = out['refine']['boot'][s]['prob'], out['fine']['boot'][s]['prob']
-        print(f'    bootstrap {s}: boundary probability, correlation {np.corrcoef(pa, pb)[0, 1]:.2f}, '
-              f'mean |difference| {np.mean(np.abs(pa - pb)):.3f}')
+    if len(out) == 2:
+        print('\nrefine against fine, real data:')
+        for i, (lr, g) in enumerate(SETTINGS):
+            a, b = out['refine']['real'][i], out['fine']['real'][i]
+            print(f'    lambda x{lr:.2f}, gamma {g:.3f}: K {a["K"]} / {b["K"]}, chi2 {a["chi2"]:.1f} / {b["chi2"]:.1f}, '
+                  f'ARI {outputs.ari(a["label"], b["label"]):.2f}')

@@ -163,3 +163,13 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
 - **The error model is the cause.** It was sized from the residual of the 8-domain fit (45 nT RMS in total), and half of it has the spectrum of LCS-1. It counts unexplained geology as error, so every model beyond about 2 domains looks insignificant. The arithmetic is consistent: the compressed space holds 99.9% of the data energy. The error is in the modelling choice.
 - **The 2-domain model is not simple.** Its high domain is a convoluted, interfingering shape whose edges reproduce many anomalies. The domain count understates its complexity at γ = 0.
 - **Consequence:** the model-error term needs an estimate independent of our own fits, or must be left out of the stopping rule. The step 2 and step 3 results that depend on the fitted amplitudes are on hold.
+
+**Option A: data noise only, two weightings (run_merge.py WEIGHTING=points/noise; maps in `show-me/2026-10-03-whitened-merging/` 02–03)**
+- **A2, point weighting** (σ 20.4 nT, compressed data, λ calibrated on correlated noise):
+  - λ_95 = 1,255; fresh null data give K = 1 in 90%.
+  - It reproduces the earlier results: 9 domains at γ 0 (38.8 nT), and 7 compact domains at γ 0.01 λ_95 (12.5 per edge; 43.6 nT; L = 536, against the old 511).
+- **A1, noise-whitened:**
+  - λ_95 = 74.4; fresh null data give K = 1 in 100%.
+  - 19–21 spindly domains (37–39 nT), and the γ grid is too weak in these units.
+  - Its weight sits on the largest scales.
+- **γ does not transfer between weightings as a fraction of λ_95,** because the fit gain per boundary edge scales differently.
