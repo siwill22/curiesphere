@@ -61,3 +61,16 @@ def boundary_probability(labels, edges, weights=None):
 def tradeoff_record(method, setting, K, misfit, **extra):
     """one row of a region's trade-off table: misfit (chi2 of whitened data) against K"""
     return dict(method=method, setting=setting, K=np.asarray(K), misfit=np.asarray(misfit), **extra)
+
+
+def ari(x, y):
+    """adjusted Rand index of two partitions of the same cells (1 = identical, 0 = chance)"""
+    from scipy.special import comb
+    _, xi = np.unique(x, return_inverse=True)
+    _, yi = np.unique(y, return_inverse=True)
+    ct = np.zeros((xi.max()+1, yi.max()+1))
+    np.add.at(ct, (xi, yi), 1)
+    s = comb(ct, 2).sum()
+    sa, sb = comb(ct.sum(1), 2).sum(), comb(ct.sum(0), 2).sum()
+    expected = sa*sb/comb(len(x), 2)
+    return (s - expected)/(0.5*(sa + sb) - expected)

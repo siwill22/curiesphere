@@ -117,3 +117,43 @@ A small module `notebooks/domains/` of plain functions (region, basis, errors, m
 - **Design change:** both amplitudes are estimated from the data, not just s. The whitening is exact for any pair of amplitudes.
 
 **Deferred to step 3:** the null check (noise-only data return K = 1) needs the merging code in the module.
+
+### Step 3: merging on whitened data (2026-10-03)
+
+**Code:** `notebooks/domains/merge.py` (the merging of `merge_domains.py`/`merge_compact.py`, with weighted edges and the coarse-then-refine driver) and `notebooks/run_merge.py <config>`, which writes `cache/merge.npz`. Quick-look figure: `notebooks/regions/australia/merge_check.png`.
+
+**Units**
+- γ is per fine edge (about 100 km) and given relative to λ_95.
+- The old γ 10 was about 0.008 λ_95.
+
+**Null calibration and check (the step 2 check)**
+
+| Mode | λ_95 (whitened χ²) | Fresh null data giving K = 1 |
+|---|---|---|
+| Fine (100 km) | 118 | 95% (19 of 20) |
+| Coarse then refine | 68.9 | 85% (17 of 20) |
+
+Coarse then refine is biased: λ is calibrated on the coarse path, but the fine clean-up adds flexibility afterwards.
+
+**Real data, Australia** (K and whitened χ², with 845 dimensions; one domain gives χ² 1693)
+
+| Setting | Fine | Coarse then refine | ARI between them |
+|---|---|---|---|
+| λ×1, γ 0 | 2 domains, 1041 | 3 domains, 1089 | 0.05 |
+| λ×1, γ 0.01 λ_95 | 1, 1693 | 3, 1379 | 0 |
+| λ×1/3, γ 0 | 8, 823 | 10, 785 | 0.22 |
+| λ×1/3, γ 0.01 λ_95 | 2, 1616 | 6, 1192 | 0.05 |
+| γ ≥ 0.03 λ_95 | 1–2 | 1–2 | – |
+
+- **Fine at λ×1:** two domains. High VIS covers the Yilgarn, the south coast, the Gawler and a band into the centre; the rest of the continent is low. This is the robust structure of the earlier runs.
+- **Bootstrap (30 sets, λ×1, γ 0):**
+  - fine: K = 2–3; the south-coast boundary and the boundary around the south-western block have probability 0.6–0.9;
+  - coarse then refine: more diffuse;
+  - the two maps correlate at only 0.41.
+
+**Conclusions**
+- **Coarse then refine fails the check against fine.** The partitions differ (ARI ≤ 0.22), the fit is worse at equal K, and the null calibration is biased. Fine stays the default.
+- **Fine is fast enough now.** The whitened data have 845 dimensions instead of 7,681, so a full run (3 restarts + clean-up) takes about 50 s for Australia.
+- **The honest error model supports far fewer domains:** 2 at λ_95, against 7–8 before. Correlated, field-shaped model error is no longer counted as signal.
+- **γ:** even 0.01 λ_95 collapses the model to 1–2 domains, so the useful γ range is lower (about 0.001–0.005 λ_95).
+- **Open issue:** the error amplitudes come from the residual of an 8-domain fit. A 2-domain model leaves more residual (χ²/dimension 1.23), so re-estimating the amplitudes would lower K further. The hierarchical Bayesian method (c) estimates them jointly with the model.
