@@ -261,3 +261,15 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
   - A new seed reassigns a large region, so births are drastic and rejected.
   - Non-convex units with small pieces need more seeds than the sampler can afford.
   - At this signal-to-noise the fit is very sensitive to boundaries one cell out.
+- **Decision:** replace Voronoi with a sampler on the cells themselves.
+
+**Cell-partition sampler (`notebooks/domains/partition.py`, `notebooks/run_partition_synthetic.py`; `show-me/2026-10-04-partition-sampler`)**
+- **Model:** units are sets of cells (value classes). Values and h are integrated out.
+- **Prior:** exp(−βL − κU), proper over the finite set of partitions. β = γ/2h² and κ = λ/2h², at h of the merging fit.
+- **Moves:** Swendsen–Wang cuts (Barbu & Zhu 2005). A random cluster of cells, from one cell to a whole unit, is proposed to another unit or a new one.
+- **Exact test:** all 203 partitions of a 2×3 grid; total variation 0.016, within noise.
+- **First formulation, withdrawn:** penalties inside the χ² term with h integrated out. A longer boundary then mostly inflates h, and the entropy of fragmented partitions wins (L ~ 2,000).
+- **Results** (λ = λ_95/3):
+  - **β ≳ 1.2 per edge:** the chain refines merging and gives sharp boundary probabilities. For real7 at γ = 0.01 (β 2.5): merging's 9 units become 5 value classes, the score is below the truth's (9,970 against 10,522; merging 11,962), ARI 0.96, VIS error 0.018, 94% of true edges above 0.5 and 0.5% of others.
+  - **β ≲ 1:** the posterior itself is fragmented (boundary entropy), so a sampler-based boundary confidence needs γ ≳ 2h² per edge.
+  - **The unit count never changes after the first few samples.** New units are never accepted, and a one-unit start stays at one unit. The sampler explores boundaries around merging's answer; it gives no distribution of the unit count.
