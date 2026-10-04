@@ -228,6 +228,21 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
   - True boundaries above 0.5 probability: 68–86%; other edges: 1–2%.
 - **Non-convex truth:** 7–8 units (true 7) with the broad shapes, but not the cell-level edges.
 - **Open issues:**
-  1. Units may be disconnected: they are value classes, not polygons.
-  2. The seed count is not controlled (it drifts up), which leaves geometric freedom.
+  1. Units may be disconnected: they are value classes, not polygons. **Decided (A):** keep disconnected units; report both the unit count (distinct values) and the polygon count (connected pieces), and draw the polygons.
+  2. The seed count is not controlled (it drifts up), which leaves geometric freedom. **Decided (A):** a boundary-length penalty, as γ in merging. The joint prior of geometry and h carries exp(−γL/2h²), so with h integrated out χ² becomes χ² + γL. L counts cell edges between different units (`lvoronoi.boundary_length`).
   3. The search falls a little short of the true χ².
+
+**Boundary-length penalty: synthetic results** (γ = 0, 0.001, 0.003, 0.01 λ_95; `show-me/2026-10-04-boundary-penalty`)
+- **γ = 0.001 λ_95 (1.25 per edge):**
+  - 4 units (correct), 8–13 seeds (11–18 at γ = 0) and L 215–230 (truth 232).
+  - Residual at the noise level; 1–2% false boundaries.
+  - True boundaries above 0.5 probability: 0.59–0.85 (0.72–0.86 at γ = 0).
+- **γ = 0.01 λ_95 (the merging setting):**
+  - vor6 collapses to 2 units, which is genuine: the 2-unit penalised score beats the truth's.
+  - The weaker vor6 boundaries earn less fit per edge than γ (25 per edge on average over all true boundaries, less for the weak ones).
+- **γ = 0.003 λ_95:** vor6 stops at 3 units although the truth scores much better (χ² + γL ≈ 1,684 against 2,230). This is a search failure: the chains freeze (constant L), and unit birth is never accepted.
+- **real7:** a search failure at every γ (truth ≈ 7,600 against ≈ 27,000 at γ = 0.01).
+- **Consequences:**
+  - With a penalty, the search becomes the limiting factor (issue 3).
+  - Boundary probabilities from a frozen chain are 0/1 and mean nothing.
+  - Synthetic noise is white while λ_95 was calibrated on correlated noise, so γ for real data must be calibrated with the real noise.

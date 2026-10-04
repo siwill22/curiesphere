@@ -12,6 +12,9 @@ units of sigma), i.e. exactly the likelihood's assumptions: this tests the sampl
 Each case runs in two independent chains (different random starts); h is integrated out.
 Annealing (method b) for vor6, K = 2..10.
 
+Boundary-length penalty: env GAMMA = gamma relative to lambda_95 of the A2 merging (default 0); the
+output is lvoronoi_synthetic{TAG}.npz (env TAG, default '').
+
 Run from notebooks/ (conda env pygmt17):
     PYTHONPATH=..:$PYTHONPATH python run_voronoi_synthetic.py regions/australia/config.toml
 """
@@ -31,6 +34,8 @@ C = f'{REG}/cache'
 TEMPS = list(np.geomspace(1., 200., 10))
 N_SWEEPS, THIN, SWEEP = 2500, 5, 20
 M_MAX = 60
+GAMMA_REL = float(os.environ.get('GAMMA', 0.))
+TAG = os.environ.get('TAG', '')
 
 E = np.load(f'{C}/errors.npz')
 z = np.load(f'{C}/data.npz')
@@ -41,6 +46,9 @@ T = np.linalg.svd(E['T'].T, full_matrices=False)[0].T/sigma
 Gw = T @ G
 P0 = voronoi.setup(Gw, cells['clon'], cells['clat'], T @ (z['d_lcs'] - z['b']))
 edges = cells['edges']
+lam95 = float(np.load(f'{C}/merge_points_sweep.npz')['fine_lam95'])
+P0['edges'], P0['gamma'] = edges, GAMMA_REL*lam95
+print(f'gamma {GAMMA_REL:g} lambda_95 = {P0["gamma"]:.2f} per edge', flush=True)
 
 rng = np.random.default_rng(20261004)
 truths = {}
@@ -64,7 +72,7 @@ def job(args):
     P = dict(P0, dw=data[(name, h)])
     out, acc = lvoronoi.sample(P, N_SWEEPS, TEMPS, r, m_max=M_MAX, m_start=6, thin=THIN, sweep=SWEEP, edges=edges)
     return dict(name=name, h=h, chain=chain, U=np.array([o['U'] for o in out]), M=np.array([o['M'] for o in out]),
-                pieces=np.array([o['pieces'] for o in out]), label=np.array([o['label'] for o in out]),
+                pieces=np.array([o['pieces'] for o in out]), L=np.array([o['L'] for o in out]), label=np.array([o['label'] for o in out]),
                 v=[o['v'] for o in out], chi2=np.array([o['chi2'] for o in out]), acc=acc, seconds=time.time()-t)
 
 
@@ -73,7 +81,7 @@ if __name__ == '__main__':
     with multiprocessing.get_context('fork').Pool(int(os.environ.get('N_WORKERS', 10))) as pool:
         res = pool.map(job, jobs)
     save = dict(truth_vor6_label=truths['vor6'][0], truth_vor6_v=truths['vor6'][1],
-                truth_real7_label=truths['real7'][0], truth_real7_v=truths['real7'][1], edges=edges)
+                truth_real7_label=truths['real7'][0], truth_real7_v=truths['real7'][1], edges=edges, gamma=P0['gamma'], gamma_rel=GAMMA_REL)
     for name, h in CASES:
         lab_t, v_t = truths[name]
         cut_t = lab_t[edges[:, 0]] != lab_t[edges[:, 1]]
@@ -82,19 +90,20 @@ if __name__ == '__main__':
             r = [x for x in res if x['name'] == name and x['h'] == h and x['chain'] == c][0]
             burn = len(r['U'])//3
             Us, Ms, pcs, labs = r['U'][burn:], r['M'][burn:], r['pieces'][burn:], r['label'][burn:]
+            Ls = r['L'][burn:]
             prob = outputs.boundary_probability(labs, edges)
             aris = [outputs.ari(lab_t, l) for l in labs[::5]]
             h_est = np.sqrt(np.median(r['chi2'][burn:]/(Gw.shape[0] - Us)))
             vmean = np.mean([np.asarray(v)[l] for v, l in zip(r['v'][burn:], labs)], axis=0)
             print(f'{name}, h {h:g}, chain {c}: units mode {np.bincount(Us).argmax()} (true {v_t.size}), '
                   f'5-95% {np.percentile(Us, 5):.0f}-{np.percentile(Us, 95):.0f}; seeds median {np.median(Ms):.0f}; '
-                  f'connected pieces median {np.median(pcs):.0f}; h estimate {h_est:.2f}; ARI median {np.median(aris):.2f}; '
+                  f'connected pieces median {np.median(pcs):.0f}; L median {np.median(Ls):.0f} (truth {int(cut_t.sum())}); h estimate {h_est:.2f}; ARI median {np.median(aris):.2f}; '
                   f'true boundaries p > 0.5: {np.mean(prob[cut_t] > 0.5):.2f}, other edges p > 0.5: '
                   f'{np.mean(prob[~cut_t] > 0.5):.3f}; |VIS error| {np.mean(np.abs(vmean - v_t[lab_t])):.3f}; '
                   f'best chi2 {r["chi2"].min():.0f} (truth {chi2_t:.0f}); acceptance '
                   + ', '.join(f'{k} {a:.2f}' for k, a in r['acc'].items()) + f'; {r["seconds"]/60:.1f} min', flush=True)
             key = f'{name}_h{h:g}_c{c}'
-            for k_ in ('U', 'M', 'pieces', 'chi2'):
+            for k_ in ('U', 'M', 'pieces', 'L', 'chi2'):
                 save[f'{key}_{k_}'] = r[k_]
             save[f'{key}_prob'] = prob; save[f'{key}_vmean'] = vmean; save[f'{key}_label_last'] = r['label'][-1]
-    np.savez(f'{C}/lvoronoi_synthetic.npz', **save)
+    np.savez(f'{C}/lvoronoi_synthetic{TAG}.npz', **save)

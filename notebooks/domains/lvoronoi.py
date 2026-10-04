@@ -7,6 +7,13 @@ Model
   has one VIS value. Units can be non-convex, and can also be disconnected (reported separately).
 Likelihood: as voronoi.evaluate, with the units in place of the Voronoi regions (VIS values,
   uniform on [V_LO, V_HI], and the noise scale h, Jeffreys, integrated out analytically).
+Boundary-length penalty (P['gamma'], default 0; the analogue of gamma in merging): L = number of
+  cell-graph edges (P['edges']) between different units (edges between seeds of the same unit cost
+  nothing). The joint prior of geometry and h carries a factor exp(-gamma L / (2 h^2)), so that
+  -2 log posterior = (chi2 + gamma L)/h^2 + ..., the same trade-off of misfit against length as the
+  merging score chi2 + gamma L. With h integrated out, chi2 is replaced by chi2 + gamma L in the
+  marginal likelihood; with h fixed, the log posterior gains -gamma L/(2 h^2). (The factor is not
+  normalised over geometries: it is part of an improper joint prior, as the Jeffreys prior is.)
 Prior
   p(M, U, seed set, grouping) = p(M) p(seed set | M) p(U | M) p(grouping | M, U)
     M uniform on 1..M_MAX; seed set uniform: 1/C(n, M); U uniform on 1..M: 1/M;
@@ -43,8 +50,14 @@ def log_stirling2(m_max):
     return L
 
 
+def boundary_length(edges, lab):
+    """number of cell-graph edges between different units"""
+    return int(np.sum(lab[edges[:, 0]] != lab[edges[:, 1]]))
+
+
 def evaluate(P, seeds, units, h=None):
-    """log marginal likelihood, chi2, unit values, and the unit of every cell"""
+    """log marginal likelihood (with the boundary-length penalty), chi2, unit values, and the unit
+    of every cell"""
     U = units.max() + 1
     lab = units[voronoi.assign(P, seeds)]
     GR = np.stack([P['Gw'][:, lab == k].sum(1) for k in range(U)], 1)
@@ -57,13 +70,15 @@ def evaluate(P, seeds, units, h=None):
     if (v < V_LO).any() or (v > V_HI).any():
         return -np.inf, np.inf, v, lab
     chi2 = float(np.sum((GR @ v - P['dw'])**2))
+    gamma = P.get('gamma', 0.)
+    pen = gamma*boundary_length(P['edges'], lab) if gamma else 0.
     N = P['N']
     base = -U*np.log(V_HI - V_LO) - np.sum(np.log(np.diag(cf)))
     if h is None:
         from scipy.special import gammaln
-        ll = base + gammaln((N - U)/2) - (N - U)/2*np.log(np.pi*chi2)
+        ll = base + gammaln((N - U)/2) - (N - U)/2*np.log(np.pi*(chi2 + pen))
     else:
-        ll = base - (N - U)/2*np.log(2*np.pi*h**2) - chi2/(2*h**2)
+        ll = base - (N - U)/2*np.log(2*np.pi*h**2) - (chi2 + pen)/(2*h**2)
     return float(ll), chi2, v, lab
 
 
@@ -229,5 +244,6 @@ def sample(P, n_sweeps, temps, rng, m_max=60, m_start=6, h=None, thin=5, sweep=2
                        v=None if v is None else v.copy(), chi2=chi2, ll=ll)
             if edges is not None:
                 rec['pieces'] = components(lab, edges)
+                rec['L'] = boundary_length(edges, lab)
             out.append(rec)
     return out, {k: a/max(t, 1) for k, (a, t) in acc.items()}
