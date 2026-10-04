@@ -191,3 +191,28 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
   - The eastern domain is not stable (20–40%).
 - **Trade-off:** no elbow. The residual falls steadily, from 64 nT at K = 1 to about 45 at K = 7 and about 32 at K = 100. K is set by λ.
 - **Decision:** option A2 is the merging baseline, with γ about 0.01 λ_95. Coarse-then-refine is dropped.
+
+### Step 4: Voronoi sampler and annealing (2026-10-04)
+
+**Code:** `notebooks/domains/voronoi.py` and `notebooks/run_voronoi_synthetic.py`. Figures: `show-me/2026-10-04-voronoi-checks/` (not tracked).
+
+**Model**
+- Seeds sit on cell centres; every cell belongs to its nearest seed by great-circle distance.
+- VIS values (uniform prior 0–4) and the noise scale h (Jeffreys prior) are integrated out analytically.
+- Moves: birth, death, and moves of three kinds (adjacent cell, within 400 km, anywhere).
+- 10-temperature parallel tempering, from 1 to 200.
+- One evaluation takes about 1.5 ms (Australia, 845 data dimensions).
+
+**Checks** (synthetic data that match the likelihood)
+- **Prior test:** passed. P(K) is flat.
+- **6-domain Voronoi truth (h = 1 and 2):**
+  - the VIS map is recovered (error 0.02–0.03 SI·km) and most true boundaries have probability above 0.5;
+  - but the chains report 7–11 domains, splitting true domains into equal-valued pieces;
+  - they do not reach the truth's χ², and do not mix in K.
+- **Non-convex truth** (the 7-domain merging model): the broad pattern returns, but it takes 19–40 seeds, with no convergence.
+- **Annealing** at fixed K: unreliable. At K = 6 its best χ² is 3,464, against the truth's 812.
+
+**Assessment**
+- The sampler is correct but does not search well enough at this signal-to-noise.
+- Plain Voronoi cannot represent non-convex units economically.
+- Both point to the labelled-Voronoi model (seeds carrying unit labels, counted as units), with split/merge moves.
