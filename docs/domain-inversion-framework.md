@@ -216,3 +216,18 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
 - The sampler is correct but does not search well enough at this signal-to-noise.
 - Plain Voronoi cannot represent non-convex units economically.
 - Both point to the labelled-Voronoi model (seeds carrying unit labels, counted as units), with split/merge moves.
+
+**Labelled Voronoi (`notebooks/domains/lvoronoi.py`, `notebooks/run_lvoronoi_synthetic.py`)**
+- **Model:** seeds carry unit labels.
+- **Priors:** M uniform; seed set uniform; U uniform on 1…M; grouping uniform (1/Stirling(M, U)).
+- **Moves:** seed birth and death, unit birth and death, move, relabel, merge and split.
+- **Prior test:** passed.
+- **6-domain truth:**
+  - Both chains find 4 units, which is correct: two pairs of true domains have equal values.
+  - VIS error 0.015–0.035 SI·km.
+  - True boundaries above 0.5 probability: 68–86%; other edges: 1–2%.
+- **Non-convex truth:** 7–8 units (true 7) with the broad shapes, but not the cell-level edges.
+- **Open issues:**
+  1. Units may be disconnected: they are value classes, not polygons.
+  2. The seed count is not controlled (it drifts up), which leaves geometric freedom.
+  3. The search falls a little short of the true χ².
