@@ -31,6 +31,13 @@ Moves (each step picks one of the 8 kinds with probability 1/8; impossible propo
               uniformly over the 2^(m-1) - 1 unordered splits of its m seeds         U+1
 The log prior x proposal ratios ("extra") are derived in the comments of propose(); the prior test
 (likelihood switched off) checks them: P(M) uniform on 1..M_MAX and P(U | M) uniform on 1..M.
+Residual-guided unit births (when setup_births(P) has been called): the cell of a new unit is drawn
+  from birth_q, a mixture of uniform over free cells (BIRTH_MIX) and proportional to the misfit
+  reduction of giving the 400 km disc around the cell a value of its own, from the current
+  residual. q depends only on the state, so detailed balance holds with q in the Hastings ratio of
+  unit_birth and of its reverse, unit_death (q of the smaller state, known after evaluating it).
+Starting point: seeds_from_partition turns a cell partition (e.g. a merging result) into seeds and
+  units that reproduce it.
 """
 import numpy as np
 
@@ -38,6 +45,69 @@ from . import voronoi
 from .voronoi import V_LO, V_HI, MOVE_MIX
 
 KINDS = ('seed_birth', 'seed_death', 'unit_birth', 'unit_death', 'move', 'relabel', 'merge', 'split')
+BIRTH_MIX = 0.5                                     # uniform share of the unit-birth proposal
+
+
+def setup_births(P):
+    """columns of the 400 km disc (P['near']['local']) around each cell, for guided unit births"""
+    D = np.stack([P['Gw'][:, nb].sum(1) for nb in P['near']['local']], 1)
+    P['Gdisc'], P['gdisc2'] = D, np.sum(D**2, 0)
+    return P
+
+
+def birth_q(P, seeds, v, lab):
+    """probability of each cell as the seed of a new unit (0 on occupied cells)"""
+    free = np.ones(P['n'], bool)
+    free[seeds] = False
+    uniform = np.where(free, 1./free.sum(), 0.)
+    if 'Gdisc' not in P or v is None:
+        return uniform
+    r = P['dw'] - P['Gw'] @ np.asarray(v)[lab]
+    w = np.where(free, (P['Gdisc'].T @ r)**2/P['gdisc2'], 0.)
+    if not w.sum() > 0:
+        return uniform
+    return BIRTH_MIX*uniform + (1 - BIRTH_MIX)*w/w.sum()
+
+
+def seeds_from_partition(P, label, tol=0.02, max_seeds=None):
+    """seeds and units whose Voronoi units reproduce a cell partition except for a fraction tol of
+    the cells. One seed per unit at its most interior cell (farthest, great circle, from any cell of
+    another unit); then, repeatedly, (1) the seed (any free cell, with that cell's unit) that
+    corrects the most cells is added, and (2) every seed in turn moves to the adjacent cell
+    (within R_STEP_KM) that most reduces the number of wrong cells, until no move helps.
+    Stops at tol, at max_seeds, or when no added seed helps."""
+    lab = np.unique(label, return_inverse=True)[1]
+    dots = P['xyz'] @ P['xyz'].T
+    same = lab[:, None] == lab[None, :]
+    depth = -np.where(~same, dots, -1.).max(1)                              # larger = more interior
+    seeds = [int(idx[np.argmax(depth[idx])]) for idx in (np.where(lab == k)[0] for k in range(lab.max() + 1))]
+    n_wrong = lambda s: int(np.sum(lab[s][np.argmax(dots[:, s], 1)] != lab))
+    while True:
+        # (2) local moves
+        improved = True
+        while improved:
+            improved = False
+            for i in range(len(seeds)):
+                cur = n_wrong(seeds)
+                for c in P['near']['step'][seeds[i]]:
+                    if c in seeds:
+                        continue
+                    trial = seeds[:i] + [int(c)] + seeds[i+1:]
+                    if lab[c] == lab[seeds[i]] and n_wrong(trial) < cur:
+                        seeds, cur, improved = trial, n_wrong(trial), True
+        near = dots[:, seeds].max(1)
+        wrong = lab[seeds][np.argmax(dots[:, seeds], 1)] != lab
+        if wrong.sum() <= tol*len(lab) or len(seeds) >= (max_seeds or P['n']):
+            break
+        # (1) best added seed
+        take = dots > near[:, None]                                         # take[i, j]: seed at j takes cell i
+        gain = np.sum(take & wrong[:, None] & same, 0) - np.sum(take & ~wrong[:, None] & ~same, 0)
+        gain[seeds] = -1
+        if gain.max() <= 0:
+            break
+        seeds.append(int(np.argmax(gain)))
+    seeds = np.array(seeds)
+    return seeds, _compact(lab[seeds])
 
 
 def log_stirling2(m_max):
@@ -88,9 +158,20 @@ def _compact(units):
     return inv
 
 
-def propose(P, seeds, units, rng, m_max, logS):
-    """one proposal: (kind, new seeds, new units, extra) with extra = log(prior ratio x q_rev/q_fwd);
-    extra = None means the proposal is impossible here (rejected)"""
+def propose(P, seeds, units, rng, m_max, logS, qfun=None):
+    """one proposal: (kind, new seeds, new units, extra, post) with extra = log(prior ratio x
+    q_rev/q_fwd); extra = None means the proposal is impossible here (rejected). With guided births
+    (qfun() = birth_q of the current state), unit_birth uses q, and unit_death returns post = the
+    removed cell: its extra still lacks log q_new(cell) + log(n - M + 1), added by the caller once
+    the smaller state has been evaluated."""
+    kind, new_s, new_u, extra = _propose(P, seeds, units, rng, m_max, logS, qfun)
+    post = None
+    if kind == 'unit_death' and extra is not None and qfun is not None:
+        post = int(np.setdiff1d(seeds, new_s)[0])
+    return kind, new_s, new_u, extra, post
+
+
+def _propose(P, seeds, units, rng, m_max, logS, qfun):
     n, M = P['n'], len(seeds)
     U = units.max() + 1
     c = np.bincount(units, minlength=U)
@@ -119,12 +200,19 @@ def propose(P, seeds, units, rng, m_max, logS):
 
     if kind == 'unit_birth':
         # prior ratio (M+1)/(n-M) * M/(M+1) * S(M,U)/S(M+1,U+1); q_fwd 1/(n-M); q_rev 1/S1'
+        # guided: q_fwd q(c) instead of 1/(n-M), i.e. extra gains -log q(c) - log(n-M)
         if M >= m_max:
             return kind, seeds, units, None
-        new_s = np.append(seeds, rng.choice(np.setdiff1d(np.arange(n), seeds)))
+        if qfun is None:
+            c, corr = rng.choice(np.setdiff1d(np.arange(n), seeds)), 0.
+        else:
+            q = qfun()
+            c = rng.choice(n, p=q)
+            corr = -np.log(q[c]) - np.log(n - M)
+        new_s = np.append(seeds, c)
         new_u = np.append(units, U)
         S1_new = np.sum(np.bincount(new_u) == 1)
-        extra = np.log(M) + logS[M, U] - logS[M+1, U+1] - np.log(S1_new)
+        extra = np.log(M) + logS[M, U] - logS[M+1, U+1] - np.log(S1_new) + corr
         return kind, new_s, new_u, extra
 
     if kind == 'unit_death':
@@ -202,19 +290,25 @@ def components(lab, nbr_edges):
     return len({find(i) for i in range(n)})
 
 
-def sample(P, n_sweeps, temps, rng, m_max=60, m_start=6, h=None, thin=5, sweep=20, evaluate_fn=None, edges=None):
-    """parallel-tempered sampler; returns T = 1 samples (dicts) and acceptance rates per move kind"""
+def sample(P, n_sweeps, temps, rng, m_max=60, m_start=6, h=None, thin=5, sweep=20, evaluate_fn=None, edges=None,
+           start=None):
+    """parallel-tempered sampler; returns T = 1 samples (dicts) and acceptance rates per move kind.
+    start = (seeds, units): every chain starts there (else random starts with m_start seeds).
+    Unit births are residual-guided if setup_births(P) has been called."""
     ev = evaluate if evaluate_fn is None else evaluate_fn
     logS = log_stirling2(m_max + 1)
     n = P['n']
+    guided = 'Gdisc' in P
     state = []
     for _ in temps:
-        while True:
+        ll = -np.inf
+        if start is not None:
+            s, u = np.array(start[0]), _compact(np.array(start[1]))
+            ll, chi2, v, lab = ev(P, s, u, h)
+        while not np.isfinite(ll):
             s = rng.choice(n, m_start, replace=False)
             u = _compact(rng.integers(0, max(1, m_start//2), m_start))
             ll, chi2, v, lab = ev(P, s, u, h)
-            if np.isfinite(ll):
-                break
         state.append([s, u, ll, chi2, v, lab])
     acc = {k: [0, 0] for k in KINDS + ('swap',)}
     out = []
@@ -222,12 +316,17 @@ def sample(P, n_sweeps, temps, rng, m_max=60, m_start=6, h=None, thin=5, sweep=2
         for ci, T in enumerate(temps):
             for _ in range(sweep):
                 s, u, ll0 = state[ci][0], state[ci][1], state[ci][2]
-                kind, ns, nu, extra = propose(P, s, u, rng, m_max, logS)
+                qfun = (lambda st=state[ci]: birth_q(P, st[0], st[4], st[5])) if guided else None
+                kind, ns, nu, extra, post = propose(P, s, u, rng, m_max, logS, qfun)
                 if ci == 0:
                     acc[kind][1] += 1
                 if extra is None:
                     continue
                 ll, chi2, v, lab = ev(P, ns, nu, h)
+                if post is not None:                    # reverse of a guided birth into the old state
+                    if not np.isfinite(ll):
+                        continue
+                    extra += np.log(birth_q(P, ns, v, lab)[post]) + np.log(n - len(s) + 1)
                 if np.isfinite(ll) and np.log(rng.random()) < (ll - ll0)/T + extra:
                     state[ci] = [ns, nu, ll, chi2, v, lab]
                     if ci == 0:

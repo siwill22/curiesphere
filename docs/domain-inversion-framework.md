@@ -246,3 +246,18 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
   - With a penalty, the search becomes the limiting factor (issue 3).
   - Boundary probabilities from a frozen chain are 0/1 and mean nothing.
   - Synthetic noise is white while λ_95 was calibrated on correlated noise, so γ for real data must be calibrated with the real noise.
+
+**Search fix, option A: merging start and residual-guided unit births** (`show-me/2026-10-04-guided-search`)
+- **Changes in `lvoronoi`:**
+  - `setup_births` / `birth_q`: a unit birth is drawn half uniformly, half in proportion to the misfit reduction on a 400 km disc around the cell. q enters the Hastings ratio of unit birth and unit death.
+  - `seeds_from_partition`: converts a partition to seeds by greedy seed additions and local moves.
+  - `sample(start=...)`.
+- **Prior test with guided births:** passed.
+- **Result:** little gain.
+  - vor6: unit births are still almost never accepted, and γ = 0.003 still stops at 3 units.
+  - **On the shared score χ² + γL, merging matches or beats the sampler everywhere.** vor6 is comparable (merging is better at γ = 0.003: 1745 against 2222). real7 differs by a factor of 2–6: 2672 against 15187 at γ = 0.001, 8198 against 19127 at 0.01.
+  - Converting merging's partition to ≤ 50 Voronoi seeds already multiplies its score by 3–10.
+- **Diagnosis:** the limit is the representation.
+  - A new seed reassigns a large region, so births are drastic and rejected.
+  - Non-convex units with small pieces need more seeds than the sampler can afford.
+  - At this signal-to-noise the fit is very sensitive to boundaries one cell out.
