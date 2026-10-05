@@ -90,3 +90,18 @@ def hasterok_outline(path, continent=None, keys=None, crust_types=('continental'
     sel.set_crs(epsg=4326, allow_override=True).to_file(path, driver='GPKG')
     print(f'wrote {path}: {len(sel)} polygons')
     return sel
+
+
+def cell_provinces(clon, clat):
+    """Hasterok et al. (2022) province (index key of the gprm table) containing each cell centre,
+    by point-in-polygon on the sphere (pygplates); -1 where none. Returns (keys, province table)."""
+    from gprm.datasets import Geology
+    prov = Geology.fetch_GlobalTectonicMap()
+    polys, ids = [], []
+    for k, geom in prov.geometry.items():
+        for part in getattr(geom, 'geoms', [geom]):
+            polys.append(pygplates.PolygonOnSphere([(y, x) for x, y in np.array(part.exterior.coords)]))
+            ids.append(k)
+    pts = [pygplates.PointOnSphere(la, lo if lo <= 180 else lo - 360) for lo, la in zip(clon, clat)]
+    hit = find_polygons(pts, polys, ids)
+    return np.array([-1 if h is None else h for h in hit]), prov
