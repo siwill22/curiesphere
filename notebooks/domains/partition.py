@@ -137,11 +137,13 @@ def propose(P, st, rng):
     L_b = st['L'] + c_old - c_new
     kind = 'merge' if whole else ('new' if new else ('flip' if q == 0 else 'move'))
     log_cut = (c_new - c_old)*np.log1p(-q) if q > 0 else 0.
-    return kind, dict(lab=lab_b, GR=GR_b, L=L_b), log_cut + log_qr - log_qf
+    return kind, dict(lab=lab_b, GR=GR_b, L=L_b, n0=int(in0.sum()), q=q), log_cut + log_qr - log_qf
 
 
-def sample(P, lab0, n_sweeps, temps, rng, thin=5, sweep=50, score_fn=score, record=True):
-    """parallel-tempered sampler from partition lab0; returns the T = 1 samples and acceptance rates"""
+def sample(P, lab0, n_sweeps, temps, rng, thin=5, sweep=50, score_fn=score, record=True, fix_u=False, log=None):
+    """parallel-tempered sampler from partition lab0; returns the T = 1 samples and acceptance rates.
+    fix_u: proposals that change the number of units are rejected (the target restricted to U = U0).
+    log: a list that receives, for every T = 1 proposal, (kind, |V0|, q, dU, dL, dll, extra)."""
     chains = [state(P, lab0, score_fn) for _ in temps]
     kinds = ('flip', 'move', 'new', 'merge')
     acc = {k: [0, 0] for k in kinds + ('swap',)}
@@ -153,9 +155,14 @@ def sample(P, lab0, n_sweeps, temps, rng, thin=5, sweep=50, score_fn=score, reco
                 if pr is None:
                     continue
                 kind, nb, extra = pr
+                dU = nb['GR'].shape[1] - chains[ci]['GR'].shape[1]
+                if fix_u and dU:
+                    continue
                 ll, chi2, v = score_fn(P, nb['GR'], nb['L'])
                 if ci == 0:
                     acc[kind][1] += 1
+                    if log is not None:
+                        log.append((kind, nb['n0'], nb['q'], dU, nb['L'] - chains[ci]['L'], ll - chains[ci]['ll'], extra))
                 if np.isfinite(ll) and np.log(rng.random()) < (ll - chains[ci]['ll'])/T + extra:
                     chains[ci] = dict(nb, ll=ll, chi2=chi2, v=v)
                     if ci == 0:

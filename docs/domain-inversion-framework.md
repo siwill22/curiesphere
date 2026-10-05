@@ -273,3 +273,11 @@ Coarse then refine is biased: λ is calibrated on the coarse path, but the fine 
   - **β ≳ 1.2 per edge:** the chain refines merging and gives sharp boundary probabilities. For real7 at γ = 0.01 (β 2.5): merging's 9 units become 5 value classes, the score is below the truth's (9,970 against 10,522; merging 11,962), ARI 0.96, VIS error 0.018, 94% of true edges above 0.5 and 0.5% of others.
   - **β ≲ 1:** the posterior itself is fragmented (boundary entropy), so a sampler-based boundary confidence needs γ ≳ 2h² per edge.
   - **The unit count never changes after the first few samples.** New units are never accepted, and a one-unit start stays at one unit. The sampler explores boundaries around merging's answer; it gives no distribution of the unit count.
+
+**Why the unit count does not change: diagnostics** (`notebooks/run_partition_diagnostics.py`; `show-me/2026-10-05-unit-count-diagnostics`)
+1. **Profile of log π over U:**
+   - With merging's λ as κ (40–143 nats per unit), neighbouring U are 38–95 nats lower.
+   - The true 4-unit vor6 partition is 77–118 nats below U = 2, despite χ² 808 against 2,000–4,500. So the posterior is nearly a single U, fixed by κ.
+2. **Proposals:** new units are never near acceptance. A new unit pays κ at once, and Swendsen–Wang clusters are single cells, ragged fragments (whose perimeter costs β per edge) or nearly whole units, never a coherent region. Merges are blocked by the target gap or by (1 − q)^(shared boundary).
+3. **Tie test** (κ lowered so that U0 and U0 + 1 score equally): vor6 chains at U = 2 and 3 never cross in 1,200 sweeps (a mixing failure). Merging down happens; real7 at κ = 10 moves between U = 5 and 8 early, then settles at 6.
+4. **Target fault:** with h integrated out, the misfit costs only (N − U)/2 log χ², while βL and κU are linear. Poorly fitting simple models are therefore favoured. One unit (χ² 41,339) scores 224 nats above the real7 truth (χ² 865), which is why one-unit starts stay at one unit.
