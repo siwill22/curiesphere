@@ -75,8 +75,9 @@ check('end to end: median noise s.d. ratio', np.median(ratio), 1, 0.15)
 ex = result('pd_aus_lcs1_16-133_explore')
 te = json.loads(ex.attrs['domains'])
 de = np.array([(te[p]['v'] - t[p]['v'])/t[p]['sd_draws'] for p in t if p in te])
-print(f'  modes: |explore - final| / final noise s.d.: median {np.median(np.abs(de)):.2f}, max {np.abs(de).max():.2f} '
-      f'({len(te)} domains in explore)')
+print(f'  modes (explore: the same cells, 30 noise draws): |explore - final| / final noise s.d.: median '
+      f'{np.median(np.abs(de)):.2f}, max {np.abs(de).max():.2f}; noise s.d. ratio explore/final median '
+      f'{np.median([te[p]["sd_draws"]/t[p]["sd_draws"] for p in t]):.2f}')
 
 # ------------------------------------------------------------------ CR
 print('CR')

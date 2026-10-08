@@ -62,12 +62,26 @@ def _read(path):
     return merge(_read(os.path.join(os.path.dirname(path), parent)), cfg)
 
 
+# methods whose quick setting keeps the 100 km cells (ADR 0006, amendment): for domain methods coarser cells change the
+# domains themselves, so explore saves time with fewer repeat runs instead
+METHOD_MODE_DEFAULTS = {
+    'pd': {'explore': {'compute': {'coarsen': 0}, 'method': {'noise_draws': 30}},
+           'final': {'method': {'noise_draws': 100}}},
+    'merge': {'explore': {'compute': {'coarsen': 0}, 'method': {'null_runs': 10, 'bootstrap_runs': 10}},
+              'final': {'method': {'null_runs': 20, 'bootstrap_runs': 30}}},
+}
+
+
 def resolve(cfg):
-    """the config with all defaults filled in: DEFAULTS, then the mode's defaults, then cfg"""
+    """the config with all defaults filled in: DEFAULTS, then the mode's defaults, then the method's defaults for the
+    mode, then cfg"""
     mode = cfg.get('mode', DEFAULTS['mode'])
     if mode not in MODES:
         raise ValueError(f'mode must be one of {MODES}, not {mode!r}')
-    return merge(merge(DEFAULTS, MODE_DEFAULTS[mode]), cfg)
+    method = cfg.get('method', {}).get('name')
+    out = merge(DEFAULTS, MODE_DEFAULTS[mode])
+    out = merge(out, METHOD_MODE_DEFAULTS.get(method, {}).get(mode, {}))
+    return merge(out, cfg)
 
 
 def load(path):

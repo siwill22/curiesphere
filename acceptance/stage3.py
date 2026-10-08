@@ -8,8 +8,8 @@ the mode agreement of explore against final.
               bootstrap; the sweep's settings at that lambda_95
   end to end  the toolbox's configs, with its own noise draws: lambda_95 (a calibration on 20 random null sets, so it
               varies), K and the agreement of the partitions with the first build's
-  modes       explore (NSIDE 32 cells) against final: K and partition agreement (final labels moved to the coarse
-              cells by majority area). Reported for review, no pass/fail (ADR 0006).
+  modes       explore (the same cells, fewer null and bootstrap runs; ADR 0006 amendment) against final: lambda_95, K
+              and partition agreement. Reported for review, no pass/fail.
 
 Run from the repository root (conda env curiesphere):
     OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 python acceptance/stage3.py
@@ -20,7 +20,7 @@ import sys
 
 import numpy as np
 
-from remit.inversion import cache, config, geometry, results
+from remit.inversion import config, results
 from remit.inversion.methods import merge
 
 OLD = 'notebooks/regions/australia/cache'
@@ -83,17 +83,12 @@ for k in ('', '_sweep'):
     b = json.loads(ds.attrs['bootstrap'])[0]
     print(f'    bootstrap {b["setting"]}: K median {np.median(b["K"]):.0f} (first {np.median(old[k]["fine_boot0_K"]):.0f})')
 
-print('mode agreement (explore against final)')
+print('mode agreement (explore against final: the same cells, 10 null and 10 bootstrap runs instead of 20 and 30)')
 fin, exp = result('merge_aus_lcs1_16-133'), result('merge_aus_lcs1_16-133_explore')
-cells = geometry.make_cells(geometry.target_mask(cfg['']['target']['area'], cache.Cache()), 64)
-cells32, parent = geometry.coarsen(cells)
 for i, r in enumerate(json.loads(fin.attrs['settings'])):
-    lab = fin[f'domain_{i}'].values.astype(int)
-    A = np.zeros((len(cells32), lab.max() + 1))
-    np.add.at(A, (parent, lab), cells.area_km2)
     re = json.loads(exp.attrs['settings'])[i]
     print(f'  lambda x{r["lam_rel"]:.2f}, gamma {r["gamma_rel"]:.3f}: K explore {re["K"]:2d}, final {r["K"]:2d}; ARI '
-          f'{merge.ari(exp[f"domain_{i}"].values, A.argmax(1)):.2f}')
+          f'{merge.ari(exp[f"domain_{i}"].values, fin[f"domain_{i}"].values):.2f}')
 print(f'  lambda_95: explore {exp.attrs["lambda_95"]:.1f}, final {fin.attrs["lambda_95"]:.1f}')
 print('PASS' if ok else 'FAIL')
 sys.exit(0 if ok else 1)

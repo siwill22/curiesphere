@@ -16,5 +16,4 @@ table = "domains/australia_domains.csv"
 name = "pd"
 bounds = [0.0, inf]
 noise = "fixed"
-noise_draws = 100
 seed = 20261008
