@@ -1,11 +1,15 @@
 """
-Data for inversions. Global fits (ADR 0002) use the Gauss coefficients of a field model in a degree band, with the
-field model's resolution filter applied to the columns and the background; local fits (Br at points) come later.
+Data for inversions (ADR 0002). Global fits use the Gauss coefficients of a field model in a degree band; local fits
+use Br at data points near the target area, synthesised from the same band. Either way the field model's resolution
+filter is applied to the columns and the background (what the model predicts), not to the field model (already
+filtered by its makers).
 
   field models  'lcs1' (LCS_mod.cof), 'mf7' (MF7_mod.cof, degree <= 133) or the path of a Swarm .shc file
                 (e.g. MLI_SHA_2E); all referenced to r0 = R0
   filter        'lcs1': F(l) of depth.lcs1_filter fitted to LCS-1's damping; 'none'
   band          the rows of a coefficient fit: g_lm for lmin <= l <= lmax, then h_lm for m > 0
+  points        HEALPix points (NSIDE nside_data) within buffer_km (great circle) of a target-area node
+  synthesis     Br at the points of band coefficients: Br = Y @ band rows, Schmidt harmonics at r0 = R0 (as pyshtools)
   background    the fixed sources: the VIS of a model ('Hemant2005+slabs') with the free cells' grid nodes removed
                 (in a global fit all continental crust, which leaves oceanic VIS and slabs under ocean-age crust),
                 VIS spread over the HM05 oceanic crust as in depth.vis_coeffs, plus ocean remanence (an
@@ -16,6 +20,7 @@ import os
 
 import numpy as np
 import pyshtools
+from scipy.spatial import cKDTree
 
 from remit import depth
 from remit.data.models import DATA_DIR, OCEAN_MODEL_LIST, load_lcs, load_vis_model
@@ -122,3 +127,42 @@ def background(cache, mask, mask_name, lmax=depth.LMAX, vis_model='Hemant2005+sl
             c = c + depth.remanent_coeffs(g.ocean, r_top, params, lmax=lmax)[0].coeffs
         return c
     return np.asarray(cache.array('background', spec, 'coeffs', compute))
+
+
+def points(mask, nside_data, buffer_km, g=None):
+    """lon (0-360), lat of the data points of a local fit"""
+    from remit.utils.region import generate_healpix_points
+    from .graph import unit
+    g = g or geometry.grid()
+    LO, LA = np.meshgrid(g.lon, g.lat)
+    hlon, hlat = generate_healpix_points(nside_data)
+    hlon = np.mod(hlon, 360.)
+    chord, _ = cKDTree(unit(LO[mask], LA[mask])).query(unit(hlon, hlat))
+    keep = 2*np.arcsin(np.clip(chord/2, 0, 1))*depth.R0/1e3 <= buffer_km
+    return hlon[keep], hlat[keep]
+
+
+def synthesis(plon, plat, band):
+    """Y (points x band rows): Br (nT) at the points per unit coefficient"""
+    L, M = packed_lm(band.lmax)
+    P = np.array([pyshtools.legendre.PlmSchmidt(band.lmax, z) for z in np.sin(np.radians(plat))])*(L + 1.)
+    phi = np.radians(plon)[:, None]
+    return np.hstack([P[:, band.sel_g]*np.cos(phi*M[band.sel_g]), P[:, band.sel_h]*np.sin(phi*M[band.sel_h])])
+
+
+def hm_cell_vis(cells, name='Hemant2005+slabs', g=None):
+    """a VIS model averaged over each cell (cos-latitude weights, bilinear values at the nodes): for statistics such
+    as a reference level only, never as a map inside a target area"""
+    import xarray as xr
+    g = g or geometry.grid()
+    hm = load_vis_model(name=name)
+    da = xr.DataArray(np.asarray(hm.vis), coords=dict(lat=np.asarray(hm.lat), lon=np.asarray(hm.lon)),
+                      dims=('lat', 'lon')).sortby('lat')
+    i, j = np.nonzero(cells.cell >= 0)
+    lon, lat, idx = g.lon[j], g.lat[i], cells.cell[i, j]
+    lon = np.where(lon > 180, lon - 360, lon) if float(da.lon.min()) < 0 else np.mod(lon, 360)
+    v = da.interp(lon=xr.DataArray(lon, dims='p'), lat=xr.DataArray(lat, dims='p')).values
+    w = np.cos(np.radians(lat))*np.isfinite(v)
+    num = np.bincount(idx, w*np.nan_to_num(v), len(cells))
+    den = np.bincount(idx, w, len(cells))
+    return np.where(den > 0, num/np.where(den > 0, den, 1), np.nan)

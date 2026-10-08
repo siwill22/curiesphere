@@ -21,7 +21,7 @@ from scipy import sparse
 from .. import columns, core, data, errors, geometry, results, truths
 from ..cache import Cache, save_atomic
 
-EIG_VERSION = 1
+EIG_VERSION = 2                     # 2: the eigenvectors of the decomposed side (data or cells), not always cells
 
 
 def run(cfg, cache=None, log=print):
@@ -87,14 +87,14 @@ def run(cfg, cache=None, log=print):
         spec = dict(columns=store.spec, coarsen=comp.get('coarsen', 0), band=[lo, hi], filter=d.get('filter', 'lcs1'),
                     weights=[model, noise['reference']], products=comp['products_backend'], version=EIG_VERSION)
         d_eig = cache.entry('eig', spec)
-        if os.path.exists(f'{d_eig}/Q.npy'):
-            eig = (np.load(f'{d_eig}/lam.npy'), np.load(f'{d_eig}/Q.npy'))
+        if os.path.exists(f'{d_eig}/E.npy'):
+            eig = (np.load(f'{d_eig}/lam.npy'), np.load(f'{d_eig}/E.npy'))
         else:
             say(f'eigendecomposition ({min(B.shape)}^2)')
     solver = core.LevelRidge(B, u, route, comp['products_backend'], eig)
     if route == 'eigh' and eig is None:
         save_atomic(f'{d_eig}/lam.npy', lambda p: np.save(p, solver.lam))
-        save_atomic(f'{d_eig}/Q.npy', lambda p: np.save(p, solver.Q))
+        save_atomic(f'{d_eig}/E.npy', lambda p: np.save(p, solver.E))
     fit_sigma = noise.get('amplitude', 'evidence') == 'evidence'
     damping = cfg['method'].get('damping', 'evidence')
     if damping == 'evidence':

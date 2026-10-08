@@ -34,10 +34,12 @@ remit/
     config.py           load, inheritance, validation, resolved config, content hash
     cache.py            content-addressed store
     geometry.py         grid nodes, cells, layers, direction models, target areas and outlines
+    graph.py            the cell graph (edges, bridges), Laplacian and difference operator on the sphere
     columns.py          cell columns by node sum (vectorised; CPU or MPS) and by transform (reference)
     data.py             field models, filter, band, background, local (points) and global (coefficients) data, synthetic data
     truths.py           truth library for synthetic data
     errors.py           noise and model-error spectra, amplitude policies, whitening (diagonal or dense)
+    problem.py          the problem of a local fit: cells, G at the points, data, compressed and whitened error model
     parameterise.py     S builders: cells, coarse cells, domains (polygons or labels), covariate designs, uniform level
     core.py             linear-Gaussian core: MAP, posterior, evidence, discrepancy; by eigendecomposition or Cholesky; bounds
     methods/            gcm, cellmap (GMRF/L2/TV), polygon_domains, regression, bounds, merge, voronoi, lvoronoi, partition
@@ -55,7 +57,8 @@ What exists now and where it goes:
 | `domains/errors.py`, `error_model.py`, the whitening in `problem.load` and `linear.whiten`, the diagonal weights in `run_global_continents.py` | `errors.py` |
 | `domains/linear.py`, `domains/gmrf.py` (Tikhonov, discrepancy, evidence), `run_global_continents.py` (eigen solve, evidence) | `core.py`, `methods/cellmap.py`, `methods/gcm.py` |
 | `domains/design.py`, `domains/covariates.py` | `parameterise.py`, `methods/regression.py` |
-| `domains/merge.py`, `voronoi.py`, `lvoronoi.py`, `partition.py`, `graph.py`, `outputs.py` | `methods/`, `results.py` |
+| `domains/graph.py`, `outputs.cell_edges`, `region.py` | `graph.py`, `geometry.py` |
+| `domains/merge.py`, `voronoi.py`, `lvoronoi.py`, `partition.py`, the rest of `outputs.py` | `methods/`, `results.py` |
 | `domains/plotting.py`, the region plot scripts, `plot_global_continents.py` | `figures.py` |
 | `export_viewer_inversion.py`, `viewer_info.py` | `viewer.py` |
 | `build_region.py`, `build_bands.py`, `problem.py`, the `run_*.py` scripts | config files + `__main__.py` |
@@ -104,7 +107,7 @@ Each stage passes when it reproduces the listed current results under the same s
 | Stage | Contents | Reproduces |
 |---|---|---|
 | 0 (done, [report](benchmark-stage0-speed.md)) | Benchmark: vectorised node-sum columns (CPU vs MPS), BBᵀ (OpenBLAS, Accelerate, MPS float32), float32 effect on GCM-GLC. Decides GPU use and whether numpy moves to Accelerate. | — |
-| 1 | `depth`, config, cache, geometry, columns, data (local and global, synthetic), errors, core, results, figures; methods GCM and CM. Tag `pre-toolbox` before starting. | GCM-GLC lcs1_16-133: v0 = 0.751 ± 0.011 SI·km, noise × 1.53, prior s.d. 0.51 (evidence); v0 = 0.743 (discrepancy). Synthetic (one seeded noise draw, evidence): uniform truths 1.0 and 1.5 recovered as v0 = 1.000 and 1.500; uniform 1.0 with an ocean-model error (true HM05_NR, GK07_NR subtracted) gives v0 = 0.963; 0.04 × Crust1.0 truth (mean 1.352) gives v0 = 0.879, RMS error 0.61 SI·km. CM-AUS: `regions/australia/cache/map_sweep.npz`. Columns: the existing Australian cell columns to rounding. |
+| 1 (done) | `depth`, config, cache, geometry, columns, data (local and global, synthetic), errors, core, results, figures; methods GCM and CM. Tag `pre-toolbox` before starting. | GCM-GLC lcs1_16-133: v0 = 0.751 ± 0.011 SI·km, noise × 1.53, prior s.d. 0.51 (evidence); v0 = 0.743 (discrepancy). Synthetic (one seeded noise draw, evidence): uniform truths 1.0 and 1.5 recovered as v0 = 1.000 and 1.500; uniform 1.0 with an ocean-model error (true HM05_NR, GK07_NR subtracted) gives v0 = 0.963; 0.04 × Crust1.0 truth (mean 1.352) gives v0 = 0.879, RMS error 0.61 SI·km. CM-AUS: `regions/australia/cache/map_sweep.npz` and the GMRF fit in `linear_models.npz`. Result: problem identical (mask, cells, graph, points; G to 2e-14, background 4e-10, same 845-dimensional data subspace); at the first build's h, s, ell the GMRF mean and s.d. agree to 1e-6 s.d.; L2 and TV maps at the same beta to 1e-12. The toolbox's evidence maximum is 0.28 log units higher, at a length of 1554 km rather than 2040 (a flat surface); end to end the GMRF mean differs by at most 0.07 first-build s.d., the maps by 0.01 SI·km RMS (the field model is no longer filtered a second time: 0.10 nT RMS of the data). Explore against final: median 0.14, max 0.77 explore s.d. Columns: the existing Australian cell columns to rounding. |
 | 2 | PD, CR, bounds. | PD-AUS: `notebooks/inversion/real_LCS1.csv` (39 domain values). CR: `linear_models.npz`, `null_regression.npz`. Bounds: `bounds.npz`. |
 | 3 | FD-merge. | `merge_points.npz`, `merge_points_sweep.npz` (FD-merge-AUS). |
 | 4 | FD-vor, FD-lvor, FD-part. | The `*_synthetic.npz` and `partition_diagnostics.npz` results in `regions/australia/cache/`. |

@@ -3,6 +3,9 @@ Inversion configs: one TOML file fully specifies an inversion. A file may name a
 (a path relative to the file); the child's values override the parent's, tables merging key by key and
 lists being replaced. Defaults come from DEFAULTS and from the defaults of the config's mode (ADR 0006);
 values given in the files always win. The resolved config is what results carry.
+
+File paths in a config (an outline as the target area) are relative to the file that sets them, and are made
+absolute when it is read.
 """
 import copy
 import hashlib
@@ -33,10 +36,21 @@ def merge(base, over):
     return out
 
 
+PATH_KEYS = [('target', 'area')]
+
+
+def _absolute_paths(cfg, base):
+    for table, key in PATH_KEYS:
+        v = cfg.get(table, {}).get(key)
+        if isinstance(v, str) and os.path.splitext(v)[1] in ('.gpkg', '.geojson', '.json'):
+            cfg[table][key] = os.path.normpath(os.path.join(base, os.path.expanduser(v)))
+
+
 def _read(path):
     path = os.path.abspath(os.path.expanduser(path))
     with open(path, 'rb') as f:
         cfg = tomllib.load(f)
+    _absolute_paths(cfg, os.path.dirname(path))
     parent = cfg.pop('inherit', None)
     if parent is None:
         return cfg

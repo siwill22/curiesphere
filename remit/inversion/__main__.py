@@ -9,7 +9,7 @@ import os
 
 from . import config, results
 
-METHODS = {'gcm': 'remit.inversion.methods.gcm'}
+METHODS = {'gcm': 'remit.inversion.methods.gcm', 'cm': 'remit.inversion.methods.cm'}
 
 
 def main(argv=None):

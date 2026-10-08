@@ -117,7 +117,7 @@ _Avoid_: covariance (for the whole construction), weighting
 VIS per cell on all continental crust from a global fit, damped toward one fitted uniform level, with the damping chosen by the evidence or the discrepancy principle.
 
 **CM** (cell map):
-VIS per cell in a target area with GMRF, L2 or TV regularisation.
+VIS per cell in a target area from a local fit: a smooth random field (GMRF) about one fitted level, giving a mean and an uncertainty per cell, and optionally L2 or TV maps with bounds.
 
 **PD** (polygon domains):
 One VIS per domain fixed in advance from geological polygons (Hasterok et al. 2022).

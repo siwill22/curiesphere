@@ -4,6 +4,10 @@ Where sources live (CONTEXT.md): grid nodes, target areas, cells, layers and dir
   grid nodes   the 0.1 deg ocean-age grid (1801 x 3601, north pole first, 0-360 E): geometry only
   continental crust   every grid node without an ocean age, less the south-pole row and the 360 deg column
                (not in the Driscoll-Healy sums of the transform; the 360 column repeats 0)
+  outline      a target area from a GeoPackage or GeoJSON of lon/lat (WGS84) polygons: the continental-crust
+               nodes inside any polygon and outside its holes. Edges are read as straight lines in lon/lat, as
+               GIS software draws them, densified to 0.1 deg before a great-circle point-in-polygon test
+               (pygplates), so the test is on the sphere; an outline may cross 180 deg or contain a pole.
   cells        HEALPix pixels (ring numbering) holding the grid nodes of a mask; cells at the mask's edge are
                partial. Equal area on the sphere; areas are summed from the nodes' cos(latitude) weights.
   layer        a slab between a top and a base surface: 'basement' (ellipsoid - water - sediment) or a constant
@@ -11,6 +15,8 @@ Where sources live (CONTEXT.md): grid nodes, target areas, cells, layers and dir
   direction    'induced_igrf13': magnetisation along the IGRF-13 field, per SI.km of VIS
 """
 import functools
+import hashlib
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -46,11 +52,87 @@ def continental_crust(g=None):
     return m
 
 
-def target_mask(area, g=None):
-    """mask of a target area: 'continental_crust' (outline files come with the local fits)"""
+DENSIFY_DEG = 0.1
+OUTLINE_VERSION = 1
+
+
+def _densified_polygon(ring):
+    """PolygonOnSphere through a ring's vertices, with points every DENSIFY_DEG along each edge, so that its
+    great-circle edges follow the straight lon/lat lines of the GIS source"""
+    import pygplates
+    xy = np.asarray(ring.coords)[:, :2]
+    pts = []
+    for (x0, y0), (x1, y1) in zip(xy[:-1], xy[1:]):
+        dx = (x1 - x0 + 180.) % 360. - 180.                        # shortest way round in longitude
+        n = max(1, int(np.ceil(max(abs(dx), abs(y1 - y0))/DENSIFY_DEG)))
+        t = np.arange(n)/n
+        pts += list(zip(y0 + t*(y1 - y0), x0 + t*dx))
+    return pygplates.PolygonOnSphere(pts)
+
+
+def read_outline(path):
+    """outline file -> (polygons, holes), lists of pygplates PolygonOnSphere"""
+    import geopandas as gpd
+    gdf = gpd.read_file(path)
+    if not (gdf.crs is None or gdf.crs.to_epsg() == 4326):
+        raise ValueError(f'{path}: outline must be lon/lat WGS84')
+    polygons, holes = [], []
+    for geom in gdf.geometry:
+        for part in getattr(geom, 'geoms', [geom]):
+            polygons.append(_densified_polygon(part.exterior))
+            holes += [_densified_polygon(h) for h in part.interiors]
+    return polygons, holes
+
+
+def _inside(polygons, lon, lat):
+    import pygplates
+    from ptt.utils.points_in_polygons import find_polygons
+    points = [pygplates.PointOnSphere(float(a), float(o)) for o, a in zip(lon, lat)]
+    hit = find_polygons(points, polygons, list(range(len(polygons))), subdivision_depth=6)
+    return np.array([h is not None for h in hit])
+
+
+def outline_nodes(path, g=None):
+    """boolean grid of the nodes inside an outline (only the latitude band it spans is tested, to a pole if a
+    polygon contains it)"""
+    import pygplates
+    g = g or grid()
+    polygons, holes = read_outline(path)
+    lats = np.concatenate([[p.to_lat_lon()[0] for p in poly.get_points()] for poly in polygons])
+    lat0, lat1 = lats.min() - 1., lats.max() + 1.
+    if any(p.is_point_in_polygon(pygplates.PointOnSphere(90., 0.)) for p in polygons):
+        lat1 = 90.
+    if any(p.is_point_in_polygon(pygplates.PointOnSphere(-90., 0.)) for p in polygons):
+        lat0 = -90.
+    ilat = np.flatnonzero((g.lat >= lat0) & (g.lat <= lat1))
+    II, JJ = np.meshgrid(ilat, np.arange(len(g.lon)), indexing='ij')
+    lon, lat = g.lon[JJ.ravel()], g.lat[II.ravel()]
+    hit = _inside(polygons, lon, lat)
+    if holes:
+        hit &= ~_inside(holes, lon, lat)
+    out = np.zeros(g.age.shape, dtype=bool)
+    out[II.ravel(), JJ.ravel()] = hit
+    return out
+
+
+def area_name(area):
+    """the cache name of a target area: 'continental_crust', or 'outline:<hash of the file's bytes>'"""
+    if area == 'continental_crust':
+        return area
+    with open(os.path.expanduser(area), 'rb') as f:
+        return 'outline:' + hashlib.sha256(f.read()).hexdigest()[:16]
+
+
+def target_mask(area, cache=None, g=None):
+    """mask of a target area: 'continental_crust', or the path of an outline file (its continental-crust nodes;
+    cached when a cache is given)"""
     if area == 'continental_crust':
         return continental_crust(g)
-    raise NotImplementedError(f'target area {area!r}')
+    compute = lambda: outline_nodes(os.path.expanduser(area), g) & continental_crust(g)
+    if cache is None:
+        return compute()
+    spec = dict(grid=AGE_GRID, area=area_name(area), densify_deg=DENSIFY_DEG, version=OUTLINE_VERSION)
+    return np.asarray(cache.array('target_mask', spec, 'mask', compute))
 
 
 @dataclass(frozen=True)
