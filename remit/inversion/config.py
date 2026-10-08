@@ -38,6 +38,7 @@ def merge(base, over):
 
 PATH_KEYS = [('target', 'area'), ('parameterisation', 'table')]
 NESTED_PATH_KEYS = [('method', 'hypotheses', 'hand'), ('method', 'hypotheses', 'labels')]
+LIST_PATH_KEYS = [('method', 'start')]          # [path, ...]: the first item is a path
 
 
 def _absolute_paths(cfg, base):
@@ -45,6 +46,10 @@ def _absolute_paths(cfg, base):
         v = cfg.get(table, {}).get(key)
         if isinstance(v, str) and os.path.splitext(v)[1] in ('.gpkg', '.geojson', '.json', '.csv'):
             cfg[table][key] = os.path.normpath(os.path.join(base, os.path.expanduser(v)))
+    for table, key in LIST_PATH_KEYS:
+        v = cfg.get(table, {}).get(key)
+        if isinstance(v, list) and v and isinstance(v[0], str):
+            v[0] = os.path.normpath(os.path.join(base, os.path.expanduser(v[0])))
     for table, sub, key in NESTED_PATH_KEYS:
         t = cfg.get(table, {}).get(sub)
         if isinstance(t, dict) and isinstance(t.get(key), str):
@@ -69,6 +74,9 @@ METHOD_MODE_DEFAULTS = {
            'final': {'method': {'noise_draws': 100}}},
     'merge': {'explore': {'compute': {'coarsen': 0}, 'method': {'null_runs': 10, 'bootstrap_runs': 10}},
               'final': {'method': {'null_runs': 20, 'bootstrap_runs': 30}}},
+    'voronoi': {'explore': {'compute': {'coarsen': 0}, 'method': {'sweeps': 500}}, 'final': {'method': {'sweeps': 2500}}},
+    'lvoronoi': {'explore': {'compute': {'coarsen': 0}, 'method': {'sweeps': 500}}, 'final': {'method': {'sweeps': 2500}}},
+    'partition': {'explore': {'compute': {'coarsen': 0}, 'method': {'sweeps': 400}}, 'final': {'method': {'sweeps': 2000}}},
 }
 
 

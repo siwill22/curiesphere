@@ -11,7 +11,9 @@ from . import config, results
 
 METHODS = {'gcm': 'remit.inversion.methods.gcm', 'cm': 'remit.inversion.methods.cm', 'pd': 'remit.inversion.methods.pd',
            'cr': 'remit.inversion.methods.cr', 'bounds': 'remit.inversion.methods.bounds',
-           'merge': 'remit.inversion.methods.merge'}
+           'merge': 'remit.inversion.methods.merge',
+           'voronoi': 'remit.inversion.methods.voronoi', 'lvoronoi': 'remit.inversion.methods.lvoronoi',
+           'partition': 'remit.inversion.methods.partition'}
 
 
 def main(argv=None):

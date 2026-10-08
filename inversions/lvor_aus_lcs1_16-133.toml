@@ -1,0 +1,24 @@
+# FD-lvor-AUS: labelled Voronoi domains for Australia from LCS-1, degrees 16-133 (the sampler of
+# run_lvoronoi_synthetic.py on the real data): guided unit births, boundary penalty 0.002 x lambda_95 of FD-merge,
+# chain 0 starting from the FD-merge partition at lambda_95/3 with that penalty, chain 1 at random
+# (run merge_aus_lcs1_16-133.toml first)
+inherit = "aus_lcs1_16-133.toml"
+
+[compute]
+workers = 3
+
+[method]
+name = "lvoronoi"
+temps = [1.0, 200.0, 10]
+sweep = 20
+thin = 5
+m_max = 60
+m_start = 6
+chains = 2
+burn = 0.333333
+bounds = [0.0, 4.0]
+guided = true
+lambda_95 = "start"                    # from the FD-merge result
+gamma_rel = 0.002
+start = ["results/merge_aus_lcs1_16-133.nc", 7]
+seed = 20261005

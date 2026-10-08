@@ -1,0 +1,18 @@
+# FD-vor-AUS: Voronoi domains sampled for Australia from LCS-1, degrees 16-133 (the sampler of
+# run_voronoi_synthetic.py, on the real data): K uniform on 1-40, two parallel-tempered chains
+inherit = "aus_lcs1_16-133.toml"
+
+[compute]
+workers = 3
+
+[method]
+name = "voronoi"
+temps = [1.0, 200.0, 10]
+sweep = 20
+thin = 5
+k_max = 40
+k_start = 3
+chains = 2
+burn = 0.333333
+bounds = [0.0, 4.0]
+seed = 20261004

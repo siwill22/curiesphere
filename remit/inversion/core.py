@@ -342,25 +342,36 @@ def bounded_map(A, y, rows, v_ref, lo=0., hi=np.inf, v_start=None, AtA=None):
     return box_qp(H, g, lo, hi, v_start)
 
 
-def regression_evidence(A, y, lo, hi):
-    """log evidence of y = A theta + e alone (no damped part): theta uniform on the box [lo, hi], e ~ N(0, h^2 I) with
-    h integrated out under p(h) ~ 1/h:
-        -sum log(hi - lo) - 1/2 log|A'A| + log Gamma((N-K)/2) - (N-K)/2 log(pi chi2)
-    -inf if the least-squares theta leaves the box (or A'A is singular)"""
+def box_evidence(A, y, lo, hi, h=None, pen=0.):
+    """log evidence, chi2 and least-squares theta of y = A theta + e alone (no damped part): theta uniform on the box
+    [lo, hi] (the Gaussian integral taken over all of R^K, a least-squares theta outside the box given zero mass),
+    e ~ N(0, h^2 I); with h None it is integrated out under p(h) ~ 1/h:
+        -sum log(hi - lo) - 1/2 log|A'A| + log Gamma((N-K)/2) - (N-K)/2 log(pi (chi2 + pen))
+    and with h given: -sum log(hi - lo) - 1/2 log|A'A| - (N-K)/2 log(2 pi h^2) - (chi2 + pen)/(2 h^2).
+    pen: a penalty added to chi2 (a boundary-length term). Constants in K are kept, so models with different K
+    compare directly. Returns (-inf, inf, theta or None) for a singular or out-of-box model."""
     from scipy.special import gammaln
     N, K = A.shape
     M = A.T @ A
     try:
         cf = np.linalg.cholesky(M)
     except np.linalg.LinAlgError:
-        return -np.inf
+        return -np.inf, np.inf, None
     theta = np.linalg.solve(M, A.T @ y)
-    lo, hi = (np.broadcast_to(np.asarray(b, float), (K,)) for b in (lo, hi))
     if (theta < lo).any() or (theta > hi).any():
-        return -np.inf
+        return -np.inf, np.inf, theta
     chi2 = float(np.sum((A @ theta - y)**2))
-    return float(-np.sum(np.log(hi - lo)) - np.sum(np.log(np.diag(cf))) + gammaln((N - K)/2)
-                 - (N - K)/2*np.log(np.pi*chi2))
+    base = -np.sum(np.broadcast_to(np.log(np.subtract(hi, lo)), (K,))) - np.sum(np.log(np.diag(cf)))
+    if h is None:
+        ll = base + gammaln((N - K)/2) - (N - K)/2*np.log(np.pi*(chi2 + pen))
+    else:
+        ll = base - (N - K)/2*np.log(2*np.pi*h**2) - (chi2 + pen)/(2*h**2)
+    return float(ll), chi2, theta
+
+
+def regression_evidence(A, y, lo, hi):
+    """box_evidence with h integrated out: the log evidence alone"""
+    return box_evidence(A, y, np.asarray(lo, float), np.asarray(hi, float))[0]
 
 
 # -------------------------------------------------------------------- extremal bounds

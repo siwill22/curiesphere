@@ -1,0 +1,3 @@
+# FD-lvor-AUS in explore mode (ADR 0006): the 100 km cells kept, shorter chains
+inherit = "lvor_aus_lcs1_16-133.toml"
+mode = "explore"
