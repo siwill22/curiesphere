@@ -1,0 +1,7 @@
+inherit = "gcm_glc_lcs1_16-133.toml"
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "crust_thickness", chi = 0.04, grid = "~/Data/Moho/crust1.0/crust1_CrustalThickness.nc" }
+seed = 20261007
+

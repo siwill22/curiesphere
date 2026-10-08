@@ -177,3 +177,7 @@ notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
 /notebooks/inversion_*/*.log
 /notebooks/inversion_*/cells/
 /notebooks/regions/*/cache/
+
+# inversion toolbox: results are reproducible from their configs (maps are kept for review)
+/inversions/results/*.nc
+/acceptance/*.out

@@ -14,12 +14,14 @@ dependencies:
   - pyshtools
   - pygmt
   - gmt
+  - ghostscript
   - pygplates
   - xarray
   - netcdf4
   - pandas
   - geopandas
   - rasterio
+  - rioxarray
   - astropy-healpix
   - cvxpy
   - clarabel

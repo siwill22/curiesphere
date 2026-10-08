@@ -1,0 +1,28 @@
+# GCM-GLC: global cell map of continental VIS from LCS-1, degrees 16-133 (the first GCM run, 2026-10-07)
+mode = "final"
+
+[target]
+area = "continental_crust"
+nside = 64
+
+[geometry]
+layers = [{ top = "basement", base = 30.0 }]
+direction = "induced_igrf13"
+lmax = 185
+
+[fit]
+type = "global"
+background = { vis_model = "Hemant2005+slabs", remanence = "GK07", near_ridge = true }
+
+[data]
+model = "lcs1"
+band = [16, 133]
+filter = "lcs1"
+
+[errors.noise]
+reference = "~/Library/CloudStorage/OneDrive-UniversityofTasmania/Data/StefanMausData/xDLFI/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901.shc"
+amplitude = "evidence"
+
+[method]
+name = "gcm"
+damping = "evidence"
