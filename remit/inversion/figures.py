@@ -66,9 +66,10 @@ def standard(ds, stem):
         panels.append((cell_map(cell, ds.vis_sd.values), f'{tag}Uncertainty of VIS (1 s.d.)', *SD_CPT, 'SI km'))
     maps = json.loads(ds.attrs.get('maps', '{}'))
     for k in [k for k in ds.data_vars if k.startswith('vis_') and k != 'vis_sd']:
-        m = maps.get(k[4:], {})
-        panels.append((cell_map(cell, ds[k].values), f'{tag}VIS, {m.get("penalty", k[4:]).upper()} map, length '
-                       f'{m.get("length_km", 0):.0f} km, bounded', *VIS_CPT, 'SI km'))
+        m = maps.get(k[4:])
+        title = (f'VIS, {m["penalty"].upper()} map, length {m["length_km"]:.0f} km, bounded' if m else
+                 'VIS, ' + k[4:].replace('_', ' ').replace('min', 'model of the smallest').replace('max', 'model of the largest'))
+        panels.append((cell_map(cell, ds[k].values), tag + title, *VIS_CPT, 'SI km'))
     if 'truth' in ds:
         panels += [(cell_map(cell, ds.truth.values), f'{tag}Synthetic truth', *VIS_CPT, 'SI km'),
                    (cell_map(cell, ds.vis.values - ds.truth.values), f'{tag}VIS minus truth', 'vik', '-0.6/0.6/0.02', 'SI km')]

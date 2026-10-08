@@ -4,7 +4,7 @@ Inversion configs: one TOML file fully specifies an inversion. A file may name a
 lists being replaced. Defaults come from DEFAULTS and from the defaults of the config's mode (ADR 0006);
 values given in the files always win. The resolved config is what results carry.
 
-File paths in a config (an outline as the target area) are relative to the file that sets them, and are made
+File paths in a config (an outline as the target area, a domain table, hypothesis files) are relative to the file that sets them, and are made
 absolute when it is read.
 """
 import copy
@@ -36,14 +36,19 @@ def merge(base, over):
     return out
 
 
-PATH_KEYS = [('target', 'area')]
+PATH_KEYS = [('target', 'area'), ('parameterisation', 'table')]
+NESTED_PATH_KEYS = [('method', 'hypotheses', 'hand'), ('method', 'hypotheses', 'labels')]
 
 
 def _absolute_paths(cfg, base):
     for table, key in PATH_KEYS:
         v = cfg.get(table, {}).get(key)
-        if isinstance(v, str) and os.path.splitext(v)[1] in ('.gpkg', '.geojson', '.json'):
+        if isinstance(v, str) and os.path.splitext(v)[1] in ('.gpkg', '.geojson', '.json', '.csv'):
             cfg[table][key] = os.path.normpath(os.path.join(base, os.path.expanduser(v)))
+    for table, sub, key in NESTED_PATH_KEYS:
+        t = cfg.get(table, {}).get(sub)
+        if isinstance(t, dict) and isinstance(t.get(key), str):
+            t[key] = os.path.normpath(os.path.join(base, os.path.expanduser(t[key])))
 
 
 def _read(path):

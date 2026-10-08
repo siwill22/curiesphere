@@ -2,12 +2,10 @@
 CM (cell map, CONTEXT.md): VIS per cell in a target area from a local fit (ADR 0002), as a smooth random field
 about one fitted level, and optionally as penalised maps with bounds.
 
-GMRF   v = v0 + u, u a Gaussian Markov random field on the cell graph: precision diag(a/ell^2) + L (a the cell areas,
-       mean 1; L the graph Laplacian with weights 1/d^2, d the great-circle distance between centres, km), scaled to
-       unit marginal variance (correlation R) and standard deviation s. Whitened data yw = Gw v + e, e ~ N(0, h^2 I).
-       With R = L_R L_R' this is the core's level model with B = Gw L_R, sigma = h, tau = s; v0 is integrated out
-       (flat prior). h and s maximise the evidence at each ell; ell is profiled (a grid, then a bounded search) or
-       given. Output: the posterior mean and s.d. of v (no bounds).
+GMRF   v = v0 + u, u a Gaussian Markov random field on the cell graph (gmrf.py) with standard deviation s and
+       correlation length ell; whitened data yw = Gw v + e, e ~ N(0, h^2 I); v0 integrated out (flat prior). h and s
+       maximise the evidence at each ell; ell is profiled or given. Output: the posterior mean and s.d. of v (no
+       bounds).
 maps   min |yw - Gw v|^2 + beta (|diag(sqrt(a))/ell (v - v_ref)|^2 + |D (v - v_ref)|^2) with lo <= v <= hi:
        'l2', or 'tv' (iteratively reweighted from the L2 map: weights rms/sqrt((Dv)^2 + eps^2), eps = 0.01 rms).
        beta at the misfit N h^2 of the GMRF fit (bisection in log beta), times beta_scale; or a number.
@@ -23,50 +21,10 @@ The GMRF always uses the eigendecomposition: after compression the data side is 
 import time
 
 import numpy as np
-from scipy.linalg import cho_factor, cho_solve, cholesky
-from scipy.optimize import minimize_scalar
 from scipy.sparse import diags, vstack
 
-from .. import core, data, graph, problem, results
+from .. import core, data, gmrf, graph, problem, results
 from ..cache import Cache
-
-ELL_GRID = np.geomspace(40., 3000., 12)
-
-
-class GMRF:
-    """the GMRF level model of one problem (Gw, yw) on cells with areas and edges"""
-
-    def __init__(self, Gw, yw, area, Lw):
-        self.Gw, self.yw, self.a, self.Lw = Gw, yw, area/np.mean(area), Lw
-        self.u = Gw @ np.ones(Gw.shape[1])
-
-    def factor(self, ell):
-        """L_R, the Cholesky factor of the correlation matrix at length ell (km)"""
-        Qi = cho_solve(cho_factor(np.diag(self.a/ell**2) + self.Lw), np.eye(len(self.a)))
-        d = 1/np.sqrt(np.diag(Qi))
-        return cholesky(Qi*d[:, None]*d[None, :], lower=True)
-
-    def at(self, ell):
-        """(log evidence, alpha^2, solver, L_R) at ell, h and s at their best"""
-        L = self.factor(ell)
-        s = core.LevelRidge(self.Gw @ L, self.u, 'eigh', level='marginal')
-        alpha2 = s.by_evidence(self.yw, fit_sigma=True)
-        return s.log_evidence(self.yw, alpha2, True), alpha2, s, L
-
-    def fit(self, length='evidence'):
-        if length != 'evidence':
-            return float(length), self.at(float(length))
-        prof = [self.at(e)[0] for e in ELL_GRID]
-        k = int(np.argmax(prof))
-        lo, hi = np.log(ELL_GRID[max(k - 1, 0)]), np.log(ELL_GRID[min(k + 1, len(ELL_GRID) - 1)])
-        best = {}
-
-        def f(le):
-            best[le] = self.at(np.exp(le))
-            return -best[le][0]
-        minimize_scalar(f, bounds=(lo, hi), method='bounded', options=dict(xatol=0.02))
-        le = max(best, key=lambda q: best[q][0])
-        return float(np.exp(le)), best[le]
 
 
 def penalty_rows(a, D, ell, beta, w=None):
@@ -121,13 +79,13 @@ def run(cfg, cache=None, log=print):
     Lw = graph.laplacian(edges, 1/graph.edge_lengths_km(edges, cells.clon, cells.clat)**2, len(cells))
     D = graph.difference_operator(edges, cells.clon, cells.clat)
 
-    gm = GMRF(Gw, yw, area, Lw)
-    ell, (ll, alpha2, solver, L) = gm.fit(me.get('length', 'evidence'))
+    one = np.ones((len(cells), 1))
+    fit = gmrf.GMRF(Gw, yw, area, Lw).fit(one, length=me.get('length', 'evidence'))
+    solver, alpha2, h, ell, ll = fit['ridge'], fit['alpha2'], fit['h'], float(fit['ell'][0]), fit['ll']
     sol = solver.solve(yw, alpha2)
-    h = solver.sigma(sol, True)
-    s = h/np.sqrt(alpha2)
-    v = sol['v0'] + L @ sol['x']
-    sd = solver.posterior_sd_map(alpha2, h, L)
+    s = float(fit['s'][0])
+    v = sol['v0'] + fit['L'] @ sol['x']
+    sd = solver.posterior_sd_map(alpha2, h, fit['L'])
     attrs = dict(v0=sol['v0'], v0_sd=h/np.sqrt(sol['prec_v0']), noise_scale_h=h, prior_sd_s=s, length_km=ell,
                  log_evidence=ll, chi2_per_datum=sol['chi2']/N, negative_area=float(area[v < 0].sum()/area.sum()),
                  n_edges=len(edges), n_bridges=len(bridges), **pb.info)

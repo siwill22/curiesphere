@@ -49,12 +49,12 @@ def test_marginal_level_and_posterior_map(shape):
     alpha2, sigma = 2.5, 1.3
     for route in ('eigh', 'cholesky'):
         s = core.LevelRidge(B, u, route, level='marginal')
-        # y ~ N(v0 u, sigma^2 (I + BB'/alpha^2)), v0 flat: log p = -1/2 (log|C| + log u'C^-1u + chi2_C) + const
+        # y ~ N(v0 u, sigma^2 (I + BB'/alpha^2)), v0 flat: log p = -1/2 ((N - 1) log 2 pi + log|C| + log u'C^-1u + chi2_C)
         C = sigma**2*(np.eye(N) + B @ B.T/alpha2)
         Ci = np.linalg.inv(C)
         v0 = (u @ Ci @ y)/(u @ Ci @ u)
         r = y - v0*u
-        direct = -0.5*(np.linalg.slogdet(C)[1] + np.log(u @ Ci @ u) + r @ Ci @ r)
+        direct = -0.5*((N - 1)*np.log(2*np.pi) + np.linalg.slogdet(C)[1] + np.log(u @ Ci @ u) + r @ Ci @ r)
         mine = s.log_evidence(y/sigma, alpha2, fit_sigma=False) - (N - 1)*np.log(sigma)
         assert np.isclose(mine, direct, atol=1e-8)
         assert np.isclose(s.solve(y, alpha2)['v0'], v0, atol=1e-10)
@@ -72,3 +72,27 @@ def test_box_qp_matches_active_set():
     v = core.box_qp(H, g, 0., np.inf)
     grad = H @ v - g
     assert (v >= 0).all() and np.all(np.abs(grad[v > 1e-9]) < 1e-6) and np.all(grad[v <= 1e-9] > -1e-6)
+
+
+def test_design_with_box_prior():
+    """several undamped columns: estimates against the direct solve; evidence against the Gaussian integral"""
+    rng = np.random.default_rng(7)
+    N, K, p = 50, 70, 3
+    B, U = rng.standard_normal((N, K)), rng.standard_normal((N, p))
+    y = U @ np.array([1., -0.5, 0.2]) + B @ (0.4*rng.standard_normal(K)) + rng.standard_normal(N)
+    alpha2 = 3.
+    A = np.hstack([U, B])
+    z = np.linalg.solve(A.T @ A + np.diag(np.r_[np.zeros(p), np.full(K, alpha2)]), A.T @ y)
+    C = np.eye(N) + B @ B.T/alpha2
+    Ci = np.linalg.inv(C)
+    th = np.linalg.solve(U.T @ Ci @ U, U.T @ Ci @ y)
+    r = y - U @ th
+    direct = -0.5*((N - p)*np.log(2*np.pi) + np.linalg.slogdet(C)[1] + np.linalg.slogdet(U.T @ Ci @ U)[1] + r @ Ci @ r)
+    for route in ('eigh', 'cholesky'):
+        s = core.LinearRidge(B, U, route, level='marginal')
+        sol = s.solve(y, alpha2)
+        assert np.allclose(sol['theta'], z[:p], atol=1e-10) and np.allclose(sol['x'], z[p:], atol=1e-10)
+        assert np.isclose(s.log_evidence(y, alpha2, fit_sigma=False), direct, atol=1e-8)
+        box = ([-2.]*p, [2.]*p)
+        assert np.isclose(s.log_evidence(y, alpha2, False, box), direct - p*np.log(4.), atol=1e-8)
+        assert s.log_evidence(y, alpha2, False, ([-2.]*p, [0.]*p)) == -np.inf

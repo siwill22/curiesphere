@@ -1,11 +1,12 @@
 """
-The linear-Gaussian core, for the damped fits with a free uniform level (GCM and its kin):
+The linear-Gaussian core, for damped fits with undamped design terms (GCM, CM, CR):
 
-    y = v0 u + B x + e,    x ~ N(0, tau^2 I),    e ~ N(0, sigma^2 I),    alpha^2 = sigma^2 / tau^2
+    y = U theta + B x + e,    x ~ N(0, tau^2 I),    e ~ N(0, sigma^2 I),    alpha^2 = sigma^2 / tau^2
 
-y and B are whitened by the fixed part of the error model (unit noise when sigma = 1), x = sqrt(a)(m - v0) are the
-area-scaled departures of the cell values m from the level v0, and v0 (the column u) is undamped, estimated in
-closed form. The MAP x minimises |y - v0 u - B x|^2 + alpha^2 |x|^2.
+y and B are whitened by the fixed part of the error model (unit noise when sigma = 1); x are the damped departures
+(GCM: x = sqrt(a)(m - v0), area-scaled; CM and CR: the GMRF in its Cholesky coordinates); theta are undamped
+(flat prior), estimated in closed form: one level v0 (U = u, GCM and CM) or a design (class means and covariate
+slopes, CR). The MAP minimises |y - U theta - B x|^2 + alpha^2 |x|^2.
 
 Two routes give the same answers (ADR 0006):
   'eigh'      one eigendecomposition of the smaller of B'B and BB' (float64, CPU), after which any alpha costs
@@ -16,9 +17,10 @@ B'B or BB' may be formed on the GPU in float32 (ADR 0005); the factorisations ar
 Damping choices: 'evidence' (largest marginal likelihood, sigma fitted or fixed), 'discrepancy' (chi^2 = N, sigma
 fixed), or a number (alpha^2).
 
-The level in the evidence: 'profile' takes v0 at its estimate (GCM); 'marginal' integrates it out under a flat prior,
-which adds -1/2 log(precision of v0) and leaves N - 1 degrees of freedom for sigma (the cell maps' GMRF, as the
-first Australian build). The posterior s.d. of any linear map v = v0 + M x includes the level's uncertainty.
+theta in the evidence: 'profile' takes it at its estimate (GCM); 'marginal' integrates it out under a flat prior (or
+uniform on a box), which adds -1/2 log det(precision of theta) and leaves N - p degrees of freedom for sigma (CM,
+CR, as the first Australian build). The posterior s.d. of any linear map v = D theta + M x includes theta's
+uncertainty.
 
 Bounded MAP (positivity or any box): min |y - A v|^2 + |rows (v - v_ref)|^2 with lo <= v <= hi, by projected Newton;
 with sparse rows and few data the Hessian is kept as sparse plus low rank.
@@ -56,13 +58,16 @@ def gram(B, side, backend='numpy'):
     return B.T @ B if side == 'cells' else B @ B.T
 
 
-class LevelRidge:
-    """the model above for one B and u; route 'eigh' or 'cholesky'"""
+class LinearRidge:
+    """y = U theta + B x + e for one B and design U (N x p, or a single column u); route 'eigh' or 'cholesky'.
+    theta is undamped (flat prior); with p = 1 the solution also carries v0 and prec_v0 (the level of GCM and CM)."""
 
     def __init__(self, B, u, route='eigh', products='numpy', eig=None, level='profile'):
         if level not in ('profile', 'marginal'):
             raise ValueError(f'level {level!r}')
-        self.B, self.u, self.level = B, u, level
+        self.B, self.level = B, level
+        self.U = np.asarray(u, float).reshape(len(B), -1)
+        self.p = self.U.shape[1]
         self.N, self.K = B.shape
         self.side = 'data' if self.N <= self.K else 'cells'
         self.route = route
@@ -71,11 +76,10 @@ class LevelRidge:
             self.lam, self.E = eig if eig is not None else self._decompose(products)
             self.lam_max = self.lam.max()
             if self.side == 'data':
-                self.c = self.E.T @ u                       # u along the data-space eigenvectors
-                self.u_res = u - self.E @ self.c            # and outside them (computed directly: no cancellation)
-                self.q = np.sqrt(self.lam)*self.c           # = Q'B'u
+                self.c = self.E.T @ self.U                  # U along the data-space eigenvectors (r x p)
+                self.U_res = self.U - self.E @ self.c       # and outside them (computed directly: no cancellation)
             else:
-                self.q = self.E.T @ (B.T @ u)
+                self.q = self.E.T @ (B.T @ self.U)          # Q'B'U (r x p)
             self._Q = None
         elif route == 'cholesky':
             self.C = gram(B, self.side, products)
@@ -83,6 +87,10 @@ class LevelRidge:
             self._f = {}
         else:
             raise ValueError(f'route {route!r}')
+
+    @property
+    def u(self):
+        return self.U[:, 0] if self.p == 1 else self.U
 
     @property
     def Q(self):
@@ -100,40 +108,55 @@ class LevelRidge:
         return lam[keep], V[:, keep]
 
     # ---------------------------------------------------------------- solutions
-    def solve(self, y, alpha2):
-        """MAP for whitened data y: x, v0, chi2 (|r|^2), J (|r|^2 + alpha^2 |x|^2), precision of v0 (sigma = 1)"""
-        # the level's precision u'(I + BB'/alpha^2)^-1 u and its right-hand side. On the data side every weight is at
-        # most 1 and the part of u outside the eigenvectors is computed directly, so nothing cancels or is amplified
-        # (u is often nearly in the range of B, where u'u - sum q^2/(lam + alpha^2) loses all its digits).
+    def _design(self, alpha2):
+        """P = U'(I + BB'/alpha^2)^-1 U (p x p, the precision of theta for sigma = 1) and the map y -> U'(...)^-1 y.
+        On the data side every weight is at most 1 and the part of U outside the eigenvectors is computed directly,
+        so nothing cancels or is amplified (U is often nearly in the range of B, where U'U - U'B(B'B + alpha^2)^-1 B'U
+        loses all its digits)."""
         if self.route == 'eigh':
             den = self.lam + alpha2
             if self.side == 'data':
-                py = self.E.T @ y
                 g = alpha2/den
-                prec = self.u_res @ self.u_res + np.sum(self.c**2*g)
-                v0 = (self.u_res @ y + np.sum(self.c*py*g))/prec
-                x = self.B.T @ (self.E @ ((py - v0*self.c)/den))
+                P = self.U_res.T @ self.U_res + self.c.T @ (g[:, None]*self.c)
+                rhs = lambda y: self.U_res.T @ y + self.c.T @ (g*(self.E.T @ y))
             else:
-                p = self.Q.T @ (self.B.T @ y)
-                prec = self.u @ self.u - np.sum(self.q**2/den)
-                v0 = (self.u @ y - np.sum(p*self.q/den))/prec
-                x = self.Q @ ((p - v0*self.q)/den)
+                P = self.U.T @ self.U - self.q.T @ (self.q/den[:, None])
+                rhs = lambda y: self.U.T @ y - self.q.T @ ((self.Q.T @ (self.B.T @ y))/den)
         else:
             f = self._factor(alpha2)
             if self.side == 'data':
-                Ciy, Ciu = cho_solve(f, y), cho_solve(f, self.u)
-                v0 = (self.u @ Ciy)/(self.u @ Ciu)
-                prec = alpha2*(self.u @ Ciu)
-                x = self.B.T @ (Ciy - v0*Ciu)
+                CiU = cho_solve(f, self.U)
+                P = alpha2*(self.U.T @ CiU)
+                rhs = lambda y: alpha2*(CiU.T @ y)
             else:
-                Hy, Hu = cho_solve(f, self.B.T @ y), cho_solve(f, self.B.T @ self.u)
-                up = self.u - self.B @ Hu
-                prec = up @ up + alpha2*(Hu @ Hu)
-                v0 = (up @ y)/prec
-                x = Hy - v0*Hu
-        r = y - v0*self.u - self.B @ x
+                HU = cho_solve(f, self.B.T @ self.U)
+                Up = self.U - self.B @ HU
+                P = Up.T @ Up + alpha2*(HU.T @ HU)
+                rhs = lambda y: Up.T @ y
+        return 0.5*(P + P.T), rhs
+
+    def _x(self, z, alpha2):
+        """(B'B + alpha^2 I)^-1 B'z"""
+        if self.route == 'eigh':
+            den = self.lam + alpha2
+            if self.side == 'data':
+                return self.B.T @ (self.E @ ((self.E.T @ z)/den))
+            return self.Q @ ((self.Q.T @ (self.B.T @ z))/den)
+        f = self._factor(alpha2)
+        return self.B.T @ cho_solve(f, z) if self.side == 'data' else cho_solve(f, self.B.T @ z)
+
+    def solve(self, y, alpha2):
+        """MAP for whitened data y: x, theta, chi2 (|r|^2), J (|r|^2 + alpha^2 |x|^2), P (precision of theta, sigma = 1);
+        for p = 1 also v0 and prec_v0"""
+        P, rhs = self._design(alpha2)
+        theta = np.linalg.solve(P, rhs(y))
+        x = self._x(y - self.U @ theta, alpha2)
+        r = y - self.U @ theta - self.B @ x
         chi2 = float(r @ r)
-        return dict(x=x, v0=float(v0), chi2=chi2, J=chi2 + alpha2*float(x @ x), prec_v0=float(prec), r=r)
+        out = dict(x=x, theta=theta, chi2=chi2, J=chi2 + alpha2*float(x @ x), P=P, r=r)
+        if self.p == 1:
+            out.update(v0=float(theta[0]), prec_v0=float(P[0, 0]))
+        return out
 
     def _factor(self, alpha2):
         if alpha2 not in self._f:
@@ -148,23 +171,33 @@ class LevelRidge:
         return float(2*np.sum(np.log(np.diag(f[0]))) - len(self.C)*np.log(alpha2))
 
     def _dof(self):
-        return self.N - (self.level == 'marginal')
+        return self.N - (self.p if self.level == 'marginal' else 0)
 
-    def log_evidence(self, y, alpha2, fit_sigma=True):
-        """log marginal likelihood up to a constant: v0 at its estimate ('profile') or integrated out ('marginal');
-        sigma at its maximum (J/dof) or 1"""
+    def log_evidence(self, y, alpha2, fit_sigma=True, box=None):
+        """log marginal likelihood. 'profile': theta at its estimate, up to a constant (GCM). 'marginal': theta
+        integrated out under a flat prior, complete with its constants, so models with different designs compare
+        directly; box = (lo, hi) per column makes the prior uniform on that box (-sum log(hi - lo); -inf if the
+        estimate leaves it). sigma at its maximum (J/dof) or 1."""
         sol = self.solve(y, alpha2)
         J, n = sol['J'], self._dof()
-        extra = np.log(sol['prec_v0']) if self.level == 'marginal' else 0.
-        if fit_sigma:
-            return -0.5*(n*np.log(J/n) + self.logdet(alpha2) + extra)
-        return -0.5*(J + self.logdet(alpha2) + extra)
+        if self.level == 'profile':
+            if fit_sigma:
+                return -0.5*(n*np.log(J/n) + self.logdet(alpha2))
+            return -0.5*(J + self.logdet(alpha2))
+        ll = -0.5*(self.logdet(alpha2) + np.linalg.slogdet(sol['P'])[1])
+        ll += -0.5*n*(np.log(2*np.pi*J/n) + 1) if fit_sigma else -0.5*(n*np.log(2*np.pi) + J)
+        if box is not None:
+            lo, hi = (np.broadcast_to(np.asarray(b, float), (self.p,)) for b in box)
+            if (sol['theta'] < lo).any() or (sol['theta'] > hi).any():
+                return -np.inf
+            ll -= np.sum(np.log(hi - lo))
+        return float(ll)
 
     def sigma(self, sol, fit_sigma):
         return float(np.sqrt(sol['J']/self._dof())) if fit_sigma else 1.
 
     def posterior_sd_x(self, alpha2, sigma=1., chunk=2000):
-        """posterior s.d. of each x_k given v0"""
+        """posterior s.d. of each x_k given theta"""
         if self.route == 'eigh':
             s = self.lam/(alpha2*(self.lam + alpha2))
             var = np.concatenate([1/alpha2 - (self.Q[k:k + chunk]**2) @ s for k in range(0, self.K, chunk)])
@@ -174,20 +207,27 @@ class LevelRidge:
             raise NotImplementedError('posterior s.d. on the data-space Cholesky route: use route "eigh"')
         return sigma*np.sqrt(np.maximum(var, 0.))
 
-    def posterior_sd_map(self, alpha2, sigma, M):
-        """posterior s.d. of v = v0 + M x (M: n x K), v0 integrated out"""
-        if self.route == 'eigh':
+    def posterior_sd_map(self, alpha2, sigma, M, D=None):
+        """posterior s.d. of v = D theta + M x (M: n x K; D: n x p, default ones), theta integrated out"""
+        D = np.ones((len(M), self.p)) if D is None else np.asarray(D, float).reshape(len(M), -1)
+        if self.route == 'eigh' and self.side == 'data':
+            den = self.lam + alpha2
+            MBE = (M @ self.B.T) @ self.E                    # (B'B + alpha^2)^-1 = (I - B'E diag(1/den) E'B)/alpha^2
+            var = (np.sum(M**2, 1) - np.sum(MBE**2/den, 1))/alpha2
+            CU = self.B.T @ (self.E @ (self.c/den[:, None]))  # (B'B + alpha^2)^-1 B'U
+        elif self.route == 'eigh':
             den = self.lam + alpha2
             MQ = M @ self.Q
-            c = self.Q @ (self.q/den)
-            var = np.sum(MQ**2/den, 1) + (np.sum(M**2, 1) - np.sum(MQ**2, 1))/alpha2
+            var = np.sum(MQ**2/den, 1)
+            CU = self.Q @ (self.q/den[:, None])
         else:
             Ai = (cho_solve(self._factor(alpha2), np.eye(self.K)) if self.side == 'cells' else
                   (np.eye(self.K) - self.B.T @ cho_solve(self._factor(alpha2), self.B))/alpha2)
-            c = Ai @ (self.B.T @ self.u)
             var = np.sum((M @ Ai)*M, 1)
-        prec = self.solve(np.zeros(self.N), alpha2)['prec_v0']
-        return sigma*np.sqrt(np.maximum(var + (1 - M @ c)**2/prec, 0.))
+            CU = Ai @ (self.B.T @ self.U)
+        P = self._design(alpha2)[0]
+        S = D - M @ CU                                         # sensitivity of v to theta
+        return sigma*np.sqrt(np.maximum(var + np.sum(S*np.linalg.solve(P, S.T).T, 1), 0.))
 
     # ---------------------------------------------------------------- choosing alpha
     def bounds(self):
@@ -202,7 +242,8 @@ class LevelRidge:
         return 10**(0.5*(lo + hi))
 
     def by_evidence(self, y, fit_sigma=True, n_grid=29):
-        """alpha^2 of the largest evidence: a grid in log alpha^2, then a bounded search around its best point"""
+        """alpha^2 of the largest evidence: a grid in log alpha^2, then a bounded search around its best point
+        (the box of the prior on theta does not depend on alpha, so it is left out here)"""
         lo, hi = self.bounds()
         grid = np.linspace(lo, hi, n_grid if self.route == 'eigh' else 9)
         k = int(np.argmax([self.log_evidence(y, 10**g, fit_sigma) for g in grid]))
@@ -210,6 +251,9 @@ class LevelRidge:
         res = minimize_scalar(lambda g: -self.log_evidence(y, 10**g, fit_sigma), bounds=(a, b), method='bounded',
                               options=dict(xatol=1e-3 if self.route == 'eigh' else 2e-2))
         return 10**res.x
+
+
+LevelRidge = LinearRidge                     # the one-column case (GCM, CM)
 
 
 # -------------------------------------------------------------------- bounded MAP
@@ -296,3 +340,58 @@ def bounded_map(A, y, rows, v_ref, lo=0., hi=np.inf, v_start=None, AtA=None):
     if np.all(np.isneginf(lo)) and np.all(np.isposinf(hi)):
         return H.solver()(g) if isinstance(H, SparsePlusLowRank) else cho_solve(cho_factor(H), g)
     return box_qp(H, g, lo, hi, v_start)
+
+
+def regression_evidence(A, y, lo, hi):
+    """log evidence of y = A theta + e alone (no damped part): theta uniform on the box [lo, hi], e ~ N(0, h^2 I) with
+    h integrated out under p(h) ~ 1/h:
+        -sum log(hi - lo) - 1/2 log|A'A| + log Gamma((N-K)/2) - (N-K)/2 log(pi chi2)
+    -inf if the least-squares theta leaves the box (or A'A is singular)"""
+    from scipy.special import gammaln
+    N, K = A.shape
+    M = A.T @ A
+    try:
+        cf = np.linalg.cholesky(M)
+    except np.linalg.LinAlgError:
+        return -np.inf
+    theta = np.linalg.solve(M, A.T @ y)
+    lo, hi = (np.broadcast_to(np.asarray(b, float), (K,)) for b in (lo, hi))
+    if (theta < lo).any() or (theta > hi).any():
+        return -np.inf
+    chi2 = float(np.sum((A @ theta - y)**2))
+    return float(-np.sum(np.log(hi - lo)) - np.sum(np.log(np.diag(cf))) + gammaln((N - K)/2)
+                 - (N - K)/2*np.log(np.pi*chi2))
+
+
+# -------------------------------------------------------------------- extremal bounds
+def extremes(A, y, c, chi2_target, lo=0., hi=4., D=None, rough_max=None, solver='CLARABEL'):
+    """the smallest and largest c'v over all models with |A v - y|^2 <= chi2_target and lo <= v <= hi (and |D v| <=
+    rough_max if given): a second-order cone programme, solved exactly by an interior-point method (cvxpy, Clarabel;
+    SCS if that fails). With more data than cells the misfit is first reduced exactly by a QR factorisation,
+    |A v - y|^2 = |R v - Q'y|^2 + |y - QQ'y|^2. Returns {'min': ..., 'max': ...}, each value, v, chi2, status, rough."""
+    import cvxpy as cp
+    v = cp.Variable(A.shape[1])
+    M, b, target = A, y, chi2_target
+    if A.shape[0] > A.shape[1]:
+        Qm, M = np.linalg.qr(A)
+        b = Qm.T @ y
+        target = chi2_target - float(np.sum((y - Qm @ b)**2))
+        if target <= 0:
+            raise ValueError(f'bounds: no model reaches chi2 {chi2_target:.0f} (the part of the data outside the span '
+                             f'of A alone exceeds it)')
+    cons = [cp.norm(M @ v - b) <= np.sqrt(target), v >= lo, v <= hi]
+    if rough_max is not None:
+        cons.append(cp.norm(D @ v) <= rough_max)
+    out = {}
+    for name, sense in (('min', cp.Minimize), ('max', cp.Maximize)):
+        prob = cp.Problem(sense(c @ v), cons)
+        try:
+            prob.solve(solver=solver)
+        except cp.error.SolverError:
+            prob.solve(solver='SCS', eps=1e-7, max_iters=200000)
+        if prob.status not in ('optimal', 'optimal_inaccurate'):
+            raise ValueError(f'bounds: {prob.status} (no model within the bounds reaches chi2 {chi2_target:.0f}?)')
+        x = np.clip(v.value, lo, hi)
+        out[name] = dict(value=float(c @ x), v=x, chi2=float(np.sum((A @ x - y)**2)), status=prob.status,
+                         rough=float(np.linalg.norm(D @ x)) if D is not None else None)
+    return out

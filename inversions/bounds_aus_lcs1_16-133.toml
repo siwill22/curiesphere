@@ -1,0 +1,10 @@
+# Bounds-AUS: extremal bounds on the Australian craton means and the craton - rest contrast from LCS-1, degrees
+# 16-133, as the first Australian build (run_bounds.py, 'real' case)
+inherit = "aus_lcs1_16-133.toml"
+
+[method]
+name = "bounds"
+quantities = ["NAC mean", "WAC mean", "SAC mean", "craton - rest"]
+bounds = [0.0, 4.0]
+quantile = 0.95
+roughness = [4.0, 2.0, 1.0]

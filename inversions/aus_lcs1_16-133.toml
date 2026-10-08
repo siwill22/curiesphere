@@ -1,0 +1,42 @@
+# Australia, LCS-1, degrees 16-133: the settings of the first Australian build (notebooks/regions/australia):
+# the error model of LCS-1 - MF7 noise at its RMS over the points, model error with the field's own spectrum at
+# 33.4 nT (from that build's reference fit), compressed with the 'subspace' weighting. Methods inherit this.
+mode = "final"
+
+[target]
+area = "outlines/australia.gpkg"
+nside = 64
+
+[geometry]
+layers = [{ top = "basement", base = 30.0 }]
+direction = "induced_igrf13"
+lmax = 185
+
+[fit]
+type = "local"
+buffer_km = 300.0
+data_nside = 128
+background = { vis_model = "Hemant2005+slabs", remanence = "GK07", near_ridge = true }
+
+[data]
+model = "lcs1"
+band = [16, 133]
+filter = "lcs1"
+
+[errors]
+weighting = "subspace"
+keep = 0.999
+noise = { reference = "mf7", rms_nT = "points" }
+model_error = { spectrum = "field", rms_nT = 33.4 }
+
+# covariates for the regressions (CR): grids of the first Australian build ('~' expanded)
+[covariates]
+moho = "~/Data/AuSREM-CM-moho/AusMoho2012.xyz"                  # columns lat, lon, Moho depth (km)
+crust_fallback = "~/Data/Moho/crust1.0/crust1_CrustalThickness.nc"
+lab = "~/Data/AuSREM-CM-moho/LAB.xyz"                            # columns lon, lat, depth (km)
+lab_fallback = "~/Data/litho1.0/grids/litho1_LID-BOTTOM.nc"      # metres
+heat_flow = "~/Library/CloudStorage/OneDrive-UniversityofTasmania/Data/Heatflow/HFgrid14.nc"
+
+[covariates.heat_flow_alt]
+seisheat = "~/GIT/SeisHeat/out/method1_grid.nc:q_bar"            # similarity method on SL2013sv
+heatr = "~/GIT/Heatr/data/processed/heatflow_pred_13.nc:q_pred"

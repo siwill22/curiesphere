@@ -6,7 +6,7 @@ maps in map_sweep.npz), and the mode agreement of explore against final.
   problem      target mask, cells, cell graph, data points, G, background against the first build's caches;
                the compressed data subspace (cosines of the principal angles)
   estimators   on the first build's own whitened data (Gw, dw rebuilt from its caches as notebooks/domains/problem.py
-               does): the GMRF fit (h, s, ell, mean, s.d.) and the L2 and TV maps at the same beta
+               does): the GMRF evidence, its fit (h, s, ell, mean, s.d.) and the L2 and TV maps at the same beta
   end to end   the toolbox's CM-AUS run against the same results, in units of the first build's GMRF s.d.; it differs
                by design in the data (the field model is not filtered again) and slightly in the noise RMS
   modes        explore (NSIDE 32 cells summed from NSIDE 64, GPU float32 columns) against final on the NSIDE 32 cells,
@@ -21,7 +21,7 @@ import time
 
 import numpy as np
 
-from remit.inversion import cache, config, data, geometry, graph, results
+from remit.inversion import cache, config, data, geometry, gmrf, graph, results
 from remit.inversion.methods import cm
 
 OLD = 'notebooks/regions/australia/cache'
@@ -84,15 +84,18 @@ area = oc['area_km2']
 Lw = graph.laplacian(edges, 1/graph.edge_lengths_km(edges, oc['clon'], oc['clat'])**2, len(area))
 D = graph.difference_operator(edges, oc['clon'], oc['clat'])
 t = time.time()
-gm = cm.GMRF(Gw, dw, area, Lw)
-ell, (ll, alpha2, solver, L) = gm.fit()
-h = solver.sigma(solver.solve(dw, alpha2), True)
+gm = gmrf.GMRF(Gw, dw, area, Lw)
+one = np.ones((len(area), 1))
+fit = gm.fit(one, box=([0.], [4.]))
+ell, ll, alpha2, h = float(fit['ell'][0]), fit['ll'], fit['alpha2'], fit['h']
 H, S, EL = float(lm['real_gp_h']), float(lm['real_gp_s']), float(lm['real_gp_ell'])
-_, _, solver_old, L_old = gm.at(EL)
+solver_old, L_old = gm.model(one, EL)
 print(f'  GMRF fit in {time.time() - t:.0f} s: noise x {h:.4f}, VIS s.d. {h/np.sqrt(alpha2):.4f} SI.km, length {ell:.0f} km '
       f'(first build {H:.4f}, {S:.4f}, {EL:.0f} km)')
 check('GMRF noise scale h (relative)', h/H, 1, 2e-3)
-check('log evidence: toolbox maximum - at the first build\'s', ll - solver_old.log_evidence(dw, H**2/S**2), 0.5, 0.5)
+check('log evidence at the first build\'s h, s, ell against its own', gm.evidence(one, H, S, EL, ([0.], [4.])),
+      float(lm['real_gp_ll']), 1e-6)
+check('log evidence: toolbox maximum - the first build\'s', ll - float(lm['real_gp_ll']), 0.5, 0.5)
 sol = solver_old.solve(dw, H**2/S**2)
 v = sol['v0'] + L_old @ sol['x']
 sd = solver_old.posterior_sd_map(H**2/S**2, H, L_old)

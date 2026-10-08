@@ -1,0 +1,10 @@
+# CR-AUS: covariate regression for Australia from LCS-1, degrees 16-133, as the first Australian build
+# (run_linear_models.py, parts regression, classes and hypotheses, with the 'real' case)
+inherit = "aus_lcs1_16-133.toml"
+
+[method]
+name = "cr"
+design = ["class", "crust", "age", "undated", "heat_flow", "lab"]
+heat_flow_alternatives = ["heat_flow_seisheat", "heat_flow_heatr"]
+per_class = true
+hypotheses = { auto = true, hand = "hypotheses/australia.toml" }

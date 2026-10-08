@@ -39,7 +39,8 @@ class Cache:
 def save_atomic(path, write):
     """write(tmp) to a temporary name next to path, then rename it into place"""
     tmp = f'{path}.tmp{os.getpid()}'
-    if path.endswith('.npy'):
-        tmp += '.npy'                                    # np.save appends .npy otherwise
+    for ext in ('.npy', '.npz'):
+        if path.endswith(ext):
+            tmp += ext                                   # np.save and np.savez append it otherwise
     write(tmp)
     os.replace(tmp, path)

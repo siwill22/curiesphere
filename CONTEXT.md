@@ -126,7 +126,13 @@ One VIS per domain fixed in advance from geological polygons (Hasterok et al. 20
 Domains formed from the data: FD-merge (agglomerative merging), FD-vor (Voronoi), FD-lvor (labelled Voronoi), FD-part (cell partition).
 
 **CR** (covariate regression):
-VIS modelled as a combination of covariates (crustal thickness, heat flow, province class…), with hypotheses scored by the evidence.
+VIS modelled as a combination of covariates (crustal thickness, heat flow, province class…) plus a smooth random rest, with hypotheses scored by the evidence.
+
+**Bounds** (extremal bounds):
+The smallest and largest value of a summary (a craton's mean VIS, a contrast) over all models that fit the data within the noise and stay within the VIS bounds, optionally with a roughness limit. Not an estimate: the range the data allow.
+
+**Null test**:
+A synthetic check of a method's uncertainties: truths without the effect being estimated (e.g. no covariate effect), many noise draws, and the spread of the estimates compared with the uncertainties the method reports.
 
 **ORP23**:
 The method of Olsen, Ravat & Purucker (2023): point dipoles at 70 km, damped toward an a-priori thickness model. Referred to, not implemented.
