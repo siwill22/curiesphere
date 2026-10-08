@@ -59,6 +59,6 @@ The benchmark rerun in the new environment matches the throwaway one within run-
 
 The float32 effect is identical: at most 1.6e-5 posterior standard deviations.
 
-## Open decision
+## eigh (decided)
 
-- **eigh:** whether a faster route is worth it (a Cholesky per damping value with the log-determinant from its diagonal; a partial eigendecomposition), or whether ~15 minutes once per configuration is acceptable.
+Both routes are kept, chosen by mode ([ADR 0006](adr/0006-explore-and-final-modes.md)): explore mode solves by Cholesky at a few damping values, final mode takes the full eigendecomposition (~15 min, cached) for the whole evidence curve and posterior uncertainties.

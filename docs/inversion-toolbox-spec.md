@@ -21,6 +21,7 @@ Terms are defined in [CONTEXT.md](../CONTEXT.md). Decisions that are hard to rev
 | Outputs | One result type (NetCDF), a 0.1° grid export, a standard figure set (VIS with domains, uncertainty, data Br, model Br, residual; plain-English captions). | this spec |
 | Review | The browser viewer is the main review tool, fed only by standard results through one exporter, for any target area. Its detailed design is a later topic. | this spec |
 | Testing | Synthetic data is a data option (truth library, noise from the error model); results from synthetic data store the truth. Three tiers: unit tests, synthetic recovery per method, acceptance on real data. | this spec |
+| Modes | `mode = explore` (fast defaults) or `final` (robust defaults), each default overridable; results record and display their mode. Each method has a mode-agreement test in its acceptance. | [ADR 0006](adr/0006-explore-and-final-modes.md) |
 | Old code | Tag `pre-toolbox` first; delete the code a stage replaces once that stage passes. Key result files (numbers, CSVs, figures) kept, caches not. | this spec |
 
 ## Package layout (proposed)
@@ -98,7 +99,7 @@ bounds = [0.0, 4.0]
 
 ## Stages and acceptance
 
-Each stage passes when it reproduces the listed current results under the same settings (data, band, error model). The results are then reviewed in the viewer next to the old ones, and the replaced code is deleted.
+Each stage passes when it reproduces the listed current results under the same settings (data, band, error model). It also passes the mode-agreement test for its methods: explore and final runs of the same configs, with the differences reported in final posterior standard deviations (and partition agreement for domain methods). The results are then reviewed in the viewer next to the old ones, and the replaced code is deleted.
 
 | Stage | Contents | Reproduces |
 |---|---|---|

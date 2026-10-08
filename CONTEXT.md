@@ -86,6 +86,17 @@ _Avoid_: test data, fake data
 The source strengths used to compute synthetic data; stored with the results so estimates can be compared with it.
 _Avoid_: true model (when the background is meant)
 
+**Explore mode**:
+Settings chosen for speed, for scanning many inversion settings quickly; its results are marked as provisional.
+_Avoid_: quick mode, draft
+
+**Final mode**:
+Settings chosen for robustness, for results that are reported.
+_Avoid_: production mode, full run
+
+**Mode agreement**:
+How much an explore-mode result differs from the final-mode result of the same config, measured against the final result's own uncertainty.
+
 ### Errors
 
 **Noise**:
