@@ -1,0 +1,6 @@
+# FD-merge-AUS, the gamma sweep of the first build (merge_points_sweep.npz)
+inherit = "merge_aus_lcs1_16-133.toml"
+
+[method]
+gamma_rels = [0.005, 0.0075, 0.01, 0.015, 0.02]
+bootstrap = [[1.0, 0.01]]

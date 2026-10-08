@@ -8,13 +8,14 @@ local fit (gmrf.py):  v = Bd theta + u, theta uniform on its box, u a GMRF; hype
   classes      class means with s and ell per class, against shared statistics (log evidence), with Laplace errors
   hypotheses   designs scored by their evidence (a) with u (hyperparameters fitted per design) and (b) without u (h
                integrated out): every subset of the covariate groups, the hand-written designs of a TOML file, and
-               partitions of the cells (one mean each) from an .npz of label arrays
+               partitions of the cells (one mean each): an .npz of label arrays, or an FD-merge result (.nc)
 
 Config keys used, besides those of problem.local and [covariates]:
   [method] design (columns), heat_flow_alternatives (covariate names), per_class (true/false),
            hypotheses = { auto = true, hand = path, labels = path }
 """
 import itertools
+import json
 import os
 import time
 import tomllib
@@ -58,9 +59,17 @@ def hypotheses(model, cov, area, spec, base=None):
             for name, cols in tomllib.load(f).get('hypotheses', {}).items():
                 out['hand: ' + name] = parameterise.design(cols, cov, area)[:3]
     if spec.get('labels'):
-        z = np.load(os.path.expanduser(spec['labels']))
-        for name in z.files:
-            B = parameterise.indicator(z[name])
+        path = os.path.expanduser(spec['labels'])
+        if path.endswith('.nc'):                                    # an FD-merge result: one partition per setting
+            ds = results.load(path)
+            rows = json.loads(ds.attrs['settings'])
+            labels = {f'merging lam x{r["lam_rel"]:.2g} gamma {r["gamma_rel"]:g} (K {r["K"]})': ds[f'domain_{i}'].values
+                      for i, r in enumerate(rows)}
+        else:
+            z = np.load(path)
+            labels = {name: z[name] for name in z.files}
+        for name, lab in labels.items():
+            B = parameterise.indicator(lab)
             out[name] = (B, np.full(B.shape[1], parameterise.LEVEL[0]), np.full(B.shape[1], parameterise.LEVEL[1]))
     return out
 

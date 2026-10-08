@@ -10,7 +10,8 @@ import os
 from . import config, results
 
 METHODS = {'gcm': 'remit.inversion.methods.gcm', 'cm': 'remit.inversion.methods.cm', 'pd': 'remit.inversion.methods.pd',
-           'cr': 'remit.inversion.methods.cr', 'bounds': 'remit.inversion.methods.bounds'}
+           'cr': 'remit.inversion.methods.cr', 'bounds': 'remit.inversion.methods.bounds',
+           'merge': 'remit.inversion.methods.merge'}
 
 
 def main(argv=None):

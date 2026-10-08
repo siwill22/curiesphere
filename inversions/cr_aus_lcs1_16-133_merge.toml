@@ -1,0 +1,8 @@
+# CR-AUS with the FD-merge sweep's partitions among the hypotheses (as run_linear_models.py, part 4, with
+# merge_points_sweep.npz); run merge_aus_lcs1_16-133_sweep.toml first
+inherit = "cr_aus_lcs1_16-133.toml"
+
+[method]
+per_class = false
+heat_flow_alternatives = []
+hypotheses = { auto = true, hand = "hypotheses/australia.toml", labels = "results/merge_aus_lcs1_16-133_sweep.nc" }
