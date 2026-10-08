@@ -102,7 +102,7 @@ Each stage passes when it reproduces the listed current results under the same s
 
 | Stage | Contents | Reproduces |
 |---|---|---|
-| 0 | Benchmark: vectorised node-sum columns (CPU vs MPS), BBᵀ (OpenBLAS, Accelerate, MPS float32), float32 effect on GCM-GLC. Decides GPU use and whether numpy moves to Accelerate. | — |
+| 0 (done, [report](benchmark-stage0-speed.md)) | Benchmark: vectorised node-sum columns (CPU vs MPS), BBᵀ (OpenBLAS, Accelerate, MPS float32), float32 effect on GCM-GLC. Decides GPU use and whether numpy moves to Accelerate. | — |
 | 1 | `depth`, config, cache, geometry, columns, data (local and global, synthetic), errors, core, results, figures; methods GCM and CM. Tag `pre-toolbox` before starting. | GCM-GLC lcs1_16-133: v0 = 0.751 ± 0.011 SI·km, noise × 1.53, prior s.d. 0.51 (evidence); v0 = 0.743 (discrepancy). Synthetic (one seeded noise draw, evidence): uniform truths 1.0 and 1.5 recovered as v0 = 1.000 and 1.500; uniform 1.0 with an ocean-model error (true HM05_NR, GK07_NR subtracted) gives v0 = 0.963; 0.04 × Crust1.0 truth (mean 1.352) gives v0 = 0.879, RMS error 0.61 SI·km. CM-AUS: `regions/australia/cache/map_sweep.npz`. Columns: the existing Australian cell columns to rounding. |
 | 2 | PD, CR, bounds. | PD-AUS: `notebooks/inversion/real_LCS1.csv` (39 domain values). CR: `linear_models.npz`, `null_regression.npz`. Bounds: `bounds.npz`. |
 | 3 | FD-merge. | `merge_points.npz`, `merge_points_sweep.npz` (FD-merge-AUS). |

@@ -1,5 +1,6 @@
 #import os as _os
 import numpy as _np
+_trapezoid = getattr(_np, 'trapezoid', None) or _np.trapz      # numpy >= 2 renamed trapz
 from scipy.interpolate import interp1d
 import xarray as _xr
 from remit.utils.profile import DEFAULT_AGE_ARRAY, DEFAULT_COOLING_MODEL, DEFAULT_LAYER_BOUNDARY_DEPTHS, DEFAULT_LAYER_THICKNESS, DEFAULT_CURIE_ISOTHERM, DEFAULT_DEPTH_ARRAY, DEFAULT_LAYER_WEIGHTS
@@ -313,7 +314,7 @@ class PolarityTimescale(object):
                                 self.polarity_step_function[ind],
                                 self.polarity_step_function[ind[-1]]))
 
-                antialiase_polarity.append(_np.trapz(y, x)/(window_half_size*2))
+                antialiase_polarity.append(_trapezoid(y, x)/(window_half_size*2))
         
         self.Interpolator = interp1d(antialiase_time_series, antialiase_polarity, 
                                      kind='nearest', bounds_error=False, fill_value=0)

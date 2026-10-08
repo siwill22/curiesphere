@@ -1,0 +1,31 @@
+# The curiesphere environment: forward models and the inversion toolbox.
+#   conda env create -f environment.yml && conda activate curiesphere && pip install -e .
+# BLAS is Apple's Accelerate (libblas *newaccelerate, macOS >= 13.3; on other systems drop that line).
+# PyTorch is used only for the optional GPU (MPS) backend; it comes from conda-forge so that it shares
+# conda's OpenMP runtime (the pip wheel brings its own libomp, which clashes).
+name: curiesphere
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy>=2
+  - scipy
+  - libblas=*=*newaccelerate
+  - pyshtools
+  - pygmt
+  - gmt
+  - pygplates
+  - xarray
+  - netcdf4
+  - pandas
+  - geopandas
+  - rasterio
+  - astropy-healpix
+  - cvxpy
+  - clarabel
+  - numba
+  - pytorch
+  - matplotlib
+  - tqdm
+  - pytest
+  - pip
