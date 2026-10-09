@@ -125,6 +125,9 @@ One VIS per domain fixed in advance from geological polygons (Hasterok et al. 20
 **FD** (free domains):
 Domains formed from the data: FD-merge (agglomerative merging), FD-vor (Voronoi), FD-lvor (labelled Voronoi), FD-part (cell partition).
 
+**DF** (domain fractal):
+VIS in domains given in advance (polygons, a merge partition, or the whole area as one domain), each with its own mean and its own fractal pattern inside: a strength per domain, with the fractal exponent and largest patch size shared by all. The patterns start afresh at domain boundaries; the evidence ranks domain layouts.
+
 **CR** (covariate regression):
 VIS modelled as a combination of covariates (crustal thickness, heat flow, province class…) plus a smooth random rest, with hypotheses scored by the evidence.
 

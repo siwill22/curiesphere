@@ -1,0 +1,9 @@
+# DF: independent fractal patterns per domain, measured noise only, a shared exponent
+
+DF models VIS as a mean per domain plus a Gaussian random pattern inside each domain, with a power-law spectrum (the fractal form of the magnetisation literature). The patterns of different domains are independent: they start afresh at domain boundaries, because the boundaries stand for geological breaks, and the evidence of a layout then tests whether those breaks are real. Each domain has its own mean (uniform on 0-4 SI·km) and strength; the fractal exponent β and the largest patch size are shared by all domains, because inside one domain the data (features of about 300-2500 km) span too few sizes to fix an exponent. β is fitted within the published range (2-3 for vertically integrated maps: 3-4 for the 3-D magnetisation, Pilkington & Todoeschuck 1993, Maus & Dimri 1995, less one for the depth sum).
+
+The data error is the measurement noise only, without the model-error term that CM's error model takes from the field's own spectrum: that term stands in for variation the model leaves out, which DF now models, and keeping both would count it twice and shrink the strengths.
+
+The pattern is Gaussian, so the evidence is exact and fast, and VIS can dip below zero inside a domain; how much does so is reported, with a bounded map where it matters, rather than using a log-normal pattern (always positive, but no exact evidence). Strengths, β and the patch size maximise the evidence, with error bars from its curvature; sampling them (MCMC) is planned as v2.
+
+Considered: one pattern over the whole area whose statistics change between domains (almost the per-class GMRF of CM and CR; softer boundaries, no test of the breaks); strength and exponent per domain (exponents undetermined); the CM error model (double counting).
