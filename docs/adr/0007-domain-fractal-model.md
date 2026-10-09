@@ -7,3 +7,7 @@ The data error is the measurement noise only, without the model-error term that 
 The pattern is Gaussian, so the evidence is exact and fast, and VIS can dip below zero inside a domain; how much does so is reported, with a bounded map where it matters, rather than using a log-normal pattern (always positive, but no exact evidence). Strengths, β and the patch size maximise the evidence, with error bars from its curvature; sampling them (MCMC) is planned as v2.
 
 Considered: one pattern over the whole area whose statistics change between domains (almost the per-class GMRF of CM and CR; softer boundaries, no test of the breaks); strength and exponent per domain (exponents undetermined); the CM error model (double counting).
+
+## Amendment (2026-10-09): an extra error for the ring of data around the target
+
+On the Australian data the noise-only error left a misfit of 52 nT in the ring of data points around the target (up to 300 km beyond it), where no domain can explain the field: errors of the fixed background or sources just outside. Fitting one noise scale everywhere absorbed it but inflated the errors onshore too (scale 2.5) and pushed beta from one end of its range to the other. The data in the ring therefore get an extra error of their own (correlated like the field model, its RMS fitted by the evidence: 62 nT), which fits better than the inflated noise and leaves the onshore fit unchanged; a noise scale fitted on top now gains little. The onshore data keep the noise-only error of the decision above.
