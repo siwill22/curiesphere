@@ -37,7 +37,7 @@ def merge(base, over):
 
 
 PATH_KEYS = [('target', 'area'), ('parameterisation', 'table')]
-NESTED_PATH_KEYS = [('method', 'hypotheses', 'hand'), ('method', 'hypotheses', 'labels')]
+NESTED_PATH_KEYS = [('method', 'hypotheses', 'hand'), ('method', 'hypotheses', 'labels'), ('method', 'layouts', 'merge')]
 LIST_PATH_KEYS = [('method', 'start')]          # [path, ...]: the first item is a path
 
 
@@ -77,6 +77,7 @@ METHOD_MODE_DEFAULTS = {
     'voronoi': {'explore': {'compute': {'coarsen': 0}, 'method': {'sweeps': 500}}, 'final': {'method': {'sweeps': 2500}}},
     'lvoronoi': {'explore': {'compute': {'coarsen': 0}, 'method': {'sweeps': 500}}, 'final': {'method': {'sweeps': 2500}}},
     'partition': {'explore': {'compute': {'coarsen': 0}, 'method': {'sweeps': 400}}, 'final': {'method': {'sweeps': 2000}}},
+    'df': {'explore': {'compute': {'coarsen': 0}, 'method': {'hyper_sd': False}}, 'final': {'method': {'hyper_sd': True}}},
 }
 
 

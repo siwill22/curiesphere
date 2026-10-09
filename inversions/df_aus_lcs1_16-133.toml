@@ -1,0 +1,22 @@
+# DF-AUS: Australia's polygon domains (as PD-AUS), each with its own mean and its own fractal pattern inside
+# (ADR 0007), from LCS-1, degrees 16-133. The data error is the measurement noise only (no model-error term), with
+# its correlations ('full' weighting). The FD-merge partition at lambda_95/3, gamma 0.01 and the whole area as one
+# domain are fitted too and ranked by the evidence (run merge_aus_lcs1_16-133.toml first).
+inherit = "aus_lcs1_16-133.toml"
+
+[errors]
+weighting = "full"
+model_error = { rms_nT = 0.0 }
+
+[parameterisation]
+kind = "domains"
+table = "domains/australia_domains.csv"
+
+[method]
+name = "df"
+bounds = [0.0, 4.0]
+beta_range = [2.0, 3.0]
+ell_range = [50.0, 5000.0]
+s_range = [0.001, 10.0]
+noise = "fixed"
+layouts = { one = true, merge = "results/merge_aus_lcs1_16-133.nc", merge_settings = [9] }

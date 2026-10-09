@@ -13,7 +13,8 @@ METHODS = {'gcm': 'remit.inversion.methods.gcm', 'cm': 'remit.inversion.methods.
            'cr': 'remit.inversion.methods.cr', 'bounds': 'remit.inversion.methods.bounds',
            'merge': 'remit.inversion.methods.merge',
            'voronoi': 'remit.inversion.methods.voronoi', 'lvoronoi': 'remit.inversion.methods.lvoronoi',
-           'partition': 'remit.inversion.methods.partition'}
+           'partition': 'remit.inversion.methods.partition',
+           'df': 'remit.inversion.methods.df'}
 
 
 def main(argv=None):
