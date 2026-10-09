@@ -88,3 +88,27 @@ def test_gradient_with_an_extra_error_shape():
         e[j] = 1e-5
         fd = (m.evidence(x + e, True) - m.evidence(x - e, True))/2e-5
         assert abs(g[j] - fd) < 1e-4*max(1, abs(fd)), (j, g[j], fd)
+
+
+def test_bounded_map():
+    rng = np.random.default_rng(4)
+    A = rng.standard_normal((6, 6))
+    Cov = A @ A.T + np.eye(6)
+    v = np.array([1., 2., 0.5, 1.5, 3., 1.])
+    assert np.allclose(df.bounded_map(v, Cov), v, atol=1e-6)
+    v[2] = -1.
+    vb = df.bounded_map(v, Cov)
+    assert vb.min() >= -1e-9
+    H = np.linalg.inv(Cov)
+    g = H @ (vb - v)                                 # KKT: zero gradient on free cells, >= 0 at the bound
+    assert np.all(abs(g[vb > 1e-6]) < 1e-5) and np.all(g[vb <= 1e-6] >= -1e-5)
+
+
+def test_chain_runs_and_stays_in_bounds():
+    m, _ = small(5)
+    f = m.fit()
+    bnds = m.bounds((1e-3, 10.), (2., 3.), (50., 5000.), False)
+    X, LL, acc = m.chain(f, bnds, 300, 1, np.eye(len(f['x']))*0.01)
+    lo, hi = np.array(bnds).T
+    assert 0.05 < acc < 0.95 and np.all((X >= lo - 1e-12) & (X <= hi + 1e-12))
+    assert abs(df.rhat(np.stack([X[100:200], X[200:300]]))).max() < 10

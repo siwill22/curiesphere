@@ -3,3 +3,4 @@ mode = "explore"
 
 [method]
 beta_profile = []
+sample = { steps = 2000 }

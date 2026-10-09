@@ -1,0 +1,88 @@
+key,id,prov_name,prov_type,crust_type,prov_group,param
+0,1,Gariep Belt,orogenic belt,continental,,Gariep_Belt
+1,2,Rehoboth Block,shield,continental,Kalahari Craton,Rehoboth_Block
+2,3,Okwa Terrane,shield,continental,Kalahari Craton,Okwa_Terrane
+3,4,Limpopo Belt,shield,continental,Kalahari Craton,Limpopo_Belt
+4,5,Kamanjab Inlier,shield,continental,Congo Craton,Kamanjab_Inlier
+5,6,Usagaran Belt,shield,continental,Congo Craton,Usagaran_Belt
+6,7,Tanzania Craton,craton,continental,Congo Craton,Tanzania_Craton
+7,8,South Azania,orogenic belt,continental,,South_Azania
+10,11,Ubendian Belt,shield,continental,Congo Craton,Ubendian_Belt
+11,12,Atlas Mountains,orogenic belt,continental,,Atlas_Mountains
+12,13,Eglab Shield,shield,continental,West African Craton,Eglab_Shield
+13,14,Anti-Atlas Mountains,shield,continental,West African Craton,Anti_Atlas_Mountains
+14,15,Tindouf Basin,shield,continental,West African Craton,Tindouf_Basin
+15,16,Uganda Craton,craton,continental,Congo Craton,Uganda_Craton
+16,17,Rwenzori Block,shield,continental,Congo Craton,Rwenzori_Block
+17,18,Gabon Craton,craton,continental,Congo Craton,Gabon_Craton
+18,19,West Congo and Kimezian Belts,shield,continental,Congo Craton,West_Congo_and_Kimezian_Belts
+19,20,Gabon Belt,craton,continental,Congo Craton,Gabon_Belt
+20,21,Ethiopian Rift,narrow rift,continental,East African Rift,Ethiopian_Rift
+21,22,East African Rift-west,narrow rift,continental,East African Rift,East_African_Rift_west
+22,23,East African Rift-east,narrow rift,continental,East African Rift,East_African_Rift_east
+23,24,East Congo Mobile Belt,shield,continental,Congo Craton,East_Congo_Mobile_Belt
+26,27,Mait Complex,orogenic belt,continental,,Mait_Complex
+27,28,Bekilv Block,shield,continental,,Bekilv_Block
+28,29,Antenanarivo Block,orogenic belt,continental,,Antenanarivo_Block
+29,30,Itremo Block,orogenic belt,continental,,Itremo_Block
+30,31,Bemarivo Belt,orogenic belt,continental,,Bemarivo_Belt
+31,32,Antongil Block,craton,continental,,Antongil_Block
+32,33,Chad Craton,shield,continental,Sahara Metacraton,Chad_Craton
+34,35,Reguibat Rise,craton,continental,West African Craton,Reguibat_Rise
+35,36,Angolan Shield,shield,continental,Congo Craton,Angolan_Shield
+36,37,Central African Margin,passive margin,transitional,,Central_African_Margin
+37,38,Somali Margin,passive margin,transitional,,Somali_Margin
+38,39,West African Rifted Margin,passive margin,transitional,,West_African_Rifted_Margin
+39,40,West Nile Terrane,shield,continental,Congo Craton,West_Nile_Terrane
+40,41,Damara Orogenic Belt,orogenic belt,continental,,Damara_Orogenic_Belt
+41,42,Kaoka Belt,orogenic belt,continental,,Kaoka_Belt
+42,43,Namaqua-Natal Belt,orogenic belt,continental,,Namaqua_Natal_Belt
+43,44,South African Rifted Margin,passive margin,transitional,,South_African_Rifted_Margin
+44,45,Cape Fold Belt,orogenic belt,continental,,Cape_Fold_Belt
+54,55,Gabgaba and Gebeit Terranes,volcanic arc,continental,Arabian-Nubian Shield,Gabgaba_and_Gebeit_Terranes
+55,56,East Desert Terrane,volcanic arc,continental,Arabian-Nubian Shield,East_Desert_Terrane
+61,62,Mozambique Belt,orogenic belt,continental,Mozambique Belt,Mozambique_Belt
+62,63,Mauritius Remnant,narrow rift,transitional,,Mauritius_Remnant
+63,64,Seychelle Remnant,narrow rift,transitional,,Seychelle_Remnant
+65,66,North African Margin,passive margin,continental,,North_African_Margin
+68,69,Kasai Craton,craton,continental,Congo Craton,Kasai_Craton
+69,70,Kibaran Belt,shield,continental,Congo Craton,Kibaran_Belt_69
+70,71,Embomou Craton,shield,continental,Congo Craton,Embomou_Craton
+71,72,Cuvette Centrale,craton,continental,Congo Craton,Cuvette_Centrale
+72,73,Kibaran Belt,shield,continental,Congo Craton,Kibaran_Belt_72
+73,74,North Africa Belt,orogenic belt,continental,,North_Africa_Belt
+74,75,Murzuq Craton,shield,continental,Sahara Metacraton,Murzuq_Craton
+75,76,Nakfa Terrane,volcanic arc,continental,Arabian-Nubian Shield,Nakfa_Terrane
+76,77,Eastern Hoggar Belt,volcanic arc,continental,Tuareg Shield,Eastern_Hoggar_Belt
+77,78,Al Kufrah Craton,shield,continental,Sahara Metacraton,Al_Kufrah_Craton
+78,79,Bayuda Terrane,volcanic arc,continental,Arabian-Nubian Shield,Bayuda_Terrane
+79,80,Central Sahara Province,orogenic belt,continental,Sahara Metacraton,Central_Sahara_Province
+80,81,Kenema-Man Craton,craton,continental,West African Craton,Kenema_Man_Craton
+81,82,Rockelides,orogenic belt,continental,,Rockelides
+82,83,Mauritanides,orogenic belt,continental,,Mauritanides
+83,84,Leo Rise,shield,continental,West African Craton,Leo_Rise
+84,85,Mali Basin,shield,continental,West African Craton,Mali_Basin
+85,86,Pharusian Belt,volcanic arc,continental,Tuareg Shield,Pharusian_Belt
+86,87,Tshiluba Province,back-arc basin,continental,Sahara Metacraton,Tshiluba_Province
+87,88,LATEA Metacraton,volcanic arc,continental,Tuareg Shield,LATEA_Metacraton
+88,89,Central African Orogen,orogenic belt,continental,,Central_African_Orogen
+89,90,Haya Terrane,volcanic arc,continental,Arabian-Nubian Shield,Haya_Terrane
+90,91,Benin-Niger Shield,volcanic arc,continental,Tuareg Shield,Benin_Niger_Shield
+803,804,Nampula Block,orogenic belt,continental,Mozambique Belt,Nampula_Block
+804,805,Tanzanian Eastern Granulites,orogenic belt,continental,Mozambique Belt,Tanzanian_Eastern_Granulites
+805,806,Cabo Delgado Nappe Complex,orogenic belt,continental,Mozambique Belt,Cabo_Delgado_Nappe_Complex
+806,807,Marrupa Province,orogenic belt,continental,Mozambique Belt,Marrupa_Province
+807,808,Unango Province,orogenic belt,continental,Mozambique Belt,Unango_Province
+808,809,Barue Complex,shield,continental,,Barue_Complex
+809,810,Magondi-Gweta Belt,shield,continental,Kalahari Craton,Magondi_Gweta_Belt
+810,811,Choma-Kaloma Block,orogenic belt,continental,,Choma_Kaloma_Block
+811,812,Zimbabwe Craton,craton,continental,Kalahari Craton,Zimbabwe_Craton
+812,813,West Zambezi Belt,orogenic belt,continental,Mozambique Belt,West_Zambezi_Belt
+813,814,Malawi Complex,orogenic belt,continental,Mozambique Belt,Malawi_Complex
+814,815,Irumide Belt,orogenic belt,continental,Congo Craton,Irumide_Belt
+815,816,Bangweulu Block,orogenic belt,continental,Congo Craton,Bangweulu_Block
+816,817,Lufilian Arc,volcanic arc,continental,,Lufilian_Arc
+817,818,Southern Irumide Belt,orogenic belt,continental,Mozambique Belt,Southern_Irumide_Belt
+861,862,Zambezi Belt,orogenic belt,continental,Mozambique Belt,Zambezi_Belt
+911,912,Kheis Belt,shield,continental,Kalahari Craton,Kheis_Belt
+912,913,Kaapvaal Craton,craton,continental,Kalahari Craton,Kaapvaal_Craton

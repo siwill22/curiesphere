@@ -21,7 +21,11 @@ Config keys used, besides those of problem.local (weighting 'full', model_error 
            ring_error = {beyond_km = 50} (an extra error at the data points farther than beyond_km from every cell
            centre, i.e. the ring of points around the target: correlated with the field model's own spectrum in the
            band, its RMS sigma_ring (nT) fitted; for errors of the background there, which no domain can explain),
-           beta_profile = [beta, ...] (the log evidence of the first layout with beta fixed at each value)
+           beta_profile = [beta, ...] (the log evidence of the first layout with beta fixed at each value),
+           sample = {chains, steps, burn, n_post} (sample the hyperparameters of the first layout by adaptive Metropolis,
+           prior uniform in x on the bounds; maps and domain values then average over n_post samples), seed
+Outputs: the posterior mean map (vis), its s.d., the domain averages, the strengths, and the most probable map with
+VIS >= 0 (vis_bounded: a box QP on the Gaussian posterior at the best-fit hyperparameters).
 """
 import json
 import time
@@ -30,7 +34,7 @@ import numpy as np
 from scipy.linalg import cho_factor, cho_solve, cholesky, block_diag
 from scipy.optimize import minimize
 
-from .. import errors, parameterise, problem, results
+from .. import errors, parameterise, problem, results, sampling
 from ..cache import Cache
 from ..geometry import area_name
 from ..graph import unit
@@ -155,7 +159,7 @@ class DomainFractal:
         b = [tuple(np.log(s_range))]*self.K + [tuple(beta_range), tuple(np.log(ell_range))]
         return b + [(np.log(0.2), np.log(5.))]*int(fit_h) + [tuple(np.log(sig_range))]*len(self.extra)
 
-    def fit(self, s_range=(1e-3, 10.), beta_range=(2., 3.), ell_range=(50., 5000.), fit_h=False, x0=None):
+    def fit(self, s_range=(0.01, 10.), beta_range=(2., 3.), ell_range=(50., 5000.), fit_h=False, x0=None):
         if x0 is None:
             x0 = np.r_[np.full(self.K, np.log(0.3)), np.mean(beta_range), np.log(500.), [0.] if fit_h else [],
                        np.full(len(self.extra), np.log(30.))]
@@ -169,22 +173,70 @@ class DomainFractal:
         return dict(x=res.x, s=s, beta=float(beta), ell=float(ell), h=float(h), sig=sig, ll=float(-res.fun), fit_h=fit_h,
                     at_bound=at, n_eval=int(res.nfev), converged=bool(res.success), message=str(res.message))
 
-    def hyper_sd(self, fit, step=1e-3):
-        """Laplace s.d. of the hyperparameters x (the inverse Hessian of -log evidence; NaN where singular)"""
+    def hessian(self, fit, step=1e-3):
+        """Hessian of -log evidence in x (central differences of the gradient)"""
         x, n = fit['x'], len(fit['x'])
         H = np.zeros((n, n))
         for j in range(n):
             e = np.zeros(n)
             e[j] = step
             H[:, j] = -(self.gradient(x + e, fit['fit_h'])[1] - self.gradient(x - e, fit['fit_h'])[1])/(2*step)
-        H = 0.5*(H + H.T)
-        try:
-            return np.sqrt(np.where(np.diag(np.linalg.inv(H)) > 0, np.diag(np.linalg.inv(H)), np.nan))
-        except np.linalg.LinAlgError:
-            return np.full(n, np.nan)
+        return 0.5*(H + H.T)
 
-    def posterior(self, fit, area):
-        """posterior mean and s.d. of v, the process means theta, and the area mean of v over each domain"""
+    @staticmethod
+    def laplace_sd(H):
+        """Laplace s.d. of the hyperparameters x (the inverse Hessian; NaN where singular)"""
+        try:
+            d = np.diag(np.linalg.inv(H))
+            return np.sqrt(np.where(d > 0, d, np.nan))
+        except np.linalg.LinAlgError:
+            return np.full(len(H), np.nan)
+
+    def hyper_sd(self, fit, step=1e-3):
+        return self.laplace_sd(self.hessian(fit, step))
+
+    def chain(self, fit, bnds, n_steps, seed, cov0, start_sd=1.):
+        """adaptive Metropolis (Haario et al. 2001) over x, prior uniform in x on the bounds (log-uniform strengths,
+        uniform beta); starts from the fit displaced by start_sd x the proposal s.d. (overdispersed chains).
+        Returns (samples, log evidences, acceptance rate)."""
+        rng = np.random.default_rng(seed)
+        lo, hi = np.array(bnds, float).T
+        free = hi > lo
+        d = int(free.sum())
+        C0 = cov0[np.ix_(free, free)]
+        x = fit['x'].copy()
+        if start_sd:
+            for _ in range(100):
+                y = x.copy()
+                y[free] += start_sd*np.linalg.cholesky(C0) @ rng.standard_normal(d)
+                if np.all((y >= lo) & (y <= hi)):
+                    x = y
+                    break
+        ll = self.evidence(x, fit['fit_h'])
+        X, LL, acc = np.empty((n_steps, len(x))), np.empty(n_steps), 0
+        Lp, log_scale, recent = np.linalg.cholesky(C0), np.log(2.38**2/d), []
+        for i in range(n_steps):
+            if i >= 1000 and i % 200 == 0:                  # adapt the shape to the chain so far
+                Lp = np.linalg.cholesky(np.cov(X[i//2:i][:, free].T) + 1e-8*np.eye(d))
+            y = x.copy()
+            y[free] += np.exp(0.5*log_scale)*(Lp @ rng.standard_normal(d))
+            ok = False
+            if np.all((y >= lo) & (y <= hi)):
+                ly = self.evidence(y, fit['fit_h'])
+                if np.log(rng.uniform()) < ly - ll:
+                    x, ll, ok = y, ly, True
+            acc += ok
+            log_scale += (float(ok) - 0.234)/np.sqrt(i + 1)*(i < n_steps//2)    # scale to ~23% acceptance (burn-in)
+            X[i], LL[i] = x, ll
+        return X, LL, acc/n_steps
+
+    def fit_at(self, x, fit_h):
+        s, beta, ell, h, sig = self.unpack(x, fit_h)
+        return dict(x=x, s=s, beta=float(beta), ell=float(ell), h=float(h), sig=sig, fit_h=fit_h)
+
+    def posterior(self, fit, area, full=False):
+        """posterior mean and s.d. of v, the process means theta, and the area mean of v over each domain (and the
+        covariance of v when full)"""
         o = self._solve(fit['s'], fit['beta'], fit['ell'], fit['h'], fit.get('sig', ()))
         M, Ls, q = o['M'], o['Ls'], o['q']
         n = len(self.label)
@@ -202,9 +254,12 @@ class DomainFractal:
         c = self.S*area[:, None]
         c /= c.sum(0)
         cov_avg = c.T @ Cov @ c
-        return dict(v=v, v_sd=np.sqrt(np.maximum(np.diag(Cov), 0)), theta=o['theta'],
-                    theta_sd=np.sqrt(np.diag(cov_theta)), avg=c.T @ v, avg_sd=np.sqrt(np.maximum(np.diag(cov_avg), 0)),
-                    ll=o['ll'])
+        out = dict(v=v, v_sd=np.sqrt(np.maximum(np.diag(Cov), 0)), theta=o['theta'],
+                   theta_sd=np.sqrt(np.diag(cov_theta)), avg=c.T @ v, avg_sd=np.sqrt(np.maximum(np.diag(cov_avg), 0)),
+                   ll=o['ll'])
+        if full:
+            out['cov'] = Cov
+        return out
 
     def no_variation(self, h=1., sig=()):
         """log evidence and chi2 with no pattern inside the domains (PD under this error model, means unbounded)"""
@@ -219,6 +274,49 @@ class DomainFractal:
         ll = (-N*np.log(h) - np.sum(np.log(np.diag(cA[0]))) - 0.5*r @ r/h**2 - 0.5*(N - self.K)*np.log(2*np.pi)
               - np.sum(np.log(self.hi - self.lo)))
         return float(ll), float(r @ r), theta
+
+
+def proposal_cov(H, bnds):
+    """first proposal covariance of the sampler: the inverse Hessian at the best fit (correlations kept: beta and ell
+    trade off), its eigenvalues floored so no direction is wider than a quarter of the widest bound, and each
+    variance capped at (its bound width / 4)^2"""
+    width = np.array([b[1] - b[0] for b in bnds])
+    w, V = np.linalg.eigh(0.5*(H + H.T))
+    C = (V/np.maximum(w, 1/(width.max()/4)**2)) @ V.T
+    d = np.sqrt(np.diag(C))
+    cap = np.minimum(1, (np.maximum(width, 1e-12)/4)/d)
+    return C*cap[:, None]*cap[None, :]
+
+
+def bounded_map(v, Cov, lo=0.):
+    """the most probable map with v >= lo under the Gaussian posterior N(v, Cov): a box QP with H = Cov^-1"""
+    from .. import core
+    n = len(v)
+    cf = cho_factor(Cov + 1e-10*np.trace(Cov)/n*np.eye(n), lower=True)
+    H = cho_solve(cf, np.eye(n))
+    H = 0.5*(H + H.T)
+    return core.box_qp(H, H @ v, lo, np.inf, v=np.maximum(v, lo), tol=1e-10)
+
+
+def mixture(m, fits, area):
+    """posterior summaries averaged over hyperparameter samples: means averaged, variances = mean of the variances
+    + variance of the means"""
+    ps = [m.posterior(f, area) for f in fits]
+    out = {}
+    for k, ksd in (('v', 'v_sd'), ('avg', 'avg_sd'), ('theta', 'theta_sd')):
+        mu = np.array([p[k] for p in ps])
+        var = np.array([p[ksd]**2 for p in ps])
+        out[k], out[ksd] = mu.mean(0), np.sqrt(var.mean(0) + mu.var(0))
+    return out
+
+
+def rhat(chains):
+    """Gelman-Rubin potential scale reduction per parameter (chains: n_chains x n x d)"""
+    c = np.asarray(chains)
+    n = c.shape[1]
+    W = c.var(1, ddof=1).mean(0)
+    B = n*c.mean(1).var(0, ddof=1)
+    return np.sqrt(((n - 1)/n*W + B/n)/np.where(W > 0, W, np.nan))
 
 
 def layouts(cells, cfg, cache, say):
@@ -253,7 +351,7 @@ def run(cfg, cache=None, log=print):
     if cfg['errors'].get('model_error', {}).get('rms_nT', 0.) != 0:
         raise ValueError('DF takes measurement noise only (ADR 0007): set [errors] model_error rms_nT = 0')
     lo, hi = me.get('bounds', [0., 4.])
-    opts = dict(s_range=tuple(me.get('s_range', [1e-3, 10.])), beta_range=tuple(me.get('beta_range', [2., 3.])),
+    opts = dict(s_range=tuple(me.get("s_range", [0.01, 10.])), beta_range=tuple(me.get('beta_range', [2., 3.])),
                 ell_range=tuple(me.get('ell_range', [50., 5000.])))
     fit_h = me.get('noise', 'fixed') == 'fitted'
     cell_km2 = 4*np.pi*R_KM**2/(12*cells.nside**2)
@@ -288,16 +386,54 @@ def run(cfg, cache=None, log=print):
                             sigma_ring_nT=[float(v) for v in fb['sig']]))
         say(f'beta fixed at {b:.2f}: log evidence {fb["ll"]:.1f} ({fb["ll"] - f["ll"]:+.1f}), ell {fb["ell"]:.0f} km'
             + (f', ring error {fb["sig"][0]:.1f} nT' if extra else ''))
-    post = m.posterior(f, cells.area_km2)
-    sd = m.hyper_sd(f) if me.get('hyper_sd', True) else np.full(len(f['x']), np.nan)
+    area = cells.area_km2
+    post = m.posterior(f, area, full=True)
+    spec = me.get('sample') or {}
+    spec = spec if spec.get('steps', 1) > 0 else {}                 # steps = 0: no sampling
+    H = m.hessian(f) if me.get('hyper_sd', True) or spec else None
+    sd = m.laplace_sd(H) if H is not None else np.full(len(f['x']), np.nan)
     say(f'posterior and hyperparameter s.d. of {name!r}')
+    sampled = None
+    if spec:
+        bnds = m.bounds(opts['s_range'], opts['beta_range'], opts['ell_range'], fit_h)
+        width = np.array([b[1] - b[0] for b in bnds])
+        cov0 = proposal_cov(H, bnds)
+        n_ch, steps = int(spec.get('chains', 3)), int(spec.get('steps', 10000))
+        seed = int(me.get('seed', 20261009))
+        out = sampling.chains(lambda c: m.chain(f, bnds, steps, seed + c, cov0), n_ch, cfg['compute'].get('workers', 3))
+        k0 = int(steps*spec.get('burn', 1/3))
+        X = np.array([o[0][k0:] for o in out])
+        free = width > 0
+        R = rhat(X[:, :, free])
+        pooled = X.reshape(-1, X.shape[2])
+        pick = pooled[np.linspace(0, len(pooled) - 1, int(spec.get('n_post', 150))).astype(int)]
+        mix = mixture(m, [m.fit_at(x, fit_h) for x in pick], area)
+        post = {**post, **mix}
+        q = lambda j: (float(np.mean(pooled[:, j])), float(np.std(pooled[:, j])))
+        Rf = np.full(len(free), np.nan)
+        Rf[free] = R
+        big = np.bincount(m.label, area, m.K) >= np.median(np.bincount(m.label, area, m.K))
+        say(f'R-hat: beta {Rf[m.K]:.2f}, ell {Rf[m.K + 1]:.2f}, extra errors {np.round(Rf[m.K + 2:], 2).tolist()}, '
+            f'strengths of the larger half of the domains max {np.nanmax(Rf[:m.K][big]):.2f}, smaller half max '
+            f'{np.nanmax(Rf[:m.K][~big]):.2f}; strengths with R-hat > 1.1: '
+            f'{[(names[k], round(float(np.exp(pooled[:, k]).mean()), 3)) for k in range(m.K) if Rf[k] > 1.1]}')
+        sampled = dict(chains=n_ch, steps=steps, burn=k0, acceptance=[float(o[2]) for o in out], rhat=Rf.tolist(),
+                       rhat_max=float(np.nanmax(R)), rhat_beta=float(R[np.flatnonzero(free).tolist().index(m.K)])
+                       if free[m.K] else None, beta=q(m.K), log_ell=q(m.K + 1),
+                       log_strength_mean=pooled[:, :m.K].mean(0).tolist(), log_strength_sd=pooled[:, :m.K].std(0).tolist(),
+                       log_sigma_ring=q(m.K + 2 + int(fit_h)) if extra else None)
+        sd = pooled.std(0)
+        say(f'sampled: {n_ch} chains x {steps} steps, acceptance {np.round(sampled["acceptance"], 2).tolist()}, '
+            f'R-hat max {sampled["rhat_max"]:.2f}; beta {sampled["beta"][0]:.2f} +- {sampled["beta"][1]:.2f}, '
+            f'ell {np.exp(sampled["log_ell"][0]):.0f} km (log s.d. {sampled["log_ell"][1]:.2f})')
+    vb = bounded_map(post['v'], post['cov'])
+    say(f'bounded map (VIS >= 0): moves cells by up to {np.max(abs(vb - post["v"])):.2f} SI km')
     check = None
     if not fit_h:                                         # the noise scale fitted as a check
         fh = m.fit(fit_h=True, x0=np.r_[f['x'][:m.K + 2], 0., f['x'][m.K + 2:]], **opts)
         check = dict(h=fh['h'], ll=fh['ll'], beta=fh['beta'], ell_km=fh['ell'])
         say(f'check with the noise scale fitted: h {fh["h"]:.3f}, log evidence {fh["ll"]:.1f} (+{fh["ll"] - f["ll"]:.1f})')
     v, label = post['v'], m.label
-    area = cells.area_km2
     neg = np.bincount(label, area*(v < 0), m.K)/np.bincount(label, area, m.K)
     out_box = [names[k] for k in range(m.K) if not (lo <= post['theta'][k] <= hi)]
     r = pb.yw - pb.Gw @ v
@@ -317,18 +453,19 @@ def run(cfg, cache=None, log=print):
     say(f'{K} domains, {N} data: chi2/N {chi2/N:.2f} (no variation {chi0/N:.2f}); beta {f["beta"]:.2f} '
         f'+- {sd[K]:.2f}, ell {f["ell"]:.0f} km (log s.d. {sd[K + 1]:.2f}); strengths at the lower bound: '
         f'{int(f["at_bound"][:K].sum())}; cells below zero {np.mean(v < 0):.1%}; means outside the box: {out_box}')
-    cell_vars = dict(vis=v, vis_sd=post['v_sd'], vis_domain=post['avg'][label], strength=f['s'][label],
-                     domain=label.astype(float))
+    cell_vars = dict(vis=v, vis_sd=post['v_sd'], vis_domain=post['avg'][label], vis_bounded=vb,
+                     strength=f['s'][label], domain=label.astype(float))
     if pb.truth is not None:
         cell_vars['truth'] = pb.truth
     model = pb.G @ v
     attrs = dict(domains=table, layout=name, layouts=ranking, beta=f['beta'], beta_sd=float(sd[K]), ell_km=f['ell'],
                  log_ell_sd=float(sd[K + 1]), noise_scale=f['h'], noise_check=check, log_evidence=f['ll'],
-                 sigma_ring_nT=[float(v) for v in f['sig']], residual_rms_nT=rms, beta_profile=profile,
+                 sigma_ring_nT=[float(v) for v in f['sig']], residual_rms_nT=rms, beta_profile=profile, sampled=sampled,
                  log_evidence_no_variation=ll0, chi2_per_datum=chi2/N, chi2_per_datum_no_variation=chi0/N,
                  n_domains=K, node_coverage=coverage, bounds=[lo, hi], means_outside_box=out_box,
                  cells_below_zero=float(np.mean(v < 0)),
-                 panel_titles={'vis_domain': 'VIS averaged over each domain', 'strength': 'Strength of variation in each domain (1 s.d.)'},
+                 panel_titles={'vis_domain': 'VIS averaged over each domain', 'vis_bounded': 'VIS, most probable map with VIS >= 0',
+                               'strength': 'Strength of variation in each domain (1 s.d.)'},
                  **pb.info)
     return results.make(cfg, cells, cell_vars, points=(pb.plon, pb.plat),
                         point_vars=dict(data=pb.y, model=model, residual=pb.y - model), **attrs)
