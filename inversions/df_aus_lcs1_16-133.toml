@@ -1,7 +1,10 @@
 # DF-AUS: Australia's polygon domains (as PD-AUS), each with its own mean and its own fractal pattern inside
 # (ADR 0007), from LCS-1, degrees 16-133. The data error is the measurement noise only (no model-error term), with
 # its correlations ('full' weighting). The FD-merge partition at lambda_95/3, gamma 0.01 and the whole area as one
-# domain are fitted too and ranked by the evidence (run merge_aus_lcs1_16-133.toml first).
+# domain are fitted too and ranked by the evidence (run merge_aus_lcs1_16-133.toml first). The data in the ring around
+# the target (beyond 50 km from every cell centre) get an extra error of their own, fitted: with noise alone they kept
+# a misfit of 52 nT that no domain can explain (background errors). The exponent beta is also profiled from 1 to 4,
+# beyond its published range of 2-3, to show where the data put it.
 inherit = "aus_lcs1_16-133.toml"
 
 [errors]
@@ -20,3 +23,5 @@ ell_range = [50.0, 5000.0]
 s_range = [0.001, 10.0]
 noise = "fixed"
 layouts = { one = true, merge = "results/merge_aus_lcs1_16-133.nc", merge_settings = [9] }
+ring_error = { beyond_km = 50.0 }
+beta_profile = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]

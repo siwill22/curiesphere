@@ -1,6 +1,0 @@
-# DF-AUS with the noise scale fitted by the evidence (a check on ADR 0007's noise-only error model: with the scale
-# fixed the misfit stays at 3.2 times the noise variance)
-inherit = "df_aus_lcs1_16-133.toml"
-
-[method]
-noise = "fitted"

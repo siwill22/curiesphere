@@ -49,6 +49,8 @@ class Local:
     truth: np.ndarray = None
     info: dict = field(default_factory=dict)
     draw: object = None             # draw(rng, model_error=True) -> an error-model realisation at the points (nT)
+    band: object = None
+    spectra: dict = None            # Lowes spectra of the noise and of the field model ('noise', 'model')
 
     @functools.cached_property
     def Gw(self):
@@ -159,4 +161,5 @@ def local(cfg, cache, say=print):
     info = dict(n_points=len(plon), n_data=n_data, noise_rms=sn, model_error_rms=s, weighting=weighting)
     say(f'{len(cells)} cells (NSIDE {cells.nside}), {len(plon)} points, {n_data} data ({weighting}); noise RMS '
         f'{sn:.1f} nT, model error RMS {s:.1f} nT ({time.time() - t0:.0f} s)')
-    return Local(cells, fine, parent, mask, plon, plat, G, y, W, truth, info, draw)
+    return Local(cells, fine, parent, mask, plon, plat, G, y, W, truth, info, draw, band,
+                 dict(noise=R_noise, model=R_model))

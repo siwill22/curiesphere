@@ -17,7 +17,11 @@ Config keys used, besides those of problem.local (weighting 'full', model_error 
   [parameterisation] kind = 'domains', table (as PD)
   [method] bounds ([lo, hi] of the means), beta_range, ell_range (km), s_range (SI km), noise ('fixed' or 'fitted'),
            hyper_sd (Laplace s.d. of the hyperparameters), layouts = {one = true, merge = <FD-merge result>,
-           merge_settings = [i, ...]} (further layouts, ranked by the evidence with the table's)
+           merge_settings = [i, ...]} (further layouts, ranked by the evidence with the table's),
+           ring_error = {beyond_km = 50} (an extra error at the data points farther than beyond_km from every cell
+           centre, i.e. the ring of points around the target: correlated with the field model's own spectrum in the
+           band, its RMS sigma_ring (nT) fitted; for errors of the background there, which no domain can explain),
+           beta_profile = [beta, ...] (the log evidence of the first layout with beta fixed at each value)
 """
 import json
 import time
@@ -64,8 +68,9 @@ def correlation(beta, ell, psi, window):
 class DomainFractal:
     """the DF model of one problem and one layout (label: domain index of each cell, 0..K-1)"""
 
-    def __init__(self, Gw, yw, label, clon, clat, cell_area_km2, lo, hi):
+    def __init__(self, Gw, yw, label, clon, clat, cell_area_km2, lo, hi, extra=()):
         self.Gw, self.yw, self.label = Gw, yw, np.asarray(label)
+        self.extra = list(extra)                    # error shapes E_j (data x data), each scaled by a fitted sigma_j
         self.K = int(self.label.max()) + 1
         self.S = parameterise.indicator(self.label)
         self.U = Gw @ self.S
@@ -96,17 +101,21 @@ class DomainFractal:
         return self._cache[key]
 
     def unpack(self, x, fit_h):
+        """x = log s_k (K), beta, log ell, [log h if fit_h], log sigma_j (one per extra error shape)"""
         s = np.exp(x[:self.K])
         beta, ell = x[self.K], np.exp(x[self.K + 1])
         h = np.exp(x[self.K + 2]) if fit_h else 1.
-        return s, beta, ell, h
+        sig = np.exp(np.asarray(x[self.K + 2 + int(fit_h):]))
+        return s, beta, ell, h, sig
 
-    def _solve(self, s, beta, ell, h):
+    def _solve(self, s, beta, ell, h, sig=()):
         M, Ls = self.factors(beta, ell)
         Ms = M*s[self.label]
         N = len(self.yw)
         C = Ms @ Ms.T
         C[np.diag_indices(N)] += h**2
+        for sj, E in zip(sig, self.extra):
+            C += sj**2*E
         cf = cho_factor(C, lower=True)
         CiU, Ciy = cho_solve(cf, self.U), cho_solve(cf, self.yw)
         A = self.U.T @ CiU
@@ -123,8 +132,8 @@ class DomainFractal:
 
     def gradient(self, x, fit_h=False):
         """(log evidence, gradient in x)"""
-        s, beta, ell, h = self.unpack(x, fit_h)
-        o = self._solve(s, beta, ell, h)
+        s, beta, ell, h, sig = self.unpack(x, fit_h)
+        o = self._solve(s, beta, ell, h, sig)
         M, CiU, q = o['M'], o['CiU'], o['q']
         N = len(self.yw)
         P = cho_solve(o['cf'], np.eye(N)) - CiU @ cho_solve(o['cA'], CiU.T)
@@ -138,21 +147,26 @@ class DomainFractal:
             g[j] = (self.evidence(x + e, fit_h) - self.evidence(x - e, fit_h))/(2*FD_STEP)
         if fit_h:
             g[self.K + 2] = h**2*(q @ q - np.trace(P))
+        for j, (sj, E) in enumerate(zip(sig, self.extra)):
+            g[self.K + 2 + int(fit_h) + j] = sj**2*(q @ E @ q - np.sum(P*E))
         return o['ll'], g
 
-    def bounds(self, s_range, beta_range, ell_range, fit_h):
+    def bounds(self, s_range, beta_range, ell_range, fit_h, sig_range=(0.1, 500.)):
         b = [tuple(np.log(s_range))]*self.K + [tuple(beta_range), tuple(np.log(ell_range))]
-        return b + [(np.log(0.2), np.log(5.))] if fit_h else b
+        return b + [(np.log(0.2), np.log(5.))]*int(fit_h) + [tuple(np.log(sig_range))]*len(self.extra)
 
     def fit(self, s_range=(1e-3, 10.), beta_range=(2., 3.), ell_range=(50., 5000.), fit_h=False, x0=None):
         if x0 is None:
-            x0 = np.r_[np.full(self.K, np.log(0.3)), np.mean(beta_range), np.log(500.), [0.] if fit_h else []]
+            x0 = np.r_[np.full(self.K, np.log(0.3)), np.mean(beta_range), np.log(500.), [0.] if fit_h else [],
+                       np.full(len(self.extra), np.log(30.))]
         bnds = self.bounds(s_range, beta_range, ell_range, fit_h)
+        x0 = np.clip(x0, [b[0] for b in bnds], [b[1] for b in bnds])
         f = lambda x: tuple(-a for a in self.gradient(x, fit_h))
         res = minimize(f, x0, jac=True, method='L-BFGS-B', bounds=bnds, options=dict(maxiter=2000, ftol=1e-11, gtol=1e-6))
-        s, beta, ell, h = self.unpack(res.x, fit_h)
-        at = np.array([np.isclose(v, lo, atol=1e-6) or np.isclose(v, hi, atol=1e-6) for v, (lo, hi) in zip(res.x, bnds)])
-        return dict(x=res.x, s=s, beta=float(beta), ell=float(ell), h=float(h), ll=float(-res.fun), fit_h=fit_h,
+        s, beta, ell, h, sig = self.unpack(res.x, fit_h)
+        at = np.array([lo < hi and (np.isclose(v, lo, atol=1e-6) or np.isclose(v, hi, atol=1e-6))
+                       for v, (lo, hi) in zip(res.x, bnds)])
+        return dict(x=res.x, s=s, beta=float(beta), ell=float(ell), h=float(h), sig=sig, ll=float(-res.fun), fit_h=fit_h,
                     at_bound=at, n_eval=int(res.nfev), converged=bool(res.success), message=str(res.message))
 
     def hyper_sd(self, fit, step=1e-3):
@@ -171,7 +185,7 @@ class DomainFractal:
 
     def posterior(self, fit, area):
         """posterior mean and s.d. of v, the process means theta, and the area mean of v over each domain"""
-        o = self._solve(fit['s'], fit['beta'], fit['ell'], fit['h'])
+        o = self._solve(fit['s'], fit['beta'], fit['ell'], fit['h'], fit.get('sig', ()))
         M, Ls, q = o['M'], o['Ls'], o['q']
         n = len(self.label)
         Lb = np.zeros((n, n))
@@ -192,8 +206,12 @@ class DomainFractal:
                     theta_sd=np.sqrt(np.diag(cov_theta)), avg=c.T @ v, avg_sd=np.sqrt(np.maximum(np.diag(cov_avg), 0)),
                     ll=o['ll'])
 
-    def no_variation(self, h=1.):
+    def no_variation(self, h=1., sig=()):
         """log evidence and chi2 with no pattern inside the domains (PD under this error model, means unbounded)"""
+        if len(sig):
+            o = self._solve(np.full(self.K, 1e-9), 2.5, 500., h, sig)
+            r = self.yw - self.U @ o['theta']
+            return o['ll'], float(r @ r), o['theta']
         N = len(self.yw)
         cA = cho_factor(self.U.T @ self.U/h**2, lower=True)
         theta = cho_solve(cA, self.U.T @ self.yw/h**2)
@@ -241,24 +259,41 @@ def run(cfg, cache=None, log=print):
     cell_km2 = 4*np.pi*R_KM**2/(12*cells.nside**2)
     lays, coverage = layouts(cells, cfg, cache, say)
     say(f'{len(lays)} layouts: {list(lays)}')
+    xyz_c, xyz_p = unit(cells.clon, cells.clat), unit(pb.plon, pb.plat)
+    dist_km = np.arccos(np.clip((xyz_p @ xyz_c.T).max(1), -1., 1.))*R_KM          # to the nearest cell centre
+    ring = dist_km > me.get('ring_error', {}).get('beyond_km', 50.)
+    extra = []
+    if me.get('ring_error'):
+        Wd = pb.W.toarray() if hasattr(pb.W, 'toarray') else np.asarray(pb.W)
+        Cr = errors.point_shape(pb.spectra['model'], pb.band, pb.plon[ring], pb.plat[ring])
+        extra = [Wd[:, ring] @ Cr @ Wd[:, ring].T]
+        say(f'ring error at {ring.sum()} of {len(ring)} points')
     ranking, main = {}, None
     for name, (label, names) in lays.items():
-        m = DomainFractal(pb.Gw, pb.yw, label, cells.clon, cells.clat, cell_km2, lo, hi)
+        m = DomainFractal(pb.Gw, pb.yw, label, cells.clon, cells.clat, cell_km2, lo, hi, extra)
         f = m.fit(fit_h=fit_h, **opts)
-        ll0, chi0, _ = m.no_variation()
+        ll0, chi0, _ = m.no_variation(sig=f['sig'])
         ranking[name] = dict(K=int(m.K), ll=f['ll'], ll_no_variation=ll0, beta=f['beta'], ell_km=f['ell'], h=f['h'],
-                             converged=f['converged'], n_eval=f['n_eval'])
+                             sigma_ring_nT=[float(v) for v in f['sig']], converged=f['converged'], n_eval=f['n_eval'])
         say(f'{name}: K {m.K}, log evidence {f["ll"]:.1f} (no variation {ll0:.1f}), beta {f["beta"]:.2f}, '
-            f'ell {f["ell"]:.0f} km, h {f["h"]:.2f}, {f["n_eval"]} evaluations' + ('' if f['converged'] else ' NOT CONVERGED'))
+            f'ell {f["ell"]:.0f} km, h {f["h"]:.2f}' + (f', ring error {f["sig"][0]:.1f} nT' if extra else '') +
+            f', {f["n_eval"]} evaluations' + ('' if f['converged'] else ' NOT CONVERGED'))
         if main is None:
             main = (name, m, f, names)
     name, m, f, names = main
+    profile = []
+    for b in me.get('beta_profile', []):
+        fb = m.fit(fit_h=fit_h, x0=np.r_[f['x'][:m.K], b, f['x'][m.K + 1:]], **{**opts, 'beta_range': (b, b)})
+        profile.append(dict(beta=float(b), ll=fb['ll'], ell_km=fb['ell'], h=fb['h'],
+                            sigma_ring_nT=[float(v) for v in fb['sig']]))
+        say(f'beta fixed at {b:.2f}: log evidence {fb["ll"]:.1f} ({fb["ll"] - f["ll"]:+.1f}), ell {fb["ell"]:.0f} km'
+            + (f', ring error {fb["sig"][0]:.1f} nT' if extra else ''))
     post = m.posterior(f, cells.area_km2)
     sd = m.hyper_sd(f) if me.get('hyper_sd', True) else np.full(len(f['x']), np.nan)
     say(f'posterior and hyperparameter s.d. of {name!r}')
     check = None
     if not fit_h:                                         # the noise scale fitted as a check
-        fh = m.fit(fit_h=True, x0=np.r_[f['x'], 0.], **opts)
+        fh = m.fit(fit_h=True, x0=np.r_[f['x'][:m.K + 2], 0., f['x'][m.K + 2:]], **opts)
         check = dict(h=fh['h'], ll=fh['ll'], beta=fh['beta'], ell_km=fh['ell'])
         say(f'check with the noise scale fitted: h {fh["h"]:.3f}, log evidence {fh["ll"]:.1f} (+{fh["ll"] - f["ll"]:.1f})')
     v, label = post['v'], m.label
@@ -268,8 +303,12 @@ def run(cfg, cache=None, log=print):
     r = pb.yw - pb.Gw @ v
     chi2 = float(r @ r)
     N = len(pb.yw)
-    ll0, chi0, _ = m.no_variation()
+    ll0, chi0, _ = m.no_variation(sig=f['sig'])
     K = m.K
+    res_pts = pb.y - pb.G @ v
+    rms = dict(onshore=float(np.sqrt(np.mean(res_pts[~ring]**2))), ring=float(np.sqrt(np.mean(res_pts[ring]**2))))
+    say(f'residual RMS: onshore {rms["onshore"]:.1f} nT, ring {rms["ring"]:.1f} nT'
+        + (f'; ring error {f["sig"][0]:.1f} nT' if extra else ''))
     table = {names[k]: dict(mean=float(post['avg'][k]), mean_sd=float(post['avg_sd'][k]),
                             theta=float(post['theta'][k]), theta_sd=float(post['theta_sd'][k]),
                             strength=float(f['s'][k]), log_strength_sd=float(sd[k]),
@@ -285,6 +324,7 @@ def run(cfg, cache=None, log=print):
     model = pb.G @ v
     attrs = dict(domains=table, layout=name, layouts=ranking, beta=f['beta'], beta_sd=float(sd[K]), ell_km=f['ell'],
                  log_ell_sd=float(sd[K + 1]), noise_scale=f['h'], noise_check=check, log_evidence=f['ll'],
+                 sigma_ring_nT=[float(v) for v in f['sig']], residual_rms_nT=rms, beta_profile=profile,
                  log_evidence_no_variation=ll0, chi2_per_datum=chi2/N, chi2_per_datum_no_variation=chi0/N,
                  n_domains=K, node_coverage=coverage, bounds=[lo, hi], means_outside_box=out_box,
                  cells_below_zero=float(np.mean(v < 0)),

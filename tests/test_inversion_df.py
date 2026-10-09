@@ -74,3 +74,17 @@ def test_no_variation_is_the_limit_of_small_strengths():
     m, _ = small(2)
     x = np.r_[np.full(m.K, np.log(1e-7)), 2.5, np.log(300.)]
     assert abs(m.evidence(x) - m.no_variation()[0]) < 1e-6
+
+
+def test_gradient_with_an_extra_error_shape():
+    m0, rng = small(3)
+    B = rng.standard_normal((len(m0.yw), 5))
+    m = df.DomainFractal(m0.Gw, m0.yw, m0.label, *np.zeros((2, len(m0.label))), 1e4, 0., 4., extra=[B @ B.T/5])
+    m.psi, m.psi_max = m0.psi, m0.psi_max
+    x = np.r_[np.log([0.3, 0.6, 0.2]), 2.4, np.log(350.), np.log(1.2), np.log(0.7)]
+    _, g = m.gradient(x, fit_h=True)
+    for j in range(len(x)):
+        e = np.zeros(len(x))
+        e[j] = 1e-5
+        fd = (m.evidence(x + e, True) - m.evidence(x - e, True))/2e-5
+        assert abs(g[j] - fd) < 1e-4*max(1, abs(fd)), (j, g[j], fd)
