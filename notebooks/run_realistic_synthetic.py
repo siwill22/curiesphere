@@ -10,10 +10,16 @@ observed. Two versions:
   hast        one value per province
   hast_var    plus smooth variation within provinces (lognormal, 25% standard deviation, ~200 km
               correlation length along great circles)
+  hast_ms     make_multiscale_truth.py's truth, if made for the region (hast_var + ~50 km detail + small bodies)
 Data: the truth's field at the data points plus realistic noise (the random-phase LCS-1 - MF7 noise
 realisations of build_region.py, scaled to sigma = RMS(LCS-1 - MF7)), at 1x and 2x sigma (2x is about
 the misfit of the real-data models; env NOISES, default 1). Weighting as for the real data (A2: point weighting on the
 compressed data).
+Finer cells (regions/australia_fine): env TRUTH_FROM=<another region's realistic_synthetic.npz> takes the
+province values from there (same truth, by province key), MERGE_MODE=refine merges on the parent cells and
+refines on the fine ones (as run_merge.py), and GAMMA_REL sets gamma (default 0.01 per ~100 km edge; halve
+it for ~50 km edges to keep the same penalty per km of boundary). With env BAND=<name> the band's data,
+merging calibration (run_merge.py with BAND) and output directory are used.
 Method: merging (merge.run, fine mode) at the real-data settings (lambda_95, gamma 0.01 lambda_95) and
 at lambda_95/3; bootstrap: N_BOOT reruns on the fitted model + fresh noise.
 Benchmark: the best map of the truth with the same number of domains, made directly from the true VIS
@@ -34,44 +40,28 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.cluster import AgglomerativeClustering
 
-from domains import merge, outputs
+from domains import covariates, merge, outputs, problem
 from domains.basis import unit
 from domains.region import cell_provinces
-from remit.data.models import load_vis_model
 
-REG = os.path.dirname(os.path.abspath(sys.argv[1]))
-C = f'{REG}/cache'
 N_BOOT = int(os.environ.get('N_BOOT', 15))
 N_WORKERS = int(os.environ.get('N_WORKERS', 3))
 MUS = [0.03, 0.1, 0.3]
 SEED = 20261005
 
-E = np.load(f'{C}/errors.npz')
-z = np.load(f'{C}/data.npz')
-G = np.load(f'{C}/G.npz')['G']
-cells = np.load(f'{C}/cells.npz')
-edges, area = cells['edges'], cells['area_km2']
-sigma = float(np.sqrt(np.mean((z['d_lcs'] - z['d_mf7'])**2)))
-T = np.linalg.svd(E['T'].T, full_matrices=False)[0].T/sigma
-Gw = T @ G
-noise = np.load(f'{C}/noise.npz')['noise']
-noise = noise*sigma/np.sqrt(np.mean(noise**2))
-lam95 = float(np.load(f'{C}/merge_points_sweep.npz')['fine_lam95'])
-SETTINGS = [(1., 0.01), (1/3, 0.01)]                       # (lambda / lambda_95, gamma / lambda_95)
+pb = problem.load(sys.argv[1])
+C = pb['cache']                                            # a band's directory with env BAND (build_bands.py)
+z, cells, sigma, T, Gw, noise = (pb[k] for k in ('z', 'cells', 'sigma', 'T', 'Gw', 'noise'))
+edges, area = pb['edges'], pb['area']
+MERGE_MODE = os.environ.get('MERGE_MODE', 'fine')
+GAMMA_REL = float(os.environ.get('GAMMA_REL', 0.01))
+lam95 = float(np.load(f'{C}/merge_points_sweep.npz')[f'{MERGE_MODE}_lam95'])
+SETTINGS = [(1., GAMMA_REL), (1/3, GAMMA_REL)]             # (lambda / lambda_95, gamma / lambda_95)
 
 # provinces and H&M statistics
 prov_key, prov_table = cell_provinces(cells['clon'], cells['clat'])
 prov = np.unique(prov_key, return_inverse=True)[1]
-cell, glat_n, glon_n = cells['cell'], cells['cell'].shape[0], cells['cell'].shape[1]
-glon, glat = np.linspace(0, 360, glon_n), np.linspace(90, -90, glat_n)
-hm = load_vis_model(name='Hemant2005+slabs')
-lo, la = np.meshgrid(glon, glat)
-from scipy.interpolate import RegularGridInterpolator
-f = RegularGridInterpolator((hm.lat[::-1] if hm.lat[0] > hm.lat[-1] else hm.lat, hm.lon),
-                            hm.vis[::-1] if hm.lat[0] > hm.lat[-1] else hm.vis, bounds_error=False, fill_value=None)
-inside = cell >= 0
-w = np.cos(np.radians(la[inside]))
-hm_cell = np.bincount(cell[inside], weights=w*f(np.stack([la[inside], lo[inside] % 360], 1)))/np.bincount(cell[inside], weights=w)
+hm_cell = covariates.hm_cell_vis(cells)
 lmu, lsd = np.average(np.log(np.clip(hm_cell, 1e-3, None)), weights=area), None
 lsd = np.sqrt(np.average((np.log(np.clip(hm_cell, 1e-3, None)) - lmu)**2, weights=area))
 
@@ -83,12 +73,20 @@ Ccov = np.exp(-dist/200.) + 1e-8*np.eye(len(dist))
 field = np.linalg.cholesky(Ccov) @ rng.standard_normal(len(dist))
 n_pts = len(z['plon'])
 rms_nT = lambda w: sigma*np.sqrt(np.sum(w**2)/n_pts)                 # RMS at the points of a subspace vector
-real_signal = np.sqrt(rms_nT(T @ (z['d_lcs'] - z['b']))**2 - sigma**2)
+real_signal = np.sqrt(max(rms_nT(pb['dw_real'])**2 - sigma**2, 0.))      # the band's data model (0: synthetic-only band)
 scales = np.linspace(0.5, 5, 91)
 strength = [rms_nT(Gw @ np.clip(np.exp(lmu + s_*lsd*zp), 0.01, 4.)[prov]) for s_ in scales]
 CONTRAST_SCALE = float(scales[np.argmin(np.abs(np.array(strength) - real_signal))])
 v_prov = np.clip(np.exp(lmu + CONTRAST_SCALE*lsd*zp), 0.01, 4.)
+if os.environ.get('TRUTH_FROM'):                           # the same province values as another region
+    o = np.load(os.environ['TRUTH_FROM'], allow_pickle=True)
+    by_key = {k: o['v_prov'][p_] for k, p_ in zip(o['prov_key'], o['prov'])}
+    keys = np.unique(prov_key)
+    v_prov = np.array([by_key.get(k, v) for k, v in zip(keys, v_prov)])
+    print(f'province values from {os.environ["TRUTH_FROM"]} ({sum(k in by_key for k in keys)} of {len(keys)} provinces)')
 truths = {'hast': v_prov[prov], 'hast_var': np.clip(v_prov[prov]*np.exp(0.25*field - 0.5*0.25**2), 0.01, 4.)}
+if os.path.exists(f'{pb["shared"]}/multiscale_truth.npz'):                # make_multiscale_truth.py (its own hast_var)
+    truths['hast_ms'] = np.load(f'{pb["shared"]}/multiscale_truth.npz')['truth']
 NOISES = [float(x) for x in os.environ.get('NOISES', '1').split(',')]
 data = {}
 j = 0
@@ -97,6 +95,8 @@ for name in truths:
         data[(name, nl)] = Gw @ truths[name] + nl*(T @ noise[j])
         j += 1
 P = merge.setup(Gw, edges)
+parent = np.asarray(cells['parent'])                       # read now: forked workers must not share a zip handle
+P_coarse = merge.coarse_problem(Gw, edges, parent) if MERGE_MODE == 'refine' else None
 conn = csr_matrix((np.ones(len(edges)), (edges[:, 0], edges[:, 1])), shape=(len(area),)*2)
 conn = conn + conn.T
 
@@ -112,7 +112,10 @@ def best_map(truth, K):
 def run(args):
     dw, lr, g = args
     t = time.time()
-    r = merge.run(P, dw, lr*lam95, g*lam95, MUS)
+    if P_coarse is None:
+        r = merge.run(P, dw, lr*lam95, g*lam95, MUS)
+    else:
+        r = merge.run(P_coarse, dw, lr*lam95, g*lam95, MUS, refine=(P, parent))
     r['seconds'] = time.time() - t
     return r
 
@@ -127,9 +130,9 @@ if __name__ == '__main__':
         res = dict(zip(keys, pool.map(run, [(data[(n, nl)], lr, g) for n, nl, lr, g in keys])))
         boot_jobs = []
         for (name, nl) in data:
-            r0 = res[(name, nl, 1., 0.01)]
+            r0 = res[(name, nl, 1., GAMMA_REL)]
             pred = Gw @ r0['v']
-            boot_jobs += [((name, nl), (pred + nl*(T @ noise[40 + b]), 1., 0.01)) for b in range(N_BOOT)]
+            boot_jobs += [((name, nl), (pred + nl*(T @ noise[40 + b]), 1., GAMMA_REL)) for b in range(N_BOOT)]
         boot = pool.map(run, [b[1] for b in boot_jobs])
     save = dict(prov=prov, prov_key=prov_key, v_prov=v_prov, edges=edges, settings=np.array(SETTINGS),
                 noises=NOISES, lam95=lam95, hm_lmu=lmu, hm_lsd=lsd,

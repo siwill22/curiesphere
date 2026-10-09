@@ -221,12 +221,18 @@ def vis_coeffs(ocean, vis, r_top, lmax=LMAX, zero_depth=False):
     return depth_weighted_coeffs(slices(), to_gmm, lmax, n_terms(umax, lmax))
 
 
+def induced_components(lat):
+    """magnetisation (r, theta, phi) per SI.km of VIS induced by IGRF-13, on the grid of lat (extended
+    DH grid, as the ocean-age grid)"""
+    B = pyshtools.datasets.Earth.IGRF_13().expand(lmax=np.floor(len(lat)/2 - 1), extend=True)
+    k = 1e3*1e-9/pyshtools.constants.mu0.value          # SI.km x nT -> A
+    return [B.rad.data*k, B.theta.data*k, B.phi.data*k]
+
+
 def induced_to_gmm(lon, lat):
     """VIS grid (SI.km) -> induced GlobalMagnetizationModel, as GlobalVIS.vim() with IGRF-13,
     but with the inducing field expanded once rather than on every call"""
-    B = pyshtools.datasets.Earth.IGRF_13().expand(lmax=np.floor(len(lat)/2 - 1), extend=True)
-    k = 1e3*1e-9/pyshtools.constants.mu0.value          # SI.km x nT -> A
-    components = [B.rad.data*k, B.theta.data*k, B.phi.data*k]
+    components = induced_components(lat)
 
     def to_gmm(v):
         lon2, lat2, grids = DH2(lon, lat, [v*c for c in components])

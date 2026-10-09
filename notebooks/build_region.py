@@ -71,10 +71,18 @@ if 'reuse_cells' in cfg:
     n = basis.reuse_cell_columns(f'{REG}/{cfg["reuse_cells"]["cells_npz"]}', f'{REG}/{cfg["reuse_cells"]["dir"]}',
                                  cell, cell_ids, f'{CACHE}/cells')
     print(f'{n} cell columns reused')
-basis.compute_cell_columns(cell, cell_ids, ocean, f'{CACHE}/cells', cfg['base_depth_km'], cfg['lmax_cell'],
-                           int(os.environ.get('N_WORKERS', 8)))
+#    columns = "direct" in the config: G straight from sums over each cell's nodes (basis.cell_matrix_direct),
+#    no column files (fine cells, high degrees)
+direct = cfg.get('columns', 'global') == 'direct'
+if not direct:
+    basis.compute_cell_columns(cell, cell_ids, ocean, f'{CACHE}/cells', cfg['base_depth_km'], cfg['lmax_cell'],
+                               int(os.environ.get('N_WORKERS', 8)))
 f = f'{CACHE}/G.npz'
 if not os.path.exists(f):
-    G = basis.cell_matrix(f'{CACHE}/cells', cell_ids, plon, plat, lmin, lmax_fit)
+    if direct:
+        G = basis.cell_matrix_direct(cell, len(cell_ids), ocean, cfg['base_depth_km'], plon, plat, lmin, lmax_fit,
+                                     n_workers=int(os.environ.get('N_WORKERS', 3)))
+    else:
+        G = basis.cell_matrix(f'{CACHE}/cells', cell_ids, plon, plat, lmin, lmax_fit)
     np.savez(f, G=G, plon=plon, plat=plat, cell_ids=cell_ids)
 print(f'G: {np.load(f)["G"].shape} (points x cells)')

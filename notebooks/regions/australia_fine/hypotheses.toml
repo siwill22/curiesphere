@@ -1,0 +1,16 @@
+# Hand-written hypotheses for run_linear_models.py, part (4). Each entry is a named list of design
+# columns; VIS = sum of columns x coefficients (+ the spatially correlated rest u). Columns:
+#   intercept                one mean level (prior 0-4 SI.km)
+#   class                    one mean per province class (cratons+shields / orogens+arcs /
+#                            margins+rifts+oceanic), in place of the intercept (prior 0-4 SI.km each)
+#   crust, lab, heat_flow, age   standardised covariates (prior -2..2 SI.km per standard deviation)
+#   heat_flow_seisheat, heat_flow_heatr   alternative heat-flow products
+#   undated                  provinces without a magmatic age (offset, -2..2)
+#   craton                   the North, West and South Australian Cratons together (offset, -2..2)
+#   group:<prov_group>       one Hasterok province group, e.g. "group:West Australian Craton" (offset)
+# The automatic set (all subsets of crust, class, age, heat_flow, lab, and the merging models) is
+# scored as well. The two entries below are EXAMPLES: edit or replace them.
+
+[hypotheses]
+example_cratons_differ = ["intercept", "craton"]
+example_thick_cold_crust = ["intercept", "crust", "heat_flow"]

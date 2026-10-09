@@ -19,3 +19,41 @@ model_error_shape = "lcs1"
 [reuse_cells]
 cells_npz = "../../inversion/cells.npz"
 dir = "../../inversion/cells"
+
+# covariates (domains/covariates.py, run_covariates.py); '~' is expanded
+[covariates]
+moho = "~/Data/AuSREM-CM-moho/AusMoho2012.xyz"                  # columns lat, lon, Moho depth (km)
+crust_fallback = "~/Data/Moho/crust1.0/crust1_CrustalThickness.nc"
+lab = "~/Data/AuSREM-CM-moho/LAB.xyz"                            # columns lon, lat, depth (km)
+lab_fallback = "~/Data/litho1.0/grids/litho1_LID-BOTTOM.nc"      # metres
+heat_flow = "~/Library/CloudStorage/OneDrive-UniversityofTasmania/Data/Heatflow/HFgrid14.nc"
+
+[covariates.heat_flow_alt]
+seisheat = "~/GIT/SeisHeat/out/method1_grid.nc:q_bar"            # similarity method on SL2013sv
+heatr = "~/GIT/Heatr/data/processed/heatflow_pred_13.nc:q_pred"
+
+# degree bands and data models (build_bands.py): each run is a variant of the problem in cache/bands/<name>,
+# used by the run scripts with env BAND=<name>. Noise 'lcs1-2e': the per-degree disagreement of LCS-1 and
+# MLI 2E seen through the LCS-1 filter (the other model is the reference); 'mf7': LCS-1 - MF7 (first build).
+# Synthetic runs have no real data and no model-error term; below degree 16 their noise spectrum is flat.
+[bands]
+lmax_cell = 185
+cell_dir = "cache/cells_l185"            # columns to at least lmax_cell (the first build's stop at 150)
+noise = "lcs1-2e"
+
+[bands.models]                            # coefficients, and the filter applied to data, G and noise alike
+lcs1 = { coeffs = "lcs1", filter = "lcs1" }
+2e = { coeffs = "~/Library/CloudStorage/OneDrive-UniversityofTasmania/Data/StefanMausData/xDLFI/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901.shc", filter = "none" }
+
+[bands.runs]
+lcs1_16-133_mf7 = { data = "lcs1", lmin = 16, lmax = 133, noise = "mf7" }    # the first build again (check)
+lcs1_16-100 = { data = "lcs1", lmin = 16, lmax = 100 }
+lcs1_16-133 = { data = "lcs1", lmin = 16, lmax = 133 }
+lcs1_16-185 = { data = "lcs1", lmin = 16, lmax = 185 }
+lcs1_20-133 = { data = "lcs1", lmin = 20, lmax = 133 }
+lcs1_25-133 = { data = "lcs1", lmin = 25, lmax = 133 }
+2e_16-100 = { data = "2e", lmin = 16, lmax = 100 }
+2e_16-133 = { data = "2e", lmin = 16, lmax = 133 }
+2e_16-185 = { data = "2e", lmin = 16, lmax = 185 }
+syn_1-133 = { data = "lcs1", lmin = 1, lmax = 133, synthetic = true }
+syn_16-133 = { data = "lcs1", lmin = 16, lmax = 133, synthetic = true }

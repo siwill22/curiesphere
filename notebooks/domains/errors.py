@@ -31,10 +31,11 @@ def lowes(c):
     return (l+1)*(c**2).sum((0, 2))
 
 
-def cov_coeffs(R_l, lmin, lmax_fit):
-    """Legendre coefficients c_l of the Br covariance from a Lowes spectrum, band and filter applied"""
+def cov_coeffs(R_l, lmin, lmax_fit, F=None):
+    """Legendre coefficients c_l of the Br covariance from a Lowes spectrum, band and filter applied
+    (F: per-degree filter, default the LCS-1 filter)"""
     l = np.arange(lmax_fit+1)
-    F = band_filter(lmax_fit)
+    F = band_filter(lmax_fit) if F is None else np.asarray(F)[:lmax_fit+1]
     c = (l+1)*np.asarray(R_l)[:lmax_fit+1]/(2*l+1)*F**2
     c[:lmin] = 0
     return c

@@ -2,21 +2,17 @@
 Run from notebooks/: PYTHONPATH=..:$PYTHONPATH python regions/australia/plot_merge_check.py"""
 import numpy as np
 import pygmt
-import xarray as xr
+
+from domains.plotting import cell_grid, REGION_AUSTRALIA
 
 C = 'regions/australia/cache'
 cells = np.load(f'{C}/cells.npz')
-cell = cells['cell']
 m = np.load(f'{C}/merge.npz', allow_pickle=True)
-glat = np.linspace(90, -90, cell.shape[0]); glon = np.linspace(0, 360, cell.shape[1])
-REGION = [108, 158, -46, -3]
+REGION = REGION_AUSTRALIA
 
 
 def grid(v):
-    g = np.full(cell.shape, np.nan)
-    g[cell >= 0] = v[cell[cell >= 0]]
-    return xr.DataArray(g[::-1], coords=dict(lat=glat[::-1], lon=glon), dims=('lat', 'lon')).sel(
-        lon=slice(REGION[0], REGION[1]), lat=slice(REGION[2], REGION[3]))
+    return cell_grid(v, cells, REGION)
 
 
 # edges between cells, as lon/lat midpoints of the cell centres, for drawing boundaries

@@ -21,6 +21,8 @@ from collections import deque
 import numpy as np
 from scipy.optimize import lsq_linear
 
+from .graph import laplacian
+
 RESYNC = 100
 K_SAVE = 100
 MIN_CELLS = 3
@@ -32,9 +34,7 @@ def setup(Gw, edges, weights=None, size=None, ridge_rel=1e-6):
     n = Gw.shape[1]
     w = np.ones(len(edges)) if weights is None else np.asarray(weights, float)
     GtG = Gw.T @ Gw
-    Lap = np.zeros((n, n))
-    for (i, j), wij in zip(edges, w):
-        Lap[i, j] -= wij; Lap[j, i] -= wij; Lap[i, i] += wij; Lap[j, j] += wij
+    Lap = laplacian(edges, w, n)
     nbr = [dict() for _ in range(n)]
     for (i, j), wij in zip(edges, w):
         nbr[i][j] = wij

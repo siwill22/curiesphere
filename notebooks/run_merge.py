@@ -18,7 +18,8 @@ Weighting of the data (WEIGHTING):
             projected onto the compressed subspace (99.9% of the data energy kept)
 With 'noise' and 'points', null and bootstrap errors are the random-phase noise realisations of
 build_region.py (scaled to sigma) passed through the same transform, as in merge_domains.py.
-MODES: 'fine' (default) and/or 'refine'.
+MODES: 'fine' (default) and/or 'refine'. With env BAND=<name> (build_bands.py) the band's data are used and the
+output goes to its directory.
 
 Run from notebooks/ (conda env pygmt17):
     PYTHONPATH=..:$PYTHONPATH python run_merge.py regions/australia/config.toml
@@ -33,7 +34,7 @@ import multiprocessing
 
 import numpy as np
 
-from domains import merge, outputs
+from domains import merge, outputs, problem
 
 cfg_path = sys.argv[1]
 with open(cfg_path, 'rb') as f:
@@ -47,7 +48,8 @@ V0 = 0.6
 LAM_RELS = [float(x) for x in os.environ.get('LAM_RELS', '1,0.333333').split(',')]
 GAMMAS = [float(x) for x in os.environ.get('GAMMAS', '0,0.001,0.002,0.005,0.01').split(',')]
 SETTINGS = [(lr, g) for lr in LAM_RELS for g in GAMMAS]
-BOOT_SETTINGS = [tuple(float(x) for x in os.environ.get('BOOT', '1,0.002').split(','))]
+BOOT_SETTINGS = ([] if os.environ.get('BOOT') == 'none' else                # 'none': no bootstrap (synthetic-only bands)
+                 [tuple(float(x) for x in os.environ.get('BOOT', '1,0.002').split(','))])
 TAG = os.environ.get('TAG', '')
 WEIGHTING = os.environ.get('WEIGHTING', 'points')
 MODES = os.environ.get('MODES', 'fine').split(',')
@@ -55,21 +57,8 @@ N_WORKERS = int(os.environ.get('N_WORKERS', 8))
 SEED = 20261003
 
 # weighted problem
-E = np.load(f'{CACHE}/errors.npz')
-G = np.load(f'{CACHE}/G.npz')['G']
-z = np.load(f'{CACHE}/data.npz')
-cells = np.load(f'{CACHE}/cells.npz')
-sigma = float(np.sqrt(np.mean((z['d_lcs'] - z['d_mf7'])**2)))
-if WEIGHTING == 'model':
-    T = E['T']/np.sqrt(float(E['sn2']) + float(E['s2'])*E['lam'])[:, None]
-elif WEIGHTING == 'noise':
-    T = E['T']/sigma
-else:
-    T = np.linalg.svd(E['T'].T, full_matrices=False)[0].T/sigma      # orthonormal rows spanning the subspace
-Gw = T @ G
-dw_real = T @ (z['d_lcs'] - z['b'])
-noise = np.load(f'{CACHE}/noise.npz')['noise']
-noise_w = (T @ (noise*sigma/np.sqrt(np.mean(noise**2))).T).T          # realisations, transformed
+pb = problem.load(cfg_path, WEIGHTING)
+cells, sigma, Gw, dw_real, noise_w = (pb[k] for k in ('cells', 'sigma', 'Gw', 'dw_real', 'noise_w'))
 parent, edges = cells['parent'], cells['edges']
 P = {'fine': merge.setup(Gw, edges), 'coarse': merge.coarse_problem(Gw, edges, parent)}
 print(f'{Gw.shape[1]} fine cells, {P["coarse"]["n"]} coarse cells, {Gw.shape[0]} dimensions; weighting {WEIGHTING}, '
@@ -151,7 +140,7 @@ if __name__ == '__main__':
             save[f'{mode}_boot{i}_prob'] = o['boot'][s]['prob']
             save[f'{mode}_boot{i}_K'] = o['boot'][s]['K']
             save[f'{mode}_boot{i}_label'] = o['boot'][s]['label']
-    np.savez(f'{CACHE}/merge_{WEIGHTING}{TAG}.npz', **save)
+    np.savez(f'{pb["cache"]}/merge_{WEIGHTING}{TAG}.npz', **save)
 
     # comparison of the two modes
     if len(out) == 2:
