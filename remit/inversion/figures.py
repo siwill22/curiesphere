@@ -84,8 +84,24 @@ def standard(ds, stem):
                    (ds.model.values, f'{tag}Model', *BR_CPT, 'Br (nT)'),
                    (ds.residual.values, f'{tag}Data minus model (RMS {rms:.1f} nT)', *BR_CPT, 'Br (nT)')]
         lon = _lon180(ds.plon.values)
-        region = [float(lon.min()) - 1, float(lon.max()) + 1, float(ds.plat.min()) - 1, float(ds.plat.max()) + 1]
-        proj, width, dx, dy = 'M11c', 11, '12.5c', None
+        if lon.max() - lon.min() > 180:                 # across the dateline: longitudes 0-360
+            lon = np.mod(ds.plon.values, 360)
+        lat = ds.plat.values
+        spacing = np.radians(np.degrees(np.sqrt(4*np.pi/(12*cfg['fit']['data_nside']**2))))   # HEALPix point spacing (rad)
+        width, dx = 11, '12.5c'
+        if np.abs(lat).max() < 70:                      # Mercator
+            region = [float(lon.min()) - 1, float(lon.max()) + 1, float(lat.min()) - 1, float(lat.max()) + 1]
+            proj, dy = f'M{width}c', None
+            dot = 0.9*width*np.degrees(spacing)/(region[1] - region[0])/np.cos(np.radians(lat))
+        else:                                           # reaching high latitudes: Lambert azimuthal equal area
+            from .graph import unit
+            xyz = unit(ds.plon.values, lat)
+            c = xyz.mean(0)
+            c /= np.linalg.norm(c)
+            lon0, lat0 = np.degrees(np.arctan2(c[1], c[0])), np.degrees(np.arcsin(c[2]))
+            radius = np.degrees(np.arccos(np.clip(xyz @ c, -1, 1)).max()) + 2
+            region, proj, dy = 'g', f'A{lon0:.2f}/{lat0:.2f}/{radius:.1f}/{width}c', f'-{width + 3.0:.1f}c'
+            dot = np.full(len(lat), 0.9*(width/2)/(2*np.sin(np.radians(radius)/2))*spacing)
     else:
         lmin, lmax = int(ds.l.min()), int(ds.l.max())
         panels += [(br_map(ds, ds.data.values), f'{tag}Data less background, degrees {lmin}-{lmax}', *BR_CPT, 'Br (nT)'),
@@ -103,8 +119,8 @@ def standard(ds, stem):
         pygmt.makecpt(cmap=cmap, series=series, background=True, reverse=cmap == 'devon')
         if isinstance(g, xr.DataArray):
             fig.grdimage(g, cmap=True, nan_transparent=True)
-        else:
-            fig.plot(x=lon, y=ds.plat.values, fill=g, cmap=True, style='c0.07c')
+        else:                                        # dots as wide as the point spacing on the Mercator map
+            fig.plot(x=lon, y=ds.plat.values, fill=g, cmap=True, style='c', size=dot)
         fig.coast(shorelines='0.2p,gray30', resolution='l' if local else 'c', area_thresh=5000)
         if local and cfg['target']['area'] != 'continental_crust':
             for poly in geometry.read_outline(cfg['target']['area'])[0]:
