@@ -55,7 +55,9 @@ INFO = {
         'matters as much as the number of degrees. The noise level for every run is the disagreement of the '
         'two models degree by degree (LCS-1\'s own damping of the highest degrees is not counted as error). '
         '"Synthetic only" runs test what degrees 1-15 would add if the core field did not hide them: '
-        'they have no real data.'),
+        'they have no real data. Not shown here (finer, ~50 km cells): MLI 2E to degree 300, and a test of '
+        'future data with low noise to degree 300, which recovers most of the 50-200 km structure that '
+        'today\'s data miss; see docs/experiment-sh-degree-range.md in the curiesphere repository.'),
     'method.truth': 'The VIS map used to make the synthetic data.',
     'method.gp': (
         'Gaussian-process map: the most likely VIS when VIS is a mean level plus a smooth random part whose '

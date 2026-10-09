@@ -132,19 +132,21 @@ Maps for the multiscale truth: `notebooks/regions/australia_fine/future_maps.png
 
 ## Reproduce
 
-Run from `notebooks/` in the conda env `pygmt17`, lightly (≤3 workers, `nice -n 15`, BLAS threads 1). Prefix every command with `PYTHONPATH=..:$PYTHONPATH`.
+`notebooks/run_degree_experiment.sh stage1 stage2 stage3` reruns everything as it was run: every step, its settings and its log file. It runs one job at a time with ≤3 workers, `nice -n 15` and single-threaded BLAS, in the conda env `pygmt17`. Stages 2–3 first need `build_region.py regions/australia_fine/config.toml`.
 
-1. **Build the band variants.** `[bands]` in `regions/australia/config.toml` and `regions/australia_fine/config.toml` defines the runs:
-   - `build_region.py <config>`, then `build_bands.py <config>`.
-2. **Make the multiscale truth (fine region):** `make_multiscale_truth.py`.
-3. **Run each band** (`BAND=<run>`):
-   - `run_linear_models.py` (`PARTS=gp,gp2`);
-   - `run_bounds.py`;
-   - `run_merge.py` (`MODES=refine`);
-   - `run_realistic_synthetic.py` (`TRUTH_FROM=<fine cache>/realistic_synthetic.npz MERGE_MODE=refine GAMMA_REL=0.005`).
-4. **Compare and plot:**
-   - `compare_bands.py <config>` (stages 1–2);
-   - `compare_future.py regions/australia_fine/config.toml` (stage 3);
-   - `regions/australia_fine/plot_future.py`.
+| What | Where |
+|---|---|
+| The runs | `[bands]` in `regions/australia/config.toml` and `regions/australia_fine/config.toml` |
+| Building the band variants | `build_bands.py` |
+| Comparing them | `compare_bands.py` (stages 1–2), `compare_future.py` (stage 3) |
+| Maps | `regions/australia_fine/plot_future.py` |
+| Results (not in git) | `regions/<region>/cache/bands/<run>/`, `bands_summary.npz`, `future_summary.npz` |
 
-Results (not in git) are in `regions/<region>/cache/bands/<run>/`, `bands_summary.npz` and `future_summary.npz`.
+The inversion explorer (GeodeViewers/CuriesphereInversion, Degrees tab) shows stage 1 only. Stages 2–3 use the ~50 km cells, and the viewer holds one region.
+
+## Follow-up
+
+1. **Raise merging's domain cap.** `K_SAVE = 100` in `domains/merge.py` limits merging to 100 domains. The multiscale truth reached it with future data to degree 300. Raise it and rerun the stage 3 merging.
+2. **Regression, class statistics and hypotheses on the ~50 km cells.** They were skipped there (`PARTS=gp`), because refitting the correlation length many times on 5,358 cells is slow. They need a faster recomputation of the correlation blocks.
+3. **Degree 500.** This needs ~25 km cells (~21,000 over Australia), denser data points and a matrix-free solver: the dense G and the data-space covariances no longer fit.
+4. **Stages 2–3 in the viewer.** This would need a second region (the ~50 km cells).
