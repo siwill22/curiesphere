@@ -13,7 +13,8 @@ The problem of a local fit (ADR 0002), built from a config; methods estimate cel
 
 Config keys used:
   [target] area (an outline file), nside;  [geometry] layers (one), direction, lmax;  [compute] columns_backend,
-  coarsen;  [fit] buffer_km, data_nside, background {vis_model, remanence, near_ridge};
+  coarsen;  [fit] buffer_km, data_nside, background {vis_model, remanence, near_ridge, outside (a global result whose VIS
+             fills the continental crust outside the target; vis_model then only in the oceans)};
   [data] model ('lcs1', 'mf7', a .shc path, or 'synthetic'), band, filter; synthetic: based_on, truth, seed;
   [errors] weighting ('subspace', 'full' or 'diagonal'), keep, nugget;
   [errors.noise] reference (field model), rms_nT (a number, 'points': the RMS of the difference at the points, or
@@ -156,7 +157,13 @@ def local(cfg, cache, say=print):
         y = G @ truth + draw(np.random.default_rng(d['seed']))
     else:
         bg = fit['background']
-        C_bg = data.background(cache, mask, name, geo['lmax'], bg['vis_model'], bg['remanence'], bg['near_ridge'])
+        if bg.get('outside'):           # continental crust outside the target from a global result, oceans as GCM's
+            C_bg = (data.background(cache, geometry.continental_crust(), 'continental_crust', geo['lmax'],
+                                    bg['vis_model'], bg['remanence'], bg['near_ridge'])
+                    + data.result_background(cache, mask, name, bg['outside'], geo['layers'][0], geo['direction'],
+                                             geo['lmax'], band.lmax, comp['columns_backend'], say))
+        else:
+            C_bg = data.background(cache, mask, name, geo['lmax'], bg['vis_model'], bg['remanence'], bg['near_ridge'])
         y = Y @ band.rows(c_model) - Y @ (Fb*band.rows(C_bg))
     info = dict(n_points=len(plon), n_data=n_data, noise_rms=sn, model_error_rms=s, weighting=weighting)
     say(f'{len(cells)} cells (NSIDE {cells.nside}), {len(plon)} points, {n_data} data ({weighting}); noise RMS '

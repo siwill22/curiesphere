@@ -1,0 +1,27 @@
+key,id,prov_name,prov_type,crust_type,prov_group,param
+373,374,Dampier-Manawai Ridge,wide rift,transitional,Zealandia Extensional Province,Dampier_Manawai_Ridge
+374,375,Challenger Plateau,wide rift,continental,Zealandia Extensional Province,Challenger_Plateau
+375,376,Lord Howe Rise,wide rift,continental,Zealandia Extensional Province,Lord_Howe_Rise
+376,377,West Norfolk Ridge,wide rift,continental,Zealandia Extensional Province,West_Norfolk_Ridge
+377,378,Chesterfield Plateau,wide rift,transitional,Zealandia Extensional Province,Chesterfield_Plateau
+378,379,Taupo Volcanic Zone,back-arc basin,transitional,,Taupo_Volcanic_Zone
+379,380,Hikurangi Province,accretionary complex,continental,,Hikurangi_Province
+380,381,Taranaki Province,volcanic arc,continental,Zealandia Extensional Province,Taranaki_Province
+383,384,Three Kings Ridge,wide rift,transitional,Zealandia Extensional Province,Three_Kings_Ridge
+394,395,Taranaki Basin,back-arc basin,transitional,Zealandia Extensional Province,Taranaki_Basin
+395,396,Campbell Plateau,accretionary complex,transitional,,Campbell_Plateau
+401,402,Norfolk Basin,back-arc basin,transitional,Zealandia Extensional Province,Norfolk_Basin
+409,410,Takaka terrane,volcanic arc,continental,,Takaka_terrane
+410,411,Haast Schist,accretionary complex,continental,,Haast_Schist
+411,412,Torlesse Terrane,accretionary complex,continental,,Torlesse_Terrane
+418,419,Murihiku Terrane,accretionary complex,continental,,Murihiku_Terrane
+419,420,Havre Trough,back-arc basin,transitional,,Havre_Trough
+422,423,New Caledonian Trough,back-arc basin,transitional,Zealandia Extensional Province,New_Caledonian_Trough
+427,428,Colville Ridge,volcanic arc,transitional,,Colville_Ridge
+430,431,Niuaf'ou-Futuna Basin,back-arc basin,continental,,Niuaf_ou_Futuna_Basin
+432,433,Louisiade Plateau,wide rift,transitional,Zelandia Extensional Province,Louisiade_Plateau
+433,434,West Torres Plateau,wide rift,transitional,Zelandia Extensional Province,West_Torres_Plateau
+442,443,South Hikurangi Province,magmatic province,continental,,South_Hikurangi_Province
+859,860,Buller Terrane,accretionary complex,continental,,Buller_Terrane
+860,861,Joseph Gilbert Seamount,wide rift,continental,,Joseph_Gilbert_Seamount
+904,905,Bollons Seamount,volcanic arc,transitional,Takaka terrane,Bollons_Seamount

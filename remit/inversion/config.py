@@ -37,7 +37,7 @@ def merge(base, over):
 
 
 PATH_KEYS = [('target', 'area'), ('parameterisation', 'table')]
-NESTED_PATH_KEYS = [('method', 'hypotheses', 'hand'), ('method', 'hypotheses', 'labels'), ('method', 'layouts', 'merge')]
+NESTED_PATH_KEYS = [('fit', 'background', 'outside'), ('method', 'hypotheses', 'hand'), ('method', 'hypotheses', 'labels'), ('method', 'layouts', 'merge')]
 LIST_PATH_KEYS = [('method', 'start')]          # [path, ...]: the first item is a path
 
 

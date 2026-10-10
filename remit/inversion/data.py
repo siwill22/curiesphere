@@ -14,8 +14,11 @@ filtered by its makers).
                 (in a global fit all continental crust, which leaves oceanic VIS and slabs under ocean-age crust),
                 VIS spread over the HM05 oceanic crust as in depth.vis_coeffs, plus ocean remanence (an
                 OCEAN_MODEL_LIST model, by default GK07 with the tuned near-ridge enhancement)
+  result background   the continental crust outside a local fit's target with the VIS of a global result (GCM-GLC),
+                by the cells' own node sums; with background() of all continental crust for the oceans
 """
 import functools
+import json
 import os
 
 import numpy as np
@@ -28,6 +31,7 @@ from . import geometry
 from .columns import packed_lm
 
 BACKGROUND_VERSION = 1
+RESULT_BACKGROUND_VERSION = 1
 
 
 def read_shc(path, lmax):
@@ -127,6 +131,42 @@ def background(cache, mask, mask_name, lmax=depth.LMAX, vis_model='Hemant2005+sl
             c = c + depth.remanent_coeffs(g.ocean, r_top, params, lmax=lmax)[0].coeffs
         return c
     return np.asarray(cache.array('background', spec, 'coeffs', compute))
+
+
+def result_background(cache, mask, mask_name, result, layer, direction, lmax, lmax_calc, backend='numpy', log=print):
+    """Gauss coefficients (2, lmax+1, lmax+1; zero above lmax_calc) of the continental crust outside mask, with the
+    VIS of a global result (e.g. GCM-GLC) per HEALPix cell, by the same node sums as the cell columns (so the outside
+    is modelled exactly as a fit models its own cells). Cells straddling the edge of mask keep only their nodes
+    outside it. Add data.background(..., mask=continental crust) for the oceans."""
+    import hashlib
+    import xarray as xr
+    from .columns import Setup, node_sum
+    with open(result, 'rb') as f:
+        rhash = hashlib.sha256(f.read()).hexdigest()[:16]
+    ds = xr.open_dataset(result)
+    nside = int(json.loads(ds.attrs['config'])['target']['nside'])
+    spec = dict(grid=geometry.AGE_GRID, mask=mask_name, result=rhash, nside=nside, layer=layer, direction=direction,
+                lmax=lmax_calc, backend=backend, version=RESULT_BACKGROUND_VERSION)
+
+    def compute():
+        g = geometry.grid()
+        out_mask = geometry.continental_crust(g) & ~mask
+        cells = geometry.make_cells(out_mask, nside, g)
+        pos = {int(c): i for i, c in enumerate(ds.cell_id.values)}
+        missing = [c for c in cells.ids if int(c) not in pos]
+        if missing:
+            raise ValueError(f'{result}: {len(missing)} cells of the outside have no value')
+        v = ds.vis.values[[pos[int(c)] for c in cells.ids]]
+        S = Setup(layer, direction, lmax_calc, out_mask, g)
+        acc = np.zeros((2, len(S.L)))
+        blocks = [np.arange(k, min(k + 500, len(cells))) for k in range(0, len(cells), 500)]
+        log(f'outside background: {len(cells)} cells of {os.path.basename(result)} ({backend})')
+        for idx in blocks:
+            acc += np.einsum('icn,c->in', node_sum(cells.cell, idx, S, backend), v[idx])
+        c = np.zeros((2, lmax + 1, lmax + 1))
+        c[:, S.L, S.M] = acc
+        return c
+    return np.asarray(cache.array('result_background', spec, 'coeffs', compute))
 
 
 def points(mask, nside_data, buffer_km, g=None):

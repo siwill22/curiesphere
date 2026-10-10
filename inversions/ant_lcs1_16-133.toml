@@ -1,0 +1,10 @@
+# Antarctica, LCS-1, degrees 16-133: as aus_lcs1_16-133.toml (Australia) with the continent's Hasterok continental and
+# transitional provinces as target area (make_continent.py), and data points at half density (HEALPix NSIDE 64,
+# ~90 km apart, enough for degree 133; checked on Australia) because the continent is several times larger.
+inherit = "aus_lcs1_16-133.toml"
+
+[target]
+area = "outlines/ant.gpkg"
+
+[fit]
+data_nside = 64

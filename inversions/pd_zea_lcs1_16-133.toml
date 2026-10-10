@@ -1,0 +1,16 @@
+# PD-ZEA: one VIS per Hasterok province of Zealandia (domains/zea_domains.csv), as PD-AUS
+inherit = "zea_lcs1_16-133.toml"
+
+[errors]
+weighting = "diagonal"
+model_error = { rms_nT = 0.0 }
+
+[parameterisation]
+kind = "domains"
+table = "domains/zea_domains.csv"
+
+[method]
+name = "pd"
+bounds = [0.0, inf]
+noise = "fixed"
+seed = 20261008

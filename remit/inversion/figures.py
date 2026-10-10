@@ -118,6 +118,8 @@ def standard(ds, stem):
         fig.basemap(region=region, projection=proj, frame=['af', '+t' + title])
         pygmt.makecpt(cmap=cmap, series=series, background=True, reverse=cmap == 'devon')
         if isinstance(g, xr.DataArray):
+            if isinstance(region, list) and region[1] > 180:     # across the dateline: the grid in 0-360 too
+                g = g.assign_coords(lon=g.lon % 360).sortby('lon')
             fig.grdimage(g, cmap=True, nan_transparent=True)
         else:                                        # dots as wide as the point spacing on the Mercator map
             fig.plot(x=lon, y=ds.plat.values, fill=g, cmap=True, style='c', size=dot)

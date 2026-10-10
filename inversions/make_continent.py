@@ -5,7 +5,10 @@ ridges, units across the dateline). Each province is its own domain (param = its
 provinces). Writes outlines/<tag>.gpkg (the province polygons, lon/lat WGS84) and domains/<tag>_domains.csv (the
 columns of australia_domains.csv); edit the CSV by hand to share a value between provinces.
 
-    python make_continent.py nam|sam|afr        (env curiesphere, from inversions/)
+Eurasia (eur) joins Hasterok's Asia, Europe, India and Middle East and Southeast Asia, plus the Siberian shelf units
+that Hasterok files under North America (excluded from nam).
+
+    python make_continent.py nam|sam|afr|ant|zea|eur        (env curiesphere, from inversions/)
 """
 import os
 import re
@@ -27,15 +30,24 @@ CONTINENTS = {
         'Novosibirsk-Chukhi Fold Belt', 'Bennett-Borrovia Block', 'North Chuchi Basin', 'Bering Sea Margin']),
     'sam': ('South America', []),
     'afr': ('Africa', []),
+    'ant': ('Antarctica', []),
+    'zea': ('Zealandia', []),
+    'eur': (['Asia', 'Europe', 'India and Middle East', 'Southeast Asia'], []),
 }
+# units filed under another continent that belong to this one (Siberian shelf units filed under North America)
+INCLUDE = {'eur': ['Novosibirsk-Chukhi Fold Belt', 'Bennett-Borrovia Block', 'Unnamed Fold Belt', 'North Chuchi Basin']}
 
 
 def main(tag):
     from gprm.datasets import Geology
     name, exclude = CONTINENTS[tag]
+    names = [name] if isinstance(name, str) else name
     prov = Geology.fetch_GlobalTectonicMap()
-    sel = prov[(prov.continent == name) & prov.crust_type.isin(['continental', 'transitional'])
-               & ~prov.prov_name.isin(exclude)].copy()
+    sel = prov[(prov.continent.isin(names) | prov.prov_name.isin(INCLUDE.get(tag, [])))
+               & prov.crust_type.isin(['continental', 'transitional']) & ~prov.prov_name.isin(exclude)].copy()
+    name = ', '.join(names)
+    unnamed = sel.prov_name.isna()                  # some Antarctic units have no name: '<type> <index>'
+    sel.loc[unnamed, 'prov_name'] = sel.prov_type[unnamed].fillna('unit') + ' ' + sel.index[unnamed].astype(str)
     param = sel.prov_name.map(lambda s: re.sub(r'[^A-Za-z0-9]+', '_', s).strip('_'))
     dup = param.duplicated(keep=False)
     sel['param'] = param.where(~dup, param + '_' + sel.index.astype(str))

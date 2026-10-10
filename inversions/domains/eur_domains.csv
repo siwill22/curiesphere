@@ -1,0 +1,346 @@
+key,id,prov_name,prov_type,crust_type,prov_group,param
+8,9,Sinai Shield,volcanic arc,continental,Arabian-Nubian Shield,Sinai_Shield
+24,25,Palmyra Fold Belt,orogenic belt,continental,,Palmyra_Fold_Belt
+25,26,Zagros Foreland Basin,foredeep basin,continental,,Zagros_Foreland_Basin
+45,46,North Azania,orogenic belt,continental,,North_Azania
+46,47,Midyan Terrane,volcanic arc,continental,Arabian-Nubian Shield,Midyan_Terrane
+47,48,Asir Terrane,volcanic arc,continental,Arabian-Nubian Shield,Asir_Terrane
+48,49,Ar Rayn Terrane,volcanic arc,continental,Arabian-Nubian Shield,Ar_Rayn_Terrane
+49,50,Ad Dawadimi Terrane,volcanic arc,continental,Arabian-Nubian Shield,Ad_Dawadimi_Terrane
+50,51,Al Madinah Terrane,volcanic arc,continental,Arabian-Nubian Shield,Al_Madinah_Terrane
+51,52,Jeddah Terrane,volcanic arc,continental,Arabian-Nubian Shield,Jeddah_Terrane
+52,53,Afif Terrane,volcanic arc,continental,Arabian-Nubian Shield,Afif_Terrane
+53,54,Hulayfah Terrane,volcanic arc,continental,Arabian-Nubian Shield,Hulayfah_Terrane
+56,57,East Arabian Platform,passive margin,continental,,East_Arabian_Platform
+57,58,Ha'il Terrane,volcanic arc,continental,Arabian-Nubian Shield,Ha_il_Terrane
+58,59,Semail Ophilite,ophiolite complex,continental,,Semail_Ophilite
+59,60,Israel Accretionary complex,accretionary complex,continental,,Israel_Accretionary_complex
+60,61,Palmyrides,orogenic belt,continental,,Palmyrides
+64,65,Arabian Platform,basin,continental,,Arabian_Platform
+122,123,Tarim Basin,craton,continental,,Tarim_Basin
+123,124,North Japan Arc,volcanic arc,continental,,North_Japan_Arc
+124,125,South Japan Arc,volcanic arc,continental,,South_Japan_Arc
+125,126,Karakoram Province,volcanic arc,continental,Lhasa,Karakoram_Province
+126,127,Qiangtang Terrane,accretionary complex,continental,,Qiangtang_Terrane
+127,128,Irtysh-Zaisan Fold Belt,orogenic belt,continental,Kazakh Orocline,Irtysh_Zaisan_Fold_Belt
+128,129,Yenisei-Sayan Orogen,orogenic belt,continental,Siberian Craton,Yenisei_Sayan_Orogen
+129,130,Tungus Province,craton,continental,Siberian Craton,Tungus_Province
+130,131,Daldyn Terrane,shield,continental,Siberian Craton,Daldyn_Terrane_130
+131,132,Anabar Shield,shield,continental,Siberian Craton,Anabar_Shield
+132,133,Markha Terrane,shield,continental,Siberian Craton,Markha_Terrane
+133,134,Olenek Province,shield,continental,Siberian Craton,Olenek_Province
+134,135,Baikal Rift,narrow rift,continental,,Baikal_Rift
+135,136,Muya Terrane,orogenic belt,continental,Siberian Craton,Muya_Terrane
+136,137,Kular-Nera-Polousnyi Fold Belt,passive margin,transitional,Verkhoyansk Kolyma,Kular_Nera_Polousnyi_Fold_Belt
+137,138,Omulevka Terrane,shield,continental,Verkhoyansk Kolyma,Omulevka_Terrane
+138,139,Kolyma Accretionary Prism,accretionary complex,continental,Verkhoyansk Kolyma,Kolyma_Accretionary_Prism
+139,140,Oloi-Yarakvaam Terrane,volcanic arc,continental,Verkhoyansk Kolyma,Oloi_Yarakvaam_Terrane
+140,141,Ryukyu-Kyushu Volcanic Arc,volcanic arc,transitional,,Ryukyu_Kyushu_Volcanic_Arc
+141,142,Okinawa Trough,back-arc basin,transitional,,Okinawa_Trough
+142,143,Yinshan Block,shield,continental,North China Craton,Yinshan_Block
+143,144,Yanshan Fold Belt,orogenic belt,continental,North China Craton,Yanshan_Fold_Belt
+144,145,Ordos Block,shield,continental,North China Craton,Ordos_Block
+145,146,Khondalite Belt,shield,continental,North China Craton,Khondalite_Belt
+146,147,Sibumasu Terrane,passive margin,continental,,Sibumasu_Terrane
+147,148,Banda Forearc,accretionary complex,transitional,,Banda_Forearc
+148,149,Katha-Gangaw Range,ophiolite complex,continental,,Katha_Gangaw_Range
+150,151,Sula Spur,accretionary complex,transitional,,Sula_Spur
+151,152,Banda Volcanic Arc,volcanic arc,continental,,Banda_Volcanic_Arc
+152,153,Southern Japan Forearc,accretionary complex,transitional,,Southern_Japan_Forearc
+153,154,Northern Japan Forearc,accretionary complex,transitional,,Northern_Japan_Forearc
+156,157,Sugoi Zone,shield,continental,Verkhoyansk Kolyma,Sugoi_Zone
+157,158,In'yali-Debi Fold Belt,back-arc basin,continental,Verkhoyansk Kolyma,In_yali_Debi_Fold_Belt
+158,159,Sulu Volcanic Arc,volcanic arc,continental,,Sulu_Volcanic_Arc
+159,160,Novosibirsk-Chukhi Fold Belt,orogenic belt,continental,Verkhoyansk Kolyma,Novosibirsk_Chukhi_Fold_Belt
+160,161,Lhasa Terrane,volcanic arc,continental,,Lhasa_Terrane
+161,162,Kohistan Arc,volcanic arc,continental,,Kohistan_Arc
+162,163,Ladakh Arc,volcanic arc,continental,,Ladakh_Arc
+163,164,Yidun Arc,volcanic arc,continental,,Yidun_Arc
+164,165,Sichuan Basin,craton,continental,,Sichuan_Basin
+165,166,Dabie Orogen,orogenic belt,continental,,Dabie_Orogen
+166,167,East Cathaysia,orogenic belt,continental,,East_Cathaysia
+167,168,Southern Caspian Basin,passive margin,continental,,Southern_Caspian_Basin
+168,169,Angara Belt,orogenic belt,continental,Siberian Craton,Angara_Belt
+169,170,Turan Basin,passive margin,continental,,Turan_Basin
+170,171,Scythian Platform,accretionary complex,continental,,Scythian_Platform
+171,172,Caucas Mountains,volcanic arc,continental,,Caucas_Mountains
+172,173,Sakhalin Arc,volcanic arc,continental,,Sakhalin_Arc
+173,174,Debin Terrane,ophiolite complex,continental,Verkhoyansk Kolyma,Debin_Terrane
+174,175,Java Forearc,accretionary complex,transitional,,Java_Forearc
+175,176,Java Volcanic Arc,volcanic arc,continental,,Java_Volcanic_Arc
+176,177,Sumatran Forearc,accretionary complex,transitional,,Sumatran_Forearc
+177,178,Halmahera Volcanic Arc,volcanic arc,continental,,Halmahera_Volcanic_Arc
+178,179,Luzon Forearc,accretionary complex,transitional,,Luzon_Forearc
+179,180,Sulawesi Ophiolite complex,ophiolite complex,continental,,Sulawesi_Ophiolite_complex
+180,181,Balkhash-Yili Fold Belt,orogenic belt,continental,Kazakh Orocline,Balkhash_Yili_Fold_Belt
+181,182,Northern Tian Shan,volcanic arc,continental,Kazakh Orocline,Northern_Tian_Shan
+182,183,Karakum Craton,shield,continental,,Karakum_Craton
+183,184,Gurvansayhan volcanic arc,volcanic arc,continental,Mongol Orocline,Gurvansayhan_volcanic_arc
+184,185,Onon Basin,accretionary complex,continental,Mongol Orocline,Onon_Basin
+185,186,Bayangol Island Arc,volcanic arc,continental,Mongol Orocline,Bayangol_Island_Arc
+186,187,Haraa Basin,accretionary complex,continental,Mongol Orocline,Haraa_Basin
+187,188,Zag Passive Margin,passive margin,continental,Mongol Orocline,Zag_Passive_Margin
+188,189,Baydrag Block,orogenic belt,continental,Mongol Orocline,Baydrag_Block
+189,190,Sangelin Metamorphic Belt,orogenic belt,continental,Mongol Orocline,Sangelin_Metamorphic_Belt
+190,191,Hamardavaa Metamorphic Belt,orogenic belt,continental,Mongol Orocline,Hamardavaa_Metamorphic_Belt
+191,192,Zharma-Saur Fold Belt,volcanic arc,continental,Kazakh Orocline,Zharma_Saur_Fold_Belt
+192,193,Aktau Microcontinent,orogenic belt,continental,Kazakh Orocline,Aktau_Microcontinent_192
+193,194,Zhaman-Sarysu Fold Belt,orogenic belt,continental,Kazakh Orocline,Zhaman_Sarysu_Fold_Belt
+194,195,Naryn Sedimentary Basin,basin,continental,Kazakh Orocline,Naryn_Sedimentary_Basin
+195,196,Ferghana Basin,basin,continental,Kazakh Orocline,Ferghana_Basin
+196,197,Chu-Yili Microcontinent,orogenic belt,continental,Kazakh Orocline,Chu_Yili_Microcontinent
+197,198,Erementau-Yili Arc,volcanic arc,continental,Kazakh Orocline,Erementau_Yili_Arc
+198,199,Arkalyk Arc,volcanic arc,continental,Kazakh Orocline,Arkalyk_Arc
+199,200,Baidaulet-Akbastau Volcanic Arc,volcanic arc,continental,Kazakh Orocline,Baidaulet_Akbastau_Volcanic_Arc
+200,201,Boshchekul-Chingiz Volcanic Arc,volcanic arc,continental,Kazakh Orocline,Boshchekul_Chingiz_Volcanic_Arc
+201,202,Aktau Microcontinent,accretionary complex,continental,Kazakh Orocline,Aktau_Microcontinent_201
+202,203,North Balkhash Basin,accretionary complex,continental,Kazakh Orocline,North_Balkhash_Basin
+203,204,Kirgiz-Terskey Arc,volcanic arc,continental,Kazakh Orocline,Kirgiz_Terskey_Arc
+204,205,Selety Arc,volcanic arc,continental,Kazakh Orocline,Selety_Arc
+205,206,Teniz Basin,basin,continental,Kazakh Orocline,Teniz_Basin
+206,207,Chu-Saryu Basin,basin,continental,Kazakh Orocline,Chu_Saryu_Basin
+207,208,Ishim-Middle Tien Shan Microcontinent,orogenic belt,continental,Kazakh Orocline,Ishim_Middle_Tien_Shan_Microcontinent
+208,209,Stepnyak-Northern Tien Shan,volcanic arc,continental,Kazakh Orocline,Stepnyak_Northern_Tien_Shan
+209,210,Junggar-Balkhash Wedge,accretionary complex,continental,Kazakh Orocline,Junggar_Balkhash_Wedge
+210,211,Karamai Basin,accretionary complex,continental,Kazakh Orocline,Karamai_Basin
+211,212,Devonian Continental Arc,volcanic arc,continental,Kazakh Orocline,Devonian_Continental_Arc
+212,213,Qilian Shan,back-arc basin,continental,,Qilian_Shan
+213,214,Tourgai-Karatau Basin,basin,continental,Kazakh Orocline,Tourgai_Karatau_Basin
+214,215,South Tian Shan,orogenic belt,continental,Tian Shan,South_Tian_Shan
+215,216,Bainaimiao-Ondor Sum Belt,orogenic belt,continental,,Bainaimiao_Ondor_Sum_Belt
+216,217,Erdaojing subduction complex,accretionary complex,continental,,Erdaojing_subduction_complex
+217,218,Henegshan-Baolidao Accretionary Complex,volcanic arc,continental,,Henegshan_Baolidao_Accretionary_Complex
+218,219,Junggar Basin,passive margin,continental,Kazakh Orocline,Junggar_Basin
+219,220,Gorny Altai,accretionary complex,continental,Mongol Orocline,Gorny_Altai
+220,221,Eravna Arc,volcanic arc,continental,Mongol Orocline,Eravna_Arc
+221,222,Idermeg Terrane,volcanic arc,continental,Mongol Orocline,Idermeg_Terrane
+222,223,Miri Zone,orogenic belt,continental,,Miri_Zone
+223,224,Sibu Zone,orogenic belt,continental,,Sibu_Zone
+224,225,Kuching Zone,orogenic belt,continental,,Kuching_Zone
+225,226,Sabah Zone,ophiolite complex,continental,,Sabah_Zone
+226,227,Lancangjiang Belt,ophiolite complex,continental,,Lancangjiang_Belt
+227,228,Sukhothai Block,volcanic arc,continental,,Sukhothai_Block
+228,229,Indochina Terrane,orogenic belt,continental,,Indochina_Terrane
+229,230,Loei-Petchabun Foldbelt,volcanic arc,continental,,Loei_Petchabun_Foldbelt
+230,231,Ailaoshan Terrane,ophiolite complex,continental,,Ailaoshan_Terrane
+231,232,Song Da Terrane,orogenic belt,continental,,Song_Da_Terrane
+232,233,Truongson Terrane,volcanic arc,continental,,Truongson_Terrane
+235,236,Western Sumatra,volcanic arc,continental,,Western_Sumatra
+236,237,West Cathaysia,orogenic belt,continental,,West_Cathaysia
+237,238,Gobi-Altai Zone,accretionary complex,continental,Mongol Orocline,Gobi_Altai_Zone
+238,239,Rudny Altai Terrane,volcanic arc,continental,Mongol Orocline,Rudny_Altai_Terrane
+239,240,Kuznetsk Basin,accretionary complex,continental,Mongol Orocline,Kuznetsk_Basin
+240,241,Altai-Mongolia Terrane,accretionary complex,continental,Mongol Orocline,Altai_Mongolia_Terrane
+241,242,Zavhan Basin,volcanic arc,continental,Mongol Orocline,Zavhan_Basin
+242,243,Lake Zone,accretionary complex,continental,Mongol Orocline,Lake_Zone
+243,244,West Sayan Terrane,accretionary complex,continental,Mongol Orocline,West_Sayan_Terrane
+244,245,North Tian Shan,orogenic belt,continental,Tian Shan,North_Tian_Shan
+245,246,Central Pamir,volcanic arc,continental,Qiangtang,Central_Pamir
+246,247,Songpan-Ganzi Hoh-Xil Terrane,orogenic belt,continental,,Songpan_Ganzi_Hoh_Xil_Terrane
+247,248,Kunlun/South Qilian Fold Belt,volcanic arc,continental,,Kunlun_South_Qilian_Fold_Belt
+250,251,Bicol Volcanic Arc,volcanic arc,continental,,Bicol_Volcanic_Arc
+251,252,Andaman Arc,volcanic arc,continental,,Andaman_Arc
+252,253,Indo-Burmese Ranges,accretionary complex,continental,,Indo_Burmese_Ranges
+253,254,West Burma Block,volcanic arc,continental,Wuntho-Popa Arc,West_Burma_Block
+254,255,Andaman Forearc,accretionary complex,transitional,,Andaman_Forearc
+255,256,Sumatran Volcanic Arc,volcanic arc,continental,,Sumatran_Volcanic_Arc
+256,257,Verkhoyansk Fold Belt,orogenic belt,continental,Verkhoyansk Kolyma,Verkhoyansk_Fold_Belt
+257,258,Avan Yuryakh Anticlinorium,back-arc basin,continental,Verkhoyansk Kolyma,Avan_Yuryakh_Anticlinorium
+258,259,Balygychan Terrane,back-arc basin,continental,Verkhoyansk Kolyma,Balygychan_Terrane
+259,260,Okhotsk Microcontinent,shield,continental,Verkhoyansk Kolyma,Okhotsk_Microcontinent
+260,261,Alazeya Arc,volcanic arc,continental,Verkhoyansk Kolyma,Alazeya_Arc
+261,262,Prikolyma Terrane,shield,continental,Verkhoyansk Kolyma,Prikolyma_Terrane
+262,263,Omolon Terrane,shield,continental,Verkhoyansk Kolyma,Omolon_Terrane
+263,264,Gizhiga Zone,shield,continental,Verkhoyansk Kolyma,Gizhiga_Zone
+264,265,Koryak Fold Belt,orogenic belt,continental,,Koryak_Fold_Belt
+265,266,Kamchatka Volcanic Arc,volcanic arc,continental,,Kamchatka_Volcanic_Arc
+266,267,Taigonos Arc,volcanic arc,continental,Verkhoyansk Kolyma,Taigonos_Arc
+267,268,Bennett-Borrovia Block,shield,transitional,,Bennett_Borrovia_Block
+268,269,South Anyui-Oloi Zone,orogenic belt,continental,Verkhoyansk Kolyma,South_Anyui_Oloi_Zone
+269,270,North Chuchi Basin,basin,transitional,,North_Chuchi_Basin
+270,271,Yellow Sea,back-arc basin,transitional,,Yellow_Sea
+271,272,Western Tian Shan,orogenic belt,continental,Tian Shan,Western_Tian_Shan
+272,273,Zavhan Block,orogenic belt,continental,Mongol Orocline,Zavhan_Block
+273,274,Hangay-Hentey Basin,accretionary complex,continental,Mongol Orocline,Hangay_Hentey_Basin
+274,275,Dzhida Arc,volcanic arc,continental,Mongol Orocline,Dzhida_Arc
+275,276,Tarvagatay Igneous Belt,volcanic arc,continental,Mongol Orocline,Tarvagatay_Igneous_Belt_275
+276,277,Sea of Okhotsk,back-arc basin,transitional,,Sea_of_Okhotsk
+277,278,Pearl River Mouth Basin,passive margin,transitional,,Pearl_River_Mouth_Basin
+278,279,South China Sea Basins,back-arc basin,transitional,,South_China_Sea_Basins
+280,281,Sunda Shelf,orogenic belt,transitional,,Sunda_Shelf
+284,285,Sulu Forearc,accretionary complex,continental,,Sulu_Forearc
+285,286,Halmahera Backarc,accretionary complex,transitional,,Halmahera_Backarc
+288,289,Shirshov Ridge,volcanic arc,continental,,Shirshov_Ridge
+291,292,Bicol Forearc,accretionary complex,transitional,,Bicol_Forearc
+293,294,Kamchatka Forearc,accretionary complex,transitional,,Kamchatka_Forearc
+294,295,Misool Block,accretionary complex,transitional,,Misool_Block
+296,297,Daldyn Terrane,shield,continental,Siberian Craton,Daldyn_Terrane_296
+297,298,Yenisei-Khatanga Basin,foredeep basin,continental,Siberian Craton,Yenisei_Khatanga_Basin
+298,299,West Siberian Basin,wide rift,continental,Mongol Orocline,West_Siberian_Basin
+299,300,Yenisei Fold Belt,orogenic belt,continental,,Yenisei_Fold_Belt_299
+300,301,Yenisei Fold Belt,orogenic belt,continental,,Yenisei_Fold_Belt_300
+301,302,Magan Terrane,craton,continental,Siberian Craton,Magan_Terrane
+302,303,Akitkan Belt,orogenic belt,continental,Siberian Craton,Akitkan_Belt
+303,304,Patom Fold Belt,orogenic belt,continental,Siberian Craton,Patom_Fold_Belt
+304,305,Angara-Vitim Batholith,magmatic province,continental,Mongol Orocline,Angara_Vitim_Batholith
+305,306,Aldan Shield,shield,continental,Siberian Craton,Aldan_Shield
+306,307,Stanovoi Belt,shield,continental,Siberian Craton,Stanovoi_Belt
+311,312,Banda Sea,back-arc basin,transitional,,Banda_Sea
+312,313,Cotabato Volcanic Arc,volcanic arc,continental,,Cotabato_Volcanic_Arc
+313,314,Cotabato Forearc,accretionary complex,continental,,Cotabato_Forearc
+315,316,Halmahera Forearc,accretionary complex,continental,,Halmahera_Forearc
+316,317,Sulawesi Volcanic Arc,volcanic arc,continental,,Sulawesi_Volcanic_Arc
+317,318,Sangihe Volcanic Arc,volcanic arc,continental,,Sangihe_Volcanic_Arc
+318,319,Sangihe Forearc,accretionary complex,continental,,Sangihe_Forearc
+319,320,Luzon Volcanic Arc,volcanic arc,continental,,Luzon_Volcanic_Arc
+320,321,Negros Volcanic Arc,volcanic arc,continental,,Negros_Volcanic_Arc
+321,322,Manilla Forearc,accretionary complex,transitional,,Manilla_Forearc
+322,323,Bantam Arc,volcanic arc,continental,,Bantam_Arc
+334,335,Jiao-Liao-Ji Belt,shield,continental,North China Craton,Jiao_Liao_Ji_Belt
+335,336,Nangrim Block,back-arc basin,continental,North China Craton,Nangrim_Block
+336,337,Gyeongsang Basin,basin,continental,,Gyeongsang_Basin
+337,338,Yeongnam Massif,volcanic arc,continental,,Yeongnam_Massif
+338,339,Su-Lu Belt,accretionary complex,continental,,Su_Lu_Belt_338
+339,340,Su-Lu Belt,accretionary complex,continental,,Su_Lu_Belt_339
+340,341,Gyeonggi Massif,orogenic belt,continental,,Gyeonggi_Massif_340
+341,342,Gyeonggi Massif,orogenic belt,continental,,Gyeonggi_Massif_341
+342,343,Longgang Block,shield,continental,North China Craton,Longgang_Block
+343,344,Bureja-Jziamusy Terrane,orogenic belt,continental,,Bureja_Jziamusy_Terrane
+344,345,Sea of Japan,back-arc basin,transitional,,Sea_of_Japan
+345,346,Badzhal Terrane,accretionary complex,continental,,Badzhal_Terrane
+347,348,Himalayan Orogenic Belt,orogenic belt,continental,,Himalayan_Orogenic_Belt
+348,349,Tamir Fold and Thrust Belt,orogenic belt,continental,,Tamir_Fold_and_Thrust_Belt
+349,350,Tarvagatay Igneous Belt,back-arc basin,continental,Mongol Orocline,Tarvagatay_Igneous_Belt_349
+354,355,Afghan Tajik Block,orogenic belt,continental,,Afghan_Tajik_Block
+355,356,North Pamir,orogenic belt,continental,Kunlun,North_Pamir
+356,357,South Pamir,volcanic arc,continental,Qiangtang,South_Pamir
+357,358,Negros Forearc,accretionary complex,continental,,Negros_Forearc
+358,359,Chatkal-Valerianov Arc,volcanic arc,continental,Kazakh Orocline,Chatkal_Valerianov_Arc
+359,360,Uvat Massif,volcanic arc,continental,Kazakh Orocline,Uvat_Massif
+360,361,Ural Volcanic Arcs,volcanic arc,continental,,Ural_Volcanic_Arcs
+361,362,West Siberian Rift,wide rift,continental,,West_Siberian_Rift
+362,363,Salair Arc,volcanic arc,continental,Mongol Orocline,Salair_Arc
+448,449,Betic Cordillera,passive margin,continental,,Betic_Cordillera
+449,450,Dinarides,accretionary complex,continental,Apulia,Dinarides
+450,451,Karelia Craton,craton,continental,Baltic Shield,Karelia_Craton
+451,452,Molasse Basin,foredeep basin,continental,,Molasse_Basin
+452,453,Panonian Basin,wide rift,continental,Apulia,Panonian_Basin
+453,454,Cantabrian-Pyrenean Belt,orogenic belt,continental,,Cantabrian_Pyrenean_Belt
+454,455,Central Finland Arc Complex,volcanic arc,continental,Baltic Shield,Central_Finland_Arc_Complex
+455,456,Kola Craton,shield,continental,Baltic Shield,Kola_Craton
+456,457,Sveconorwegian Belt,shield,continental,Baltic Shield,Sveconorwegian_Belt
+457,458,Central Russian Orogen,orogenic belt,continental,Baltic Shield,Central_Russian_Orogen
+458,459,Dneipr-Donets Basin,narrow rift,continental,Baltic Shield,Dneipr_Donets_Basin
+459,460,Volgo-Uralia Craton,craton,continental,Baltic Shield,Volgo_Uralia_Craton
+460,461,Aeolian Arc,volcanic arc,continental,,Aeolian_Arc
+461,462,Sardinia-Corsica Block,orogenic belt,continental,,Sardinia_Corsica_Block
+462,463,Kirsehir Massif,magmatic province,continental,,Kirsehir_Massif
+463,464,Menderes Massif,magmatic province,continental,,Menderes_Massif
+464,465,Aegean Volcanic Arc,volcanic arc,transitional,Apulia,Aegean_Volcanic_Arc
+465,466,Jura Mountains,accretionary complex,continental,,Jura_Mountains
+466,467,Saxo-Thuringian Belt,orogenic belt,continental,,Saxo_Thuringian_Belt
+467,468,Armorican Basin,orogenic belt,continental,,Armorican_Basin
+468,469,Iberian Massif,orogenic belt,continental,,Iberian_Massif
+469,470,Ossa-Morena Zone,volcanic arc,continental,,Ossa_Morena_Zone
+470,471,Guadilquivir Basin,orogenic belt,continental,,Guadilquivir_Basin
+471,472,West Austerian Leonese Zone,orogenic belt,continental,,West_Austerian_Leonese_Zone
+472,473,Western Pontides,volcanic arc,continental,,Western_Pontides
+473,474,Cycladian Back-arc,back-arc basin,transitional,Apulia,Cycladian_Back_arc
+474,475,Middle Aegean Basin,accretionary complex,transitional,Apulia,Middle_Aegean_Basin
+476,477,Kara Block,orogenic belt,transitional,Timan Orogen,Kara_Block
+477,478,Teisseyre-Tornquist Zone,orogenic belt,continental,,Teisseyre_Tornquist_Zone
+478,479,Amberland,shield,continental,Baltic Shield,Amberland
+479,480,Mid-Baltic Belt,shield,continental,Baltic Shield,Mid_Baltic_Belt
+480,481,Bergslagen-Livonia,shield,continental,Baltic Shield,Bergslagen_Livonia
+481,482,Ljusdal,shield,continental,Baltic Shield,Ljusdal
+482,483,Bothnia microcontinent,shield,continental,Baltic Shield,Bothnia_microcontinent
+483,484,Central Finland Granitoid Complex,magmatic province,continental,Baltic Shield,Central_Finland_Granitoid_Complex
+484,485,Tyrrehenian Basin,back-arc basin,transitional,,Tyrrehenian_Basin
+485,486,Adriatic-Apulian Foreland,accretionary complex,transitional,Apulia,Adriatic_Apulian_Foreland
+486,487,Laurentia Province,craton,continental,Europe,Laurentia_Province
+487,488,Rheno-Hercynian Belt,orogenic belt,continental,,Rheno_Hercynian_Belt
+488,489,Avalonia,volcanic arc,continental,,Avalonia
+489,490,Moldanubian Belt,orogenic belt,continental,,Moldanubian_Belt
+490,491,South Portuguese Zone,orogenic belt,continental,,South_Portuguese_Zone
+491,492,Calabrian Arc,accretionary complex,continental,,Calabrian_Arc
+492,493,Campanian Arc,volcanic arc,continental,,Campanian_Arc
+493,494,Mount Etna,volcanic arc,continental,,Mount_Etna
+494,495,Svalbard Caldeonides,orogenic belt,continental,,Svalbard_Caldeonides
+495,496,Bol'shezemel'sk Domain,orogenic belt,continental,Timan Orogen,Bol_shezemel_sk_Domain
+496,497,Anatolide-Tauride Mountains,accretionary complex,continental,,Anatolide_Tauride_Mountains
+497,498,Rhodope-Strandja Massif,magmatic province,continental,Apulia,Rhodope_Strandja_Massif
+498,499,Voronezh Massif,shield,continental,Baltic Shield,Voronezh_Massif
+499,500,Transscandinavian Igneous Belt,magmatic province,continental,Baltic Shield,Transscandinavian_Igneous_Belt_499
+500,501,Transscandinavian Igneous Belt,magmatic province,continental,Baltic Shield,Transscandinavian_Igneous_Belt_500
+501,502,Iberian Rifted Margin,passive margin,transitional,,Iberian_Rifted_Margin
+502,503,Carpathian Mountains,volcanic arc,continental,Apulia,Carpathian_Mountains
+503,504,Ukranian Craton,shield,continental,Baltic Shield,Ukranian_Craton
+504,505,Moesian Platform,shield,continental,,Moesian_Platform
+505,506,Timan Orogen,orogenic belt,continental,Timan Orogen,Timan_Orogen
+506,507,Caldeonides,orogenic belt,continental,,Caldeonides
+507,508,North European Rifted Margin,passive margin,transitional,,North_European_Rifted_Margin
+508,509,Alps,accretionary complex,continental,Apulia,Alps
+509,510,Apennine Orogen,accretionary complex,continental,,Apennine_Orogen
+511,512,Outer Aegean Non-volcanic Arc,accretionary complex,transitional,Apulia,Outer_Aegean_Non_volcanic_Arc
+514,515,Alboran Basin,volcanic arc,transitional,,Alboran_Basin
+516,517,Balearic Algerian Basin,volcanic arc,transitional,,Balearic_Algerian_Basin
+517,518,Balearic Basin,back-arc basin,transitional,,Balearic_Basin
+518,519,Uralide Fold Belt,orogenic belt,continental,,Uralide_Fold_Belt
+519,520,Southern Granulite Terrane,orogenic belt,continental,,Southern_Granulite_Terrane
+520,521,Aravalli Fold Belt,orogenic belt,continental,,Aravalli_Fold_Belt
+521,522,Singhbhum Craton,craton,continental,East Indian Shield,Singhbhum_Craton
+522,523,Bastar Craton,craton,continental,East Indian Shield,Bastar_Craton
+523,524,Chuddapah Basin,craton,continental,Dharwar Craton,Chuddapah_Basin
+524,525,Closepet Batholith,craton,continental,Dharwar Craton,Closepet_Batholith
+525,526,Alborz Mountains,accretionary complex,continental,,Alborz_Mountains
+526,527,Sanandaj-Sirjan Zone,volcanic arc,continental,,Sanandaj_Sirjan_Zone
+527,528,Makran Accretionary Complex,accretionary complex,transitional,,Makran_Accretionary_Complex
+528,529,Tabas Block,orogenic belt,continental,,Tabas_Block
+529,530,Posht-Badam Block,orogenic belt,continental,,Posht_Badam_Block
+530,531,Yazd Block,orogenic belt,continental,,Yazd_Block
+531,532,Urumieh-Dokhtar Magmatic Arc,volcanic arc,continental,,Urumieh_Dokhtar_Magmatic_Arc
+532,533,Sabzevar Zone,volcanic arc,continental,,Sabzevar_Zone
+533,534,Kopeh Dag,volcanic arc,continental,,Kopeh_Dag
+534,535,Central Afgan Ranges,orogenic belt,continental,,Central_Afgan_Ranges
+535,536,Pakistan Fold and Thrust Belt,orogenic belt,continental,,Pakistan_Fold_and_Thrust_Belt
+536,537,Central Afghan Basin,orogenic belt,continental,,Central_Afghan_Basin
+537,538,Mahanadi Rift,narrow rift,continental,,Mahanadi_Rift
+538,539,Rajasthan Province,orogenic belt,continental,,Rajasthan_Province
+539,540,Shillong Plateau,shield,continental,,Shillong_Plateau
+540,541,Himalayan Foreland Basin,foredeep basin,continental,Himalayan Foreland Basin,Himalayan_Foreland_Basin_540
+541,542,Indus Plain,foredeep basin,continental,,Indus_Plain
+542,543,Vijayan Complex,orogenic belt,continental,Sri Lanka,Vijayan_Complex
+543,544,Wanni Complex,orogenic belt,continental,Sri Lanka,Wanni_Complex
+544,545,Highland Complex,orogenic belt,continental,Sri Lanka,Highland_Complex
+545,546,Kura Basin,foredeep basin,continental,,Kura_Basin
+546,547,East Iran Belt,ophiolite complex,continental,,East_Iran_Belt
+547,548,Lut Block,magmatic province,continental,,Lut_Block
+548,549,Makran-Chagai-Raskoh Arc,volcanic arc,continental,,Makran_Chagai_Raskoh_Arc
+549,550,Godavari Rift,narrow rift,continental,,Godavari_Rift
+550,551,Western Dharwar Craton,craton,continental,Dharwar Craton,Western_Dharwar_Craton
+551,552,Eastern Dharwar Craton,craton,continental,Dharwar Craton,Eastern_Dharwar_Craton
+552,553,West Indian Margin,passive margin,transitional,,West_Indian_Margin
+553,554,Trivandrum-Nagercoil Block,orogenic belt,continental,Southern Granulite Terrane,Trivandrum_Nagercoil_Block
+554,555,Sri Lanka Margin,passive margin,transitional,,Sri_Lanka_Margin
+555,556,Chagos Remnant,narrow rift,transitional,,Chagos_Remnant
+556,557,Laccadive Ridge,narrow rift,transitional,,Laccadive_Ridge
+557,558,Maldive Ridge,narrow rift,transitional,,Maldive_Ridge
+558,559,Laxmi Ridge,narrow rift,transitional,,Laxmi_Ridge
+559,560,Zagros Orogen,accretionary complex,continental,,Zagros_Orogen
+560,561,Turan,orogenic belt,continental,,Turan
+561,562,Eastern Ghats Belt,orogenic belt,continental,,Eastern_Ghats_Belt
+562,563,Krishna Province,orogenic belt,continental,,Krishna_Province
+636,637,Unnamed Fold Belt,orogenic belt,transitional,,Unnamed_Fold_Belt
+789,790,Bundelkhand Craton,craton,continental,,Bundelkhand_Craton
+790,791,Himalayan Foreland Basin,foredeep basin,continental,Himalayan Foreland Basin,Himalayan_Foreland_Basin_790
+791,792,Himalayan Foreland Basin,foredeep basin,continental,Himalayan Foreland Basin,Himalayan_Foreland_Basin_791
+792,793,Tripura Foldbelt,orogenic belt,continental,,Tripura_Foldbelt
+793,794,Bengal Fan,passive margin,continental,,Bengal_Fan
+794,795,East Indian Margin,passive margin,transitional,,East_Indian_Margin
+795,796,Central Indian Tectonic Zone,narrow rift,continental,,Central_Indian_Tectonic_Zone
+798,799,Western Yangtze Craton,craton,continental,South China Craton,Western_Yangtze_Craton
+799,800,Eastern Yangtze Craton,craton,continental,South China Craton,Eastern_Yangtze_Craton
+800,801,Pontide Mountains,volcanic arc,continental,,Pontide_Mountains
+801,802,Ogcheon Belt,craton,continental,South China Craton,Ogcheon_Belt
+802,803,Jiangnan Orogen,shield,continental,,Jiangnan_Orogen
+917,147,Wuntho-Popa Arc,back-arc basin,continental,Wuntho-Popa Arc,Wuntho_Popa_Arc
