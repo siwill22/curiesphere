@@ -36,6 +36,10 @@ _Avoid_: pixel, block
 A group of cells sharing one source strength, whether fixed in advance (polygons) or formed from the data.
 _Avoid_: unit (except for a labelled-Voronoi unit of several pieces), province, region (when one group of cells is meant)
 
+**Layout**:
+A set of domains covering the target area, such as the polygons, their groups, a merge partition, or the whole area as one domain. Layouts are compared by the evidence. A class layout gives every domain of one class (craton, orogenic belt…) a shared level wherever it lies.
+_Avoid_: partition (except for FD-part), zonation
+
 **Parameterisation**:
 A grouping of cells into parameters: each parameter is a fixed combination of cells (one cell, a domain, a coarse cell, a covariate). Its columns are the cell columns combined accordingly.
 _Avoid_: basis (when the grouping, not the cell columns, is meant)
@@ -107,6 +111,10 @@ _Avoid_: data error (when only this part is meant)
 The part of the field that a given parameterisation cannot reproduce, such as variation inside a domain. It belongs to a fitted model, not to the data.
 _Avoid_: noise, misfit
 
+**Background error**:
+The part of the data error that comes from a wrong background: the ocean model in a global fit, or the fixed sources around the target in a local fit (the ring error). It has its own correlations and a fitted amplitude, and belongs to neither the field model nor the fitted model.
+_Avoid_: noise, model error (when the background is meant)
+
 **Error model**:
 The combination of noise and model error used to weight the data: each a per-degree spectrum with an amplitude. Each amplitude is either fixed (from field-model differences or a reference fit) or fitted with the model; every result records which.
 _Avoid_: covariance (for the whole construction), weighting
@@ -114,7 +122,7 @@ _Avoid_: covariance (for the whole construction), weighting
 ### Methods
 
 **GCM** (global cell map):
-VIS per cell on all continental crust from a global fit, damped toward one fitted uniform level, with the damping chosen by the evidence or the discrepancy principle.
+VIS per cell on all continental crust from a global fit, damped toward one fitted uniform level, with the damping chosen by the evidence or the discrepancy principle. With a layout, the cells are damped toward a level per domain instead, and the domain levels scatter about the uniform level with a spread fitted by the evidence; the one-level map is the layout with a single domain.
 
 **CM** (cell map):
 VIS per cell in a target area from a local fit: a smooth random field (GMRF) about one fitted level, giving a mean and an uncertainty per cell, and optionally L2 or TV maps with bounds.
@@ -126,7 +134,7 @@ One VIS per domain fixed in advance from geological polygons (Hasterok et al. 20
 Domains formed from the data: FD-merge (agglomerative merging), FD-vor (Voronoi), FD-lvor (labelled Voronoi), FD-part (cell partition).
 
 **DF** (domain fractal):
-VIS in domains given in advance (polygons, a merge partition, or the whole area as one domain), each with its own mean and its own fractal pattern inside: a strength per domain, with the fractal exponent and largest patch size shared by all. The patterns start afresh at domain boundaries; the evidence ranks domain layouts.
+VIS in domains given in advance (polygons, a merge partition, or the whole area as one domain), each with its own mean and its own fractal pattern inside: a strength per domain, with the fractal exponent and largest patch size shared by all. The patterns start afresh at domain boundaries; the evidence ranks domain layouts. In a global fit (DF-GLC) the strength is shared by all domains or by all domains of one class.
 
 **CR** (covariate regression):
 VIS modelled as a combination of covariates (crustal thickness, heat flow, province class…) plus a smooth random rest, with hypotheses scored by the evidence.
