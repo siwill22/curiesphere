@@ -1,0 +1,11 @@
+# GCM-GLC with layouts on synthetic data, check S5: a random smooth field on the sphere (DF-like: beta 2.5, patches of
+# ~500 km, mean 0.75, s.d. 0.4 SI km), blind to geology, unlike Crust1.0 (S4), whose crustal thickness follows the
+# provinces. The polygons should not beat random tiles of the same number here. Fitted noise scale, ocean error HM05.
+inherit = "gcm_glc_layouts_lcs1_16-133_ctrl.toml"
+
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "random_field", mean = 0.75, sd = 0.4, beta = 2.5, ell_km = 500.0, seed = 20261010 }
+seed = 20261007
+ocean_error = "HM05"

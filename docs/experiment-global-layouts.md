@@ -52,6 +52,10 @@ S4 shows that grouping neighbouring cells into domains wins for any truth that i
 
 The ocean-cell columns of ADR 0009 (29,627 cells, basement to 6 km below, magnetised with the ocean model's own VIM) reproduce the ocean model's field when summed (correlation 1.000, amplitude within 1% up to degree 133).
 
+**2026-10-11, overnight (step 3 and the control layouts).** Results and figures: [reports/2026-10-11-layouts](reports/2026-10-11-layouts/README.md). Crust1.0 (S4) is not a null, since crustal thickness follows the provinces. Added **S5**, a smooth random truth (beta 2.5, ~500 km, s.d. 0.4 SI·km), as the null.
+
+Globally, with the ocean-model error (best 16 nT; +3300 log evidence over noise alone), the polygons beat random tiles of the same number on LCS-1: provinces +217, groups +156. On S5 they lose: −460 and −311. Locally (DF, Gaussian means), the polygons beat random tiles in EUR +257, NAM +127, ANT +63 and AUS +34 (nulls: NAM −55, ANT −9, AUS −23), but not in SAM +6, AFR +4 or ZEA −4. The spread of the domain means falls to its lower bound in AFR, NAM, ANT and EUR: where the polygons help locally, they do so through independent patterns, not levels.
+
 ## Deferred
 
 - Soft boundaries: a shared global pattern plus the domain patterns, with the split fitted by the evidence (ADR 0010).

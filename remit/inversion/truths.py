@@ -6,6 +6,10 @@ Truths for synthetic data (CONTEXT.md): cell VIS (SI.km) from a spec.
   {'kind': 'layout_levels', 'layout': 'groups', 'mean': 0.7, 'sd': 0.2, 'seed': 1}
                                                             one level per domain of a layout (parameterise.layouts,
                                                             passed in by the method), drawn from N(mean, sd^2)
+  {'kind': 'random_field', 'mean': 0.75, 'sd': 0.4, 'beta': 2.5, 'ell_km': 500, 'seed': 1}
+                                                            a Gaussian random field on the sphere, blind to geology,
+                                                            with DF's spectrum (l(l+1) + (R/ell)^2)^(-beta/2) to degree
+                                                            400, at the cell centres, scaled to mean and sd over them
 """
 import os
 
@@ -14,6 +18,15 @@ import xarray as xr
 
 
 def truth(spec, cells, layouts=None):
+    if spec['kind'] == 'random_field':
+        import pyshtools
+        lmax, R = 400, 6371.2
+        l = np.arange(lmax + 1)
+        S = (l*(l + 1) + (R/spec['ell_km'])**2)**(-spec['beta']/2)
+        S[0] = 0.
+        c = pyshtools.SHCoeffs.from_random(S, seed=spec['seed'])
+        v = c.expand(lat=cells.clat, lon=cells.clon)
+        return spec['mean'] + spec['sd']*(v - v.mean())/v.std()
     if spec['kind'] == 'layout_levels':
         label, names = layouts[spec['layout']]
         levels = np.random.default_rng(spec['seed']).normal(spec['mean'], spec['sd'], len(names))
