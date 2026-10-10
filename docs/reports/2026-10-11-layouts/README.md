@@ -72,6 +72,8 @@ The local fits were run again, with the best global layout fit as the background
 - the mean levels fell by 0.01–0.03 SI·km (e.g. Australia 0.65 to 0.62);
 - the evidence and the ring misfit barely moved.
 
+The exception is Eurasia: its evidence rises by 60, the ring misfit falls from 27 to 26 nT, and its mean level drops from 0.60 to 0.55 SI·km.
+
 The rise of the continent means toward GCM's level, noted in the handover, is therefore mostly not the background's doing.
 
 ## Caveats
