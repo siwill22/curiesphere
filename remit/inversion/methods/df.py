@@ -7,17 +7,22 @@ domain, the patterns independent between domains, from a local fit with measurem
 S: the indicator columns of a domain layout. R_k: the correlation of the cell averages of an isotropic field on the
 sphere with angular spectrum S_l ~ (l(l+1) + (R/ell)^2)^(-beta/2) (a 2-D power spectrum k^-beta above the largest
 patch size ell), restricted to the cells of domain k. Cell averages: a spherical cap of the cell's area as the window,
-so the correlation is a Legendre series, positive definite on the sphere for any beta. theta: uniform on the box
-[lo, hi] per domain, integrated out as a Gaussian integral over all of R^K (a domain whose best mean falls outside the
-box is reported, not given zero mass). h: 1 (the error model as it is: the data are whitened for noise only) or fitted.
+so the correlation is a Legendre series, positive definite on the sphere for any beta. theta, means = 'box': uniform on
+the box [lo, hi] per domain, integrated out as a Gaussian integral over all of R^K (a domain whose best mean falls
+outside the box is reported, not given zero mass). means = 'gaussian' (ADR 0007 amendment, as GCM's domain levels in
+ADR 0008): theta_k = v0 + delta_k with delta_k ~ N(0, tau^2) and v0 uniform on the box; delta integrated out adds
+tau^2 U U' to the data covariance (U = Gw S), so tau is a hyperparameter like an extra error (the last of sig).
+h: 1 (the error model as it is: the data are whitened for noise only) or fitted.
 Hyperparameters (log s_k, beta, log ell, and log h when fitted) maximise the log evidence (exact gradients in s_k
 and h, central differences in beta and ell), with Laplace s.d. from the curvature.
 
 Config keys used, besides those of problem.local (weighting 'full', model_error rms 0):
   [parameterisation] kind = 'domains', table (as PD)
-  [method] bounds ([lo, hi] of the means), beta_range, ell_range (km), s_range (SI km), noise ('fixed' or 'fitted'),
+  [method] means ('box' or 'gaussian'), tau_range (SI km, for 'gaussian'), bounds ([lo, hi] of the means), beta_range, ell_range (km), s_range (SI km), noise ('fixed' or 'fitted'),
            hyper_sd (Laplace s.d. of the hyperparameters), layouts = {one = true, merge = <FD-merge result>,
-           merge_settings = [i, ...]} (further layouts, ranked by the evidence with the table's),
+           merge_settings = [i, ...], controls = true, polygons = false} (further layouts, ranked by the evidence with
+           the table's; controls: random Voronoi tiles, as many as the table's domains, blind to geology; polygons =
+           false leaves the table's own layout out, the first remaining layout is then mapped),
            ring_error = {beyond_km = 50} (an extra error at the data points farther than beyond_km from every cell
            centre, i.e. the ring of points around the target: correlated with the field model's own spectrum in the
            band, its RMS sigma_ring (nT) fitted; for errors of the background there, which no domain can explain),
@@ -72,13 +77,26 @@ def correlation(beta, ell, psi, window):
 class DomainFractal:
     """the DF model of one problem and one layout (label: domain index of each cell, 0..K-1)"""
 
-    def __init__(self, Gw, yw, label, clon, clat, cell_area_km2, lo, hi, extra=()):
+    def __init__(self, Gw, yw, label, clon, clat, cell_area_km2, lo, hi, extra=(), means='box',
+                 tau_range=(0.01, 4.)):
         self.Gw, self.yw, self.label = Gw, yw, np.asarray(label)
         self.extra = list(extra)                    # error shapes E_j (data x data), each scaled by a fitted sigma_j
+        self.extra_ranges = [(0.1, 500.)]*len(self.extra)
+        self.extra_start = [30.]*len(self.extra)
         self.K = int(self.label.max()) + 1
         self.S = parameterise.indicator(self.label)
-        self.U = Gw @ self.S
-        self.lo, self.hi = (np.broadcast_to(np.asarray(b, float), (self.K,)) for b in (lo, hi))
+        self.Udom = Gw @ self.S
+        self.gaussian = means == 'gaussian' and self.K > 1
+        if self.gaussian:                           # theta_k = v0 + delta_k: v0 the only design column, delta in C
+            self.Sd = np.ones((len(self.label), 1))
+            self.extra.append(self.Udom @ self.Udom.T)
+            self.extra_ranges.append(tuple(tau_range))
+            self.extra_start.append(0.3)
+        else:
+            self.Sd = self.S
+        self.U = Gw @ self.Sd
+        self.p = self.U.shape[1]
+        self.lo, self.hi = (np.broadcast_to(np.asarray(b, float), (self.p,)) for b in (lo, hi))
         self.blocks = [np.flatnonzero(self.label == k) for k in range(self.K)]
         xyz = unit(clon, clat)
         self.psi = [np.arccos(np.clip(xyz[b] @ xyz[b].T, -1., 1.)) for b in self.blocks]
@@ -128,7 +146,7 @@ class DomainFractal:
         q = Ciy - CiU @ theta                       # P y, P = C^-1 - C^-1 U A^-1 U' C^-1
         r = self.yw - self.U @ theta
         ll = (-np.sum(np.log(np.diag(cf[0]))) - np.sum(np.log(np.diag(cA[0]))) - 0.5*r @ q
-              - 0.5*(N - self.K)*np.log(2*np.pi) - np.sum(np.log(self.hi - self.lo)))
+              - 0.5*(N - self.p)*np.log(2*np.pi) - np.sum(np.log(self.hi - self.lo)))
         return dict(ll=float(ll), M=M, Ls=Ls, cf=cf, CiU=CiU, cA=cA, theta=theta, q=q)
 
     def evidence(self, x, fit_h=False):
@@ -155,14 +173,19 @@ class DomainFractal:
             g[self.K + 2 + int(fit_h) + j] = sj**2*(q @ E @ q - np.sum(P*E))
         return o['ll'], g
 
-    def bounds(self, s_range, beta_range, ell_range, fit_h, sig_range=(0.1, 500.)):
+    def bounds(self, s_range, beta_range, ell_range, fit_h):
         b = [tuple(np.log(s_range))]*self.K + [tuple(beta_range), tuple(np.log(ell_range))]
-        return b + [(np.log(0.2), np.log(5.))]*int(fit_h) + [tuple(np.log(sig_range))]*len(self.extra)
+        return b + [(np.log(0.2), np.log(5.))]*int(fit_h) + [tuple(np.log(r)) for r in self.extra_ranges]
+
+    @property
+    def tau(self):
+        """index of tau in sig (the spread of the domain means), or None"""
+        return len(self.extra) - 1 if self.gaussian else None
 
     def fit(self, s_range=(0.01, 10.), beta_range=(2., 3.), ell_range=(50., 5000.), fit_h=False, x0=None):
         if x0 is None:
             x0 = np.r_[np.full(self.K, np.log(0.3)), np.mean(beta_range), np.log(500.), [0.] if fit_h else [],
-                       np.full(len(self.extra), np.log(30.))]
+                       np.log(self.extra_start)]
         bnds = self.bounds(s_range, beta_range, ell_range, fit_h)
         x0 = np.clip(x0, [b[0] for b in bnds], [b[1] for b in bnds])
         f = lambda x: tuple(-a for a in self.gradient(x, fit_h))
@@ -237,7 +260,8 @@ class DomainFractal:
     def posterior(self, fit, area, full=False):
         """posterior mean and s.d. of v, the process means theta, and the area mean of v over each domain (and the
         covariance of v when full)"""
-        o = self._solve(fit['s'], fit['beta'], fit['ell'], fit['h'], fit.get('sig', ()))
+        sig = fit.get('sig', ())
+        o = self._solve(fit['s'], fit['beta'], fit['ell'], fit['h'], sig)
         M, Ls, q = o['M'], o['Ls'], o['q']
         n = len(self.label)
         Lb = np.zeros((n, n))
@@ -245,18 +269,28 @@ class DomainFractal:
             Lb[np.ix_(b, b)] = L
         d2 = fit['s'][self.label]**2
         SG = Lb @ (d2[:, None]*M.T)                         # Sigma Gw'
-        v = self.S @ o['theta'] + SG @ q
         Sigma = Lb @ (d2[:, None]*Lb.T)
+        if self.gaussian:                                   # the domain offsets delta are part of the random field
+            t2 = float(sig[self.tau])**2
+            SG = SG + t2*(self.S @ self.Udom.T)
+            Sigma = Sigma + t2*(self.S @ self.S.T)
+        v = self.Sd @ o['theta'] + SG @ q
         CiSG = cho_solve(o['cf'], SG.T)
-        B = self.S - SG @ o['CiU']
-        cov_theta = cho_solve(o['cA'], np.eye(self.K))
+        B = self.Sd - SG @ o['CiU']
+        cov_theta = cho_solve(o['cA'], np.eye(self.p))
         Cov = Sigma - SG @ CiSG + B @ cov_theta @ B.T
+        if self.gaussian:                                   # theta_k = v0 + delta_k
+            Bt = 1. - t2*(self.Udom.T @ o['CiU'])
+            theta = o['theta'][0] + t2*(self.Udom.T @ q)
+            cov_th = t2*np.eye(self.K) - t2**2*(self.Udom.T @ cho_solve(o['cf'], self.Udom)) + Bt @ cov_theta @ Bt.T
+        else:
+            theta, cov_th = o['theta'], cov_theta
         c = self.S*area[:, None]
         c /= c.sum(0)
         cov_avg = c.T @ Cov @ c
-        out = dict(v=v, v_sd=np.sqrt(np.maximum(np.diag(Cov), 0)), theta=o['theta'],
-                   theta_sd=np.sqrt(np.diag(cov_theta)), avg=c.T @ v, avg_sd=np.sqrt(np.maximum(np.diag(cov_avg), 0)),
-                   ll=o['ll'])
+        out = dict(v=v, v_sd=np.sqrt(np.maximum(np.diag(Cov), 0)), theta=theta,
+                   theta_sd=np.sqrt(np.maximum(np.diag(cov_th), 0)), avg=c.T @ v,
+                   avg_sd=np.sqrt(np.maximum(np.diag(cov_avg), 0)), ll=o['ll'], v0=float(o['theta'][0]))
         if full:
             out['cov'] = Cov
         return out
@@ -271,7 +305,7 @@ class DomainFractal:
         cA = cho_factor(self.U.T @ self.U/h**2, lower=True)
         theta = cho_solve(cA, self.U.T @ self.yw/h**2)
         r = self.yw - self.U @ theta
-        ll = (-N*np.log(h) - np.sum(np.log(np.diag(cA[0]))) - 0.5*r @ r/h**2 - 0.5*(N - self.K)*np.log(2*np.pi)
+        ll = (-N*np.log(h) - np.sum(np.log(np.diag(cA[0]))) - 0.5*r @ r/h**2 - 0.5*(N - self.p)*np.log(2*np.pi)
               - np.sum(np.log(self.hi - self.lo)))
         return float(ll), float(r @ r), theta
 
@@ -335,8 +369,14 @@ def layouts(cells, cfg, cache, say):
             lab = np.unique(ds[f'domain_{i}'].values, return_inverse=True)[1]
             out[f'merging lam x{r["lam_rel"]:.2g} gamma {r["gamma_rel"]:g} (K {lab.max() + 1})'] = \
                 (lab, [f'unit {k}' for k in range(lab.max() + 1)])
+    if spec.get('controls'):
+        k = len(out['polygons'][1])
+        lab = np.unique(parameterise.voronoi(cells, k, parameterise.VORONOI_SEED + k), return_inverse=True)[1]
+        out[f'random tiles (K {lab.max() + 1})'] = (lab, [f'tile {j}' for j in range(lab.max() + 1)])
     if spec.get('one'):
         out['one domain'] = (np.zeros(len(cells), int), ['all'])
+    if spec.get('polygons') is False:                  # e.g. the controls alone, run beside the polygons
+        out.pop('polygons')
     return out, coverage
 
 
@@ -351,6 +391,7 @@ def run(cfg, cache=None, log=print):
     if cfg['errors'].get('model_error', {}).get('rms_nT', 0.) != 0:
         raise ValueError('DF takes measurement noise only (ADR 0007): set [errors] model_error rms_nT = 0')
     lo, hi = me.get('bounds', [0., 4.])
+    means = me.get('means', 'box')
     opts = dict(s_range=tuple(me.get("s_range", [0.01, 10.])), beta_range=tuple(me.get('beta_range', [2., 3.])),
                 ell_range=tuple(me.get('ell_range', [50., 5000.])))
     fit_h = me.get('noise', 'fixed') == 'fitted'
@@ -368,13 +409,17 @@ def run(cfg, cache=None, log=print):
         say(f'ring error at {ring.sum()} of {len(ring)} points')
     ranking, main = {}, None
     for name, (label, names) in lays.items():
-        m = DomainFractal(pb.Gw, pb.yw, label, cells.clon, cells.clat, cell_km2, lo, hi, extra)
+        m = DomainFractal(pb.Gw, pb.yw, label, cells.clon, cells.clat, cell_km2, lo, hi, extra, means,
+                          tuple(me.get('tau_range', [0.01, 4.])))
         f = m.fit(fit_h=fit_h, **opts)
         ll0, chi0, _ = m.no_variation(sig=f['sig'])
+        tau = float(f['sig'][m.tau]) if m.gaussian else None
         ranking[name] = dict(K=int(m.K), ll=f['ll'], ll_no_variation=ll0, beta=f['beta'], ell_km=f['ell'], h=f['h'],
-                             sigma_ring_nT=[float(v) for v in f['sig']], converged=f['converged'], n_eval=f['n_eval'])
+                             sigma_ring_nT=[float(v) for v in f['sig'][:len(extra)]], tau=tau,
+                             converged=f['converged'], n_eval=f['n_eval'])
         say(f'{name}: K {m.K}, log evidence {f["ll"]:.1f} (no variation {ll0:.1f}), beta {f["beta"]:.2f}, '
             f'ell {f["ell"]:.0f} km, h {f["h"]:.2f}' + (f', ring error {f["sig"][0]:.1f} nT' if extra else '') +
+            (f', spread of the domain means {tau:.2f} SI km' if m.gaussian else '') +
             f', {f["n_eval"]} evaluations' + ('' if f['converged'] else ' NOT CONVERGED'))
         if main is None:
             main = (name, m, f, names)
@@ -421,7 +466,8 @@ def run(cfg, cache=None, log=print):
                        rhat_max=float(np.nanmax(R)), rhat_beta=float(R[np.flatnonzero(free).tolist().index(m.K)])
                        if free[m.K] else None, beta=q(m.K), log_ell=q(m.K + 1),
                        log_strength_mean=pooled[:, :m.K].mean(0).tolist(), log_strength_sd=pooled[:, :m.K].std(0).tolist(),
-                       log_sigma_ring=q(m.K + 2 + int(fit_h)) if extra else None)
+                       log_sigma_ring=q(m.K + 2 + int(fit_h)) if extra else None,
+                       log_tau=q(m.K + 2 + int(fit_h) + m.tau) if m.gaussian else None)
         sd = pooled.std(0)
         say(f'sampled: {n_ch} chains x {steps} steps, acceptance {np.round(sampled["acceptance"], 2).tolist()}, '
             f'R-hat max {sampled["rhat_max"]:.2f}; beta {sampled["beta"][0]:.2f} +- {sampled["beta"][1]:.2f}, '
@@ -436,6 +482,7 @@ def run(cfg, cache=None, log=print):
     v, label = post['v'], m.label
     neg = np.bincount(label, area*(v < 0), m.K)/np.bincount(label, area, m.K)
     out_box = [names[k] for k in range(m.K) if not (lo <= post['theta'][k] <= hi)]
+    tau = float(f['sig'][m.tau]) if m.gaussian else None
     r = pb.yw - pb.Gw @ v
     chi2 = float(r @ r)
     N = len(pb.yw)
@@ -452,7 +499,8 @@ def run(cfg, cache=None, log=print):
                             area_km2=float(area[label == k].sum())) for k in range(K)}
     say(f'{K} domains, {N} data: chi2/N {chi2/N:.2f} (no variation {chi0/N:.2f}); beta {f["beta"]:.2f} '
         f'+- {sd[K]:.2f}, ell {f["ell"]:.0f} km (log s.d. {sd[K + 1]:.2f}); strengths at the lower bound: '
-        f'{int(f["at_bound"][:K].sum())}; cells below zero {np.mean(v < 0):.1%}; means outside the box: {out_box}')
+        f'{int(f["at_bound"][:K].sum())}; cells below zero {np.mean(v < 0):.1%}; means outside the box: {out_box}'
+        + (f'; v0 {post["v0"]:.2f}, spread of the domain means {tau:.2f} SI km' if m.gaussian else ''))
     cell_vars = dict(vis=v, vis_sd=post['v_sd'], vis_domain=post['avg'][label], vis_bounded=vb,
                      strength=f['s'][label], domain=label.astype(float))
     if pb.truth is not None:
@@ -460,7 +508,8 @@ def run(cfg, cache=None, log=print):
     model = pb.G @ v
     attrs = dict(domains=table, layout=name, layouts=ranking, beta=f['beta'], beta_sd=float(sd[K]), ell_km=f['ell'],
                  log_ell_sd=float(sd[K + 1]), noise_scale=f['h'], noise_check=check, log_evidence=f['ll'],
-                 sigma_ring_nT=[float(v) for v in f['sig']], residual_rms_nT=rms, beta_profile=profile, sampled=sampled,
+                 sigma_ring_nT=[float(v) for v in f['sig'][:len(extra)]], residual_rms_nT=rms, beta_profile=profile,
+                 sampled=sampled, means=means, tau=tau, v0=post.get('v0'),
                  log_evidence_no_variation=ll0, chi2_per_datum=chi2/N, chi2_per_datum_no_variation=chi0/N,
                  n_domains=K, node_coverage=coverage, bounds=[lo, hi], means_outside_box=out_box,
                  cells_below_zero=float(np.mean(v < 0)),

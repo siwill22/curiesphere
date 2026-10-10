@@ -101,9 +101,15 @@ def _control(name, cells, xyz, by):
     if name.startswith('tiles'):
         from astropy_healpix import healpy as hp
         return hp.ang2pix(int(name[5:]), cells.clon, cells.clat, lonlat=True)
-    from scipy.spatial import cKDTree
     k = len(np.unique(by[name.split('_')[1]].astype(str)))
-    rng = np.random.default_rng(VORONOI_SEED + k)
+    return voronoi(cells, k, VORONOI_SEED + k)
+
+
+def voronoi(cells, k, seed):
+    """label of each cell: k random Voronoi tiles on the sphere, seeds drawn uniformly by area"""
+    from scipy.spatial import cKDTree
+    xyz = graph.unit(cells.clon, cells.clat)
+    rng = np.random.default_rng(seed)
     seeds = rng.choice(len(cells), k, replace=False, p=cells.area_km2/cells.area_km2.sum())
     return cKDTree(xyz[seeds]).query(xyz)[1]             # nearest seed by chord length = by great-circle distance
 

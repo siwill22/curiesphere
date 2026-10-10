@@ -1,0 +1,7 @@
+# DF-AFR with the GCM-GLC background and the domain means drawn from N(v0, tau^2) (ADR 0007 amendment, as ADR 0008),
+# ranked against one domain and against random tiles as many as the polygons (geology-blind control)
+inherit = "df_afr_lcs1_16-133_gcmbg.toml"
+
+[method]
+means = "gaussian"
+layouts = { one = true, controls = true }

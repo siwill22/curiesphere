@@ -1,0 +1,6 @@
+# DF-EUR, the geology-blind control alone (random tiles as many as the polygons), run beside
+# df_eur_lcs1_16-133_gcmbg_gm.toml (each layout takes ~5 h)
+inherit = "df_eur_lcs1_16-133_gcmbg_gm.toml"
+
+[method]
+layouts = { one = false, controls = true, polygons = false }

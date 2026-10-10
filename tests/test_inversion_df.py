@@ -112,3 +112,38 @@ def test_chain_runs_and_stays_in_bounds():
     lo, hi = np.array(bnds).T
     assert 0.05 < acc < 0.95 and np.all((X >= lo - 1e-12) & (X <= hi + 1e-12))
     assert abs(df.rhat(np.stack([X[100:200], X[200:300]]))).max() < 10
+
+
+def test_gaussian_means_against_dense_formulas():
+    """means = 'gaussian': theta_k = v0 + delta_k, delta ~ N(0, tau^2), v0 on the box: evidence, gradient in log tau,
+    posterior map and domain means against the dense Gaussian with v0 ~ N(2, big^2)"""
+    m0, _ = small()
+    rng = np.random.default_rng(0)
+    n = len(m0.label)
+    clon, clat = 130 + rng.uniform(-8, 8, n), -25 + rng.uniform(-8, 8, n)
+    m = df.DomainFractal(m0.Gw, m0.yw, m0.label, clon, clat, 1e4, 0., 4., means='gaussian')
+    s, beta, ell, h, tau, big = np.array([0.3, 0.6, 0.2]), 2.4, 350., 1.3, 0.4, 1e3
+    x = np.r_[np.log(s), beta, np.log(ell), np.log(h), np.log(tau)]
+    M, Ls = m.factors(beta, ell)
+    L = np.zeros((n, n))
+    for b, Lk in zip(m.blocks, Ls):
+        L[np.ix_(b, b)] = Lk
+    Cv = L @ np.diag(s[m.label]**2) @ L.T + tau**2*m.S @ m.S.T + big**2*np.ones((n, n))
+    Cy = m.Gw @ Cv @ m.Gw.T + h**2*np.eye(len(m.yw))
+    r = m.yw - m.Gw @ np.full(n, 2.)
+    ll = (-0.5*(np.linalg.slogdet(2*np.pi*Cy)[1] + r @ np.linalg.solve(Cy, r)) + np.log(np.sqrt(2*np.pi)*big)
+          - np.log(4.))
+    assert abs(m.evidence(x, fit_h=True) - ll) < 1e-4
+    e = np.zeros(len(x))
+    e[-1] = 1e-5
+    fd = (m.evidence(x + e, True) - m.evidence(x - e, True))/2e-5
+    assert abs(m.gradient(x, True)[1][-1] - fd) < 1e-4
+    gain = Cv @ m.Gw.T @ np.linalg.inv(Cy)
+    v = 2. + gain @ r
+    post = m.posterior(dict(s=s, beta=beta, ell=ell, h=h, sig=np.array([tau])), np.ones(n))
+    assert np.allclose(post['v'], v, atol=1e-5)
+    Ct = big**2*np.ones((m.K, m.K)) + tau**2*np.eye(m.K)                      # prior cov of theta
+    Cty = (big**2*np.ones((m.K, n)) + tau**2*m.S.T) @ m.Gw.T
+    th = 2. + Cty @ np.linalg.solve(Cy, r)
+    th_sd = np.sqrt(np.diag(Ct - Cty @ np.linalg.solve(Cy, Cty.T)))
+    assert np.allclose(post['theta'], th, atol=1e-5) and np.allclose(post['theta_sd'], th_sd, atol=1e-4)
