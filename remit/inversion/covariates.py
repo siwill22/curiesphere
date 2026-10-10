@@ -24,8 +24,12 @@ import xarray as xr
 from . import geometry
 
 CLASS_OF_TYPE = {'craton': 0, 'shield': 0,
-                 'orogenic belt': 1, 'volcanic arc': 1, 'accretionary complex': 1,
-                 'passive margin': 2, 'wide rift': 2, 'narrow rift': 2, 'oceanic crust': 2}
+                 'orogenic belt': 1, 'volcanic arc': 1, 'accretionary complex': 1, 'ophiolite complex': 1,
+                 'passive margin': 2, 'wide rift': 2, 'narrow rift': 2, 'oceanic crust': 2,
+                 # types found outside Australia (global layouts): basins with the extended crust, large igneous
+                 # provinces with it too (their crust was thinned or intruded, not stabilised)
+                 'back-arc basin': 2, 'oceanic back-arc basin': 2, 'foredeep basin': 2, 'basin': 2,
+                 'magmatic province': 2}
 CLASS_NAMES = ('cratons+shields', 'orogens+arcs', 'margins+rifts+oceanic')
 VERSION = 1
 

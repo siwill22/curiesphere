@@ -8,6 +8,10 @@ y and B are whitened by the fixed part of the error model (unit noise when sigma
 (flat prior), estimated in closed form: one level v0 (U = u, GCM and CM) or a design (class means and covariate
 slopes, CR). The MAP minimises |y - U theta - B x|^2 + alpha^2 |x|^2.
 
+Some columns of theta may instead carry a Gaussian prior N(0, sigma^2/beta) (`prior`, a mask of the columns; GCM's
+domain levels, ADR 0008): beta is a second hyperparameter, beta |theta_prior|^2 joins the MAP objective, and the
+evidence integrates those columns out (log det(P_pp + beta I) - k log beta, P_pp their block of the precision).
+
 Two routes give the same answers (ADR 0006):
   'eigh'      one eigendecomposition of the smaller of B'B and BB' (float64, CPU), after which any alpha costs
               matrix-vector products: the whole evidence curve and the posterior s.d. of every cell
@@ -62,12 +66,14 @@ class LinearRidge:
     """y = U theta + B x + e for one B and design U (N x p, or a single column u); route 'eigh' or 'cholesky'.
     theta is undamped (flat prior); with p = 1 the solution also carries v0 and prec_v0 (the level of GCM and CM)."""
 
-    def __init__(self, B, u, route='eigh', products='numpy', eig=None, level='profile'):
+    def __init__(self, B, u, route='eigh', products='numpy', eig=None, level='profile', prior=None):
         if level not in ('profile', 'marginal'):
             raise ValueError(f'level {level!r}')
         self.B, self.level = B, level
         self.U = np.asarray(u, float).reshape(len(B), -1)
         self.p = self.U.shape[1]
+        self.prior = np.zeros(self.p, bool) if prior is None else np.asarray(prior, bool)
+        self.k = int(self.prior.sum())
         self.N, self.K = B.shape
         self.side = 'data' if self.N <= self.K else 'cells'
         self.route = route
@@ -78,6 +84,7 @@ class LinearRidge:
             if self.side == 'data':
                 self.c = self.E.T @ self.U                  # U along the data-space eigenvectors (r x p)
                 self.U_res = self.U - self.E @ self.c       # and outside them (computed directly: no cancellation)
+                self.UtU_res = self.U_res.T @ self.U_res
             else:
                 self.q = self.E.T @ (B.T @ self.U)          # Q'B'U (r x p)
             self._Q = None
@@ -117,7 +124,7 @@ class LinearRidge:
             den = self.lam + alpha2
             if self.side == 'data':
                 g = alpha2/den
-                P = self.U_res.T @ self.U_res + self.c.T @ (g[:, None]*self.c)
+                P = self.UtU_res + self.c.T @ (g[:, None]*self.c)
                 rhs = lambda y: self.U_res.T @ y + self.c.T @ (g*(self.E.T @ y))
             else:
                 P = self.U.T @ self.U - self.q.T @ (self.q/den[:, None])
@@ -145,15 +152,23 @@ class LinearRidge:
         f = self._factor(alpha2)
         return self.B.T @ cho_solve(f, z) if self.side == 'data' else cho_solve(f, self.B.T @ z)
 
-    def solve(self, y, alpha2):
-        """MAP for whitened data y: x, theta, chi2 (|r|^2), J (|r|^2 + alpha^2 |x|^2), P (precision of theta, sigma = 1);
-        for p = 1 also v0 and prec_v0"""
+    def _precision(self, alpha2, beta):
+        """the posterior precision of theta (sigma = 1) and the map y -> its right-hand side"""
         P, rhs = self._design(alpha2)
+        if self.k:
+            P = P + np.diag(beta*self.prior)
+        return P, rhs
+
+    def solve(self, y, alpha2, beta=0.):
+        """MAP for whitened data y: x, theta, chi2 (|r|^2), J (|r|^2 + alpha^2 |x|^2 + beta |theta_prior|^2), P
+        (posterior precision of theta, sigma = 1); for p = 1 also v0 and prec_v0"""
+        P, rhs = self._precision(alpha2, beta)
         theta = np.linalg.solve(P, rhs(y))
         x = self._x(y - self.U @ theta, alpha2)
         r = y - self.U @ theta - self.B @ x
         chi2 = float(r @ r)
-        out = dict(x=x, theta=theta, chi2=chi2, J=chi2 + alpha2*float(x @ x), P=P, r=r)
+        J = chi2 + alpha2*float(x @ x) + (beta*float(np.sum(theta[self.prior]**2)) if self.k else 0.)
+        out = dict(x=x, theta=theta, chi2=chi2, J=J, P=P, r=r)
         if self.p == 1:
             out.update(v0=float(theta[0]), prec_v0=float(P[0, 0]))
         return out
@@ -171,20 +186,25 @@ class LinearRidge:
         return float(2*np.sum(np.log(np.diag(f[0]))) - len(self.C)*np.log(alpha2))
 
     def _dof(self):
-        return self.N - (self.p if self.level == 'marginal' else 0)
+        return self.N - (self.p - self.k if self.level == 'marginal' else 0)    # the flat columns
 
-    def log_evidence(self, y, alpha2, fit_sigma=True, box=None):
-        """log marginal likelihood. 'profile': theta at its estimate, up to a constant (GCM). 'marginal': theta
-        integrated out under a flat prior, complete with its constants, so models with different designs compare
-        directly; box = (lo, hi) per column makes the prior uniform on that box (-sum log(hi - lo); -inf if the
-        estimate leaves it). sigma at its maximum (J/dof) or 1."""
-        sol = self.solve(y, alpha2)
+    def log_evidence(self, y, alpha2, fit_sigma=True, box=None, beta=0.):
+        """log marginal likelihood. 'profile': the flat columns of theta at their estimate, up to a constant (GCM).
+        'marginal': theta integrated out under a flat prior, complete with its constants, so models with different
+        designs compare directly; box = (lo, hi) per column makes the prior uniform on that box (-sum log(hi - lo);
+        -inf if the estimate leaves it). Columns with a Gaussian prior (beta) are integrated out either way. sigma at
+        its maximum (J/dof) or 1."""
+        sol = self.solve(y, alpha2, beta)
         J, n = sol['J'], self._dof()
         if self.level == 'profile':
+            ld = self.logdet(alpha2)
+            if self.k:
+                pp = np.ix_(self.prior, self.prior)
+                ld += np.linalg.slogdet(sol['P'][pp])[1] - self.k*np.log(beta)
             if fit_sigma:
-                return -0.5*(n*np.log(J/n) + self.logdet(alpha2))
-            return -0.5*(J + self.logdet(alpha2))
-        ll = -0.5*(self.logdet(alpha2) + np.linalg.slogdet(sol['P'])[1])
+                return -0.5*(n*np.log(J/n) + ld)
+            return -0.5*(J + ld)
+        ll = -0.5*(self.logdet(alpha2) + np.linalg.slogdet(sol['P'])[1] - self.k*np.log(beta if self.k else 1.))
         ll += -0.5*n*(np.log(2*np.pi*J/n) + 1) if fit_sigma else -0.5*(n*np.log(2*np.pi) + J)
         if box is not None:
             lo, hi = (np.broadcast_to(np.asarray(b, float), (self.p,)) for b in box)
@@ -195,6 +215,20 @@ class LinearRidge:
 
     def sigma(self, sol, fit_sigma):
         return float(np.sqrt(sol['J']/self._dof())) if fit_sigma else 1.
+
+    def cell_sd(self, alpha2, sigma, scale, D, beta=0.):
+        """posterior s.d. of v = D theta + x/scale per cell (scale: K, e.g. sqrt(area); D: K x p), theta integrated
+        out: the s.d. of x given theta plus the part from theta's uncertainty, without a dense M"""
+        var = (self.posterior_sd_x(alpha2, 1.)/scale)**2
+        if self.route == 'eigh' and self.side == 'data':
+            CU = self.B.T @ (self.E @ (self.c/(self.lam + alpha2)[:, None]))
+        elif self.route == 'eigh':
+            CU = self.Q @ (self.q/(self.lam + alpha2)[:, None])
+        else:
+            CU = self._x(self.U, alpha2) if self.side == 'cells' else self.B.T @ cho_solve(self._factor(alpha2), self.U)
+        S = np.asarray(D, float) - CU/scale[:, None]
+        P = self._precision(alpha2, beta)[0]
+        return sigma*np.sqrt(np.maximum(var + np.sum(S*np.linalg.solve(P, S.T).T, 1), 0.))
 
     def posterior_sd_x(self, alpha2, sigma=1., chunk=2000):
         """posterior s.d. of each x_k given theta"""
@@ -207,7 +241,7 @@ class LinearRidge:
             raise NotImplementedError('posterior s.d. on the data-space Cholesky route: use route "eigh"')
         return sigma*np.sqrt(np.maximum(var, 0.))
 
-    def posterior_sd_map(self, alpha2, sigma, M, D=None):
+    def posterior_sd_map(self, alpha2, sigma, M, D=None, beta=0.):
         """posterior s.d. of v = D theta + M x (M: n x K; D: n x p, default ones), theta integrated out"""
         D = np.ones((len(M), self.p)) if D is None else np.asarray(D, float).reshape(len(M), -1)
         if self.route == 'eigh' and self.side == 'data':
@@ -225,7 +259,7 @@ class LinearRidge:
                   (np.eye(self.K) - self.B.T @ cho_solve(self._factor(alpha2), self.B))/alpha2)
             var = np.sum((M @ Ai)*M, 1)
             CU = Ai @ (self.B.T @ self.U)
-        P = self._design(alpha2)[0]
+        P = self._precision(alpha2, beta)[0]
         S = D - M @ CU                                         # sensitivity of v to theta
         return sigma*np.sqrt(np.maximum(var + np.sum(S*np.linalg.solve(P, S.T).T, 1), 0.))
 
@@ -241,16 +275,40 @@ class LinearRidge:
             lo, hi = (mid, hi) if key(self.solve(y, 10**mid)) < target else (lo, mid)
         return 10**(0.5*(lo + hi))
 
-    def by_evidence(self, y, fit_sigma=True, n_grid=29):
-        """alpha^2 of the largest evidence: a grid in log alpha^2, then a bounded search around its best point
-        (the box of the prior on theta does not depend on alpha, so it is left out here)"""
+    def by_evidence(self, y, fit_sigma=True, n_grid=29, beta=0.):
+        """alpha^2 of the largest evidence (at a given beta): a grid in log alpha^2, then a bounded search around its
+        best point (the box of the prior on theta does not depend on alpha, so it is left out here)"""
         lo, hi = self.bounds()
         grid = np.linspace(lo, hi, n_grid if self.route == 'eigh' else 9)
-        k = int(np.argmax([self.log_evidence(y, 10**g, fit_sigma) for g in grid]))
+        k = int(np.argmax([self.log_evidence(y, 10**g, fit_sigma, beta=beta) for g in grid]))
         a, b = grid[max(k - 1, 0)], grid[min(k + 1, len(grid) - 1)]
-        res = minimize_scalar(lambda g: -self.log_evidence(y, 10**g, fit_sigma), bounds=(a, b), method='bounded',
+        res = minimize_scalar(lambda g: -self.log_evidence(y, 10**g, fit_sigma, beta=beta), bounds=(a, b), method='bounded',
                               options=dict(xatol=1e-3 if self.route == 'eigh' else 2e-2))
         return 10**res.x
+
+
+    def by_evidence_beta(self, y, fit_sigma=True, alpha2=None, n_grid=13):
+        """(alpha^2, beta) of the largest evidence, for a ridge with Gaussian-prior columns: a grid in log beta (each
+        point with its best alpha^2 near the start), then Nelder-Mead in (log alpha^2, log beta)"""
+        from scipy.optimize import minimize
+        lo, hi = self.bounds()
+        pp = np.ix_(self.prior, self.prior)
+        b_mid = np.log10(np.median(np.diag(self._design(10**(0.5*(lo + hi)))[0][pp])))
+        if alpha2 is None:                                  # start from the levels held near zero (one-level fit)
+            alpha2 = self.by_evidence(y, fit_sigma, beta=10**(b_mid + 6))
+        g0 = np.log10(alpha2)
+        b_mid = np.log10(np.median(np.diag(self._design(alpha2)[0][pp])))   # beta near the data's precision of a level
+        f = lambda t: -self.log_evidence(y, 10**t[0], fit_sigma, beta=10**t[1])
+        best = None
+        for b in np.linspace(b_mid - 4, b_mid + 4, n_grid):
+            r = minimize_scalar(lambda g: f((g, b)), bounds=(max(lo, g0 - 2), min(hi, g0 + 2)), method='bounded',
+                                options=dict(xatol=1e-2))
+            if best is None or r.fun < best[0]:
+                best = (r.fun, r.x, b)
+        res = minimize(f, [best[1], best[2]], method='Nelder-Mead',
+                       options=dict(xatol=1e-3, fatol=1e-3, initial_simplex=[[best[1], best[2]],
+                                    [best[1] + 0.2, best[2]], [best[1], best[2] + 0.5]]))
+        return 10**res.x[0], 10**res.x[1]
 
 
 LevelRidge = LinearRidge                     # the one-column case (GCM, CM)

@@ -11,13 +11,20 @@ Parameterisations (ADR 0001): every one is a grouping of cells, G_param = G_cell
               crust, lab, heat_flow, heat_flow_<alt>, age   standardised covariates (SLOPE per s.d.)
               undated, craton, group:<prov_group>           indicator offsets (SLOPE)
   indicator one column per label of a partition
+  layouts   for a global fit (GCM, ADR 0008): the provinces of several continent tables grouped four ways, plus one
+            level: 'continents', 'groups' (prov_group, else the province), 'provinces' (the tables' parameters) and
+            'class' (covariates.CLASS_NAMES). Cells holding no node of any polygon form one rest domain per continent
+            (the continent of the nearest cell in a polygon) in every layout.
+            Controls blind to geology (CONTROLS): 'tiles<nside>' (the HEALPix pixels of that NSIDE) and
+            'voronoi_groups', 'voronoi_provinces' (as many random Voronoi tiles on the sphere as the geological layout
+            has domains; seeds drawn uniformly by area, seeded so they repeat).
 """
 import hashlib
 import os
 
 import numpy as np
 
-from . import covariates, geometry
+from . import covariates, geometry, graph
 
 LEVEL, SLOPE = (0., 4.), (-2., 2.)
 GROUPS = {'class': ['class'], 'crust': ['crust'], 'age': ['age', 'undated'], 'heat_flow': ['heat_flow'],
@@ -37,7 +44,7 @@ def _domain_nodes(table, mask, g=None):
     import pygplates
     from ptt.utils.points_in_polygons import find_polygons
     g = g or geometry.grid()
-    t = pd.read_csv(os.path.expanduser(table), keep_default_na=False)
+    t = table if isinstance(table, pd.DataFrame) else pd.read_csv(os.path.expanduser(table), keep_default_na=False)
     t = t[t.param != '']
     params = sorted(set(t.param), key=lambda p: (p.startswith('margin'), p))
     prov = covariates.provinces()
@@ -77,6 +84,84 @@ def domains(cells, table, cache, area_name, g=None):
         raise ValueError(f'{(A.sum(1) == 0).sum()} cells hold no node of any domain')
     covered = (cells.cell >= 0).sum()
     return A.argmax(1), params, float(sel.sum()/covered)
+
+
+def _continent(path):
+    stem = os.path.basename(path).split('_')[0]
+    return {'australia': 'aus'}.get(stem, stem)
+
+
+LAYOUTS = ('one', 'continents', 'groups', 'provinces', 'class')
+CONTROLS = ('tiles8', 'tiles16', 'voronoi_groups', 'voronoi_provinces')
+VORONOI_SEED = 20261010
+
+
+def _control(name, cells, xyz, by):
+    """label of each cell for a control layout"""
+    if name.startswith('tiles'):
+        from astropy_healpix import healpy as hp
+        return hp.ang2pix(int(name[5:]), cells.clon, cells.clat, lonlat=True)
+    from scipy.spatial import cKDTree
+    k = len(np.unique(by[name.split('_')[1]].astype(str)))
+    rng = np.random.default_rng(VORONOI_SEED + k)
+    seeds = rng.choice(len(cells), k, replace=False, p=cells.area_km2/cells.area_km2.sum())
+    return cKDTree(xyz[seeds]).query(xyz)[1]             # nearest seed by chord length = by great-circle distance
+
+
+def layouts(cells, tables, cache, area_name, names=LAYOUTS, g=None):
+    """(dict name -> (label of each cell 0..K-1, domain names), share of the target nodes in a polygon) for the
+    provinces of several tables (each with its continent from the file name)"""
+    import pandas as pd
+    from scipy.spatial import cKDTree
+    g = g or geometry.grid()
+    frames, h = [], hashlib.sha256()
+    for path in tables:
+        path = os.path.expanduser(path)
+        with open(path, 'rb') as f:
+            h.update(f.read())
+        frames.append(pd.read_csv(path, keep_default_na=False).assign(continent=_continent(path)))
+    t = pd.concat(frames, ignore_index=True)
+    t = t[t.param != '']
+    spec = dict(area=area_name, tables=h.hexdigest()[:16], source='hasterok2022', version=DOMAINS_VERSION)
+    d = cache.entry('domain_nodes', spec)
+    f = os.path.join(d, 'nodes.npz')
+    if not os.path.exists(f):
+        nodes, params = _domain_nodes(t, cells.cell >= 0, g)
+        from .cache import save_atomic
+        save_atomic(f, lambda p: np.savez(p, nodes=nodes, params=np.array(params)))
+    z = np.load(f)
+    nodes, params = z['nodes'], [str(p) for p in z['params']]
+    sel = (cells.cell >= 0) & (nodes >= 0)
+    w = np.cos(np.radians(np.broadcast_to(g.lat[:, None], nodes.shape)[sel]))
+    A = np.zeros((len(cells), len(params)))
+    np.add.at(A, (cells.cell[sel], nodes[sel]), w)
+    inside = A.sum(1) > 0
+    prov = np.where(inside, A.argmax(1), -1)
+    first = t.drop_duplicates('param').set_index('param')
+    cont_of = np.array([first.continent[p] for p in params])
+    group_of = np.array([first.prov_group[p] or p for p in params])
+    class_of = np.array([covariates.CLASS_NAMES[covariates.CLASS_OF_TYPE[first.prov_type[p]]] for p in params])
+    xyz = graph.unit(cells.clon, cells.clat)
+    near = np.flatnonzero(inside)[cKDTree(xyz[inside]).query(xyz[~inside])[1]]   # chord distance: great circle order
+    cont = np.empty(len(cells), object)
+    cont[inside] = cont_of[prov[inside]]
+    cont[~inside] = cont_of[prov[near]]
+    rest = np.array([f'rest {c}' for c in cont], object)
+    by = {'continents': cont,
+          'groups': np.where(inside, group_of[np.maximum(prov, 0)], rest),
+          'provinces': np.where(inside, np.array(params, object)[np.maximum(prov, 0)], rest),
+          'class': np.where(inside, class_of[np.maximum(prov, 0)], rest)}
+    out = {}
+    for name in names:
+        if name == 'one':
+            out[name] = (np.zeros(len(cells), int), ['all'])
+        elif name in CONTROLS:
+            lab = np.unique(_control(name, cells, xyz, by), return_inverse=True)[1]
+            out[name] = (lab, [f'{name} {j}' for j in range(lab.max() + 1)])
+        else:
+            dom, lab = np.unique(by[name].astype(str), return_inverse=True)
+            out[name] = (lab, [str(x) for x in dom])
+    return out, float(sel.sum()/(cells.cell >= 0).sum())
 
 
 def columns(groups):

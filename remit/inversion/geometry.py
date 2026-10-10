@@ -166,10 +166,13 @@ def _basement(_key):
 
 
 def surface_radius(surface, g=None):
-    """radius (m) of a layer surface on the grid: 'basement', or a constant depth (km) below the ellipsoid"""
+    """radius (m) of a layer surface on the grid: 'basement', 'basement+<km>' (that far below the basement), or a
+    constant depth (km) below the ellipsoid"""
     g = g or grid()
     if surface == 'basement':
         return _basement(AGE_GRID)
+    if isinstance(surface, str) and surface.startswith('basement+'):
+        return _basement(AGE_GRID) - float(surface[9:])*1e3
     if isinstance(surface, (int, float)):
         return depth.ellipsoid_radius(g.lat)[:, None]*np.ones((len(g.lat), len(g.lon))) - surface*1e3
     raise NotImplementedError(f'layer surface {surface!r}')
@@ -185,11 +188,45 @@ def layer_radii(layer, mask=None, g=None):
 
 
 def direction_components(direction, g=None):
-    """magnetisation (r, theta, phi) per SI.km of VIS on the grid, in A"""
+    """magnetisation (r, theta, phi) per SI.km of VIS on the grid, in A. 'background:<remanence>:<vis model>[:nr]'
+    is the background's own vertically integrated magnetisation per node instead (remanence of the ocean model, with
+    the near-ridge enhancement for 'nr', plus the VIS model induced by IGRF-13; zero on continental crust), so a
+    column is the field of the background in one cell (the ocean-model error of ADR 0009)"""
     g = g or grid()
     if direction == 'induced_igrf13':
         return depth.induced_components(g.lat)
+    if direction.startswith('background:'):
+        return _background_vim(direction)
     raise NotImplementedError(f'direction model {direction!r}')
+
+
+@functools.lru_cache(maxsize=1)
+def _background_vim(direction):
+    from remit.data.models import OCEAN_MODEL_LIST, load_vis_model
+    from remit.utils.grid import agearray2magnetisation, paleoIncDec2field
+    _, remanence, vis_model, *nr = direction.split(':')
+    g = grid()
+    ocean, cont = g.ocean, continental_crust(g)
+    params = OCEAN_MODEL_LIST[remanence]
+    params = depth.with_near_ridge(params) if nr and nr[0] == 'nr' else params
+    prof, _, rm = depth.profile_slices(params)
+    M = agearray2magnetisation(ocean.age, prof.age, rm.sum(0))         # RVIM of the whole column (A)
+    Br, Bt, Bp = paleoIncDec2field(ocean.paleolatitude, ocean.declination)
+    C = np.sqrt(1 + 3*np.sin(np.radians(ocean.paleolatitude))**2)
+    vis = load_vis_model(name=vis_model, match=(ocean.lon, ocean.lat, ocean.age)).vis
+    vis = np.where(cont, 0., np.nan_to_num(np.asarray(vis)))
+    ind = depth.induced_components(g.lat)
+    return [np.where(cont, 0., np.nan_to_num(np.asarray(M*C*B))) + vis*i for B, i in zip((Br, Bt, Bp), ind)]
+
+
+def ocean_mask(g=None):
+    """the grid nodes outside continental crust (the background's sources in a global fit)"""
+    g = g or grid()
+    m = ~continental_crust(g)
+    m[0, :] = False                 # the north-pole row: zero weight in the quadrature, and no Legendre derivative
+    m[-1, :] = False
+    m[:, -1] = False
+    return m
 
 
 def coarsen(cells):

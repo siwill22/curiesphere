@@ -39,6 +39,7 @@ def merge(base, over):
 PATH_KEYS = [('target', 'area'), ('parameterisation', 'table')]
 NESTED_PATH_KEYS = [('fit', 'background', 'outside'), ('method', 'hypotheses', 'hand'), ('method', 'hypotheses', 'labels'), ('method', 'layouts', 'merge')]
 LIST_PATH_KEYS = [('method', 'start')]          # [path, ...]: the first item is a path
+PATH_LIST_KEYS = [('parameterisation', 'tables')]   # [path, ...]: every item is a path
 
 
 def _absolute_paths(cfg, base):
@@ -50,6 +51,10 @@ def _absolute_paths(cfg, base):
         v = cfg.get(table, {}).get(key)
         if isinstance(v, list) and v and isinstance(v[0], str):
             v[0] = os.path.normpath(os.path.join(base, os.path.expanduser(v[0])))
+    for table, key in PATH_LIST_KEYS:
+        v = cfg.get(table, {}).get(key)
+        if isinstance(v, list):
+            cfg[table][key] = [os.path.normpath(os.path.join(base, os.path.expanduser(x))) for x in v]
     for table, sub, key in NESTED_PATH_KEYS:
         t = cfg.get(table, {}).get(sub)
         if isinstance(t, dict) and isinstance(t.get(key), str):

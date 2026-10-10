@@ -96,3 +96,42 @@ def test_design_with_box_prior():
         box = ([-2.]*p, [2.]*p)
         assert np.isclose(s.log_evidence(y, alpha2, False, box), direct - p*np.log(4.), atol=1e-8)
         assert s.log_evidence(y, alpha2, False, ([-2.]*p, [0.]*p)) == -np.inf
+
+
+def test_gaussian_prior_columns():
+    """columns with a Gaussian prior N(0, 1/beta) (GCM's domain levels): MAP against the augmented direct solve,
+    evidence (profile and marginal) against the Gaussian integral, cell s.d. against the dense posterior"""
+    rng = np.random.default_rng(11)
+    N, K, k = 40, 60, 4
+    B = rng.standard_normal((N, K))
+    D = np.eye(k)[rng.integers(0, k, K)]                       # cells in k domains
+    scale = 0.5 + rng.random(K)
+    U = np.hstack([B @ scale[:, None], B @ (scale[:, None]*D)])  # level and domain levels, as in GCM
+    prior = np.r_[False, np.ones(k, bool)]
+    y = U @ np.r_[1., 0.3*rng.standard_normal(k)] + B @ (0.4*rng.standard_normal(K)) + rng.standard_normal(N)
+    alpha2, beta = 2., 5.
+    A = np.hstack([U, B])
+    z = np.linalg.solve(A.T @ A + np.diag(np.r_[0., np.full(k, beta), np.full(K, alpha2)]), A.T @ y)
+    C2 = np.eye(N) + B @ B.T/alpha2 + U[:, 1:] @ U[:, 1:].T/beta
+    Ci = np.linalg.inv(C2)
+    u = U[:, :1]
+    th = np.linalg.solve(u.T @ Ci @ u, u.T @ Ci @ y)
+    r = y - u @ th
+    profile = -0.5*(np.linalg.slogdet(C2)[1] + r @ Ci @ r)
+    marginal = -0.5*((N - 1)*np.log(2*np.pi) + np.linalg.slogdet(C2)[1] + np.linalg.slogdet(u.T @ Ci @ u)[1]
+                     + r @ Ci @ r)
+    H = np.linalg.inv(A.T @ A + np.diag(np.r_[0., np.full(k, beta), np.full(K, alpha2)]))
+    Mv = np.hstack([np.ones((K, 1)), D, np.diag(1/scale)])      # VIS = v0 + level + x/scale
+    sd_direct = np.sqrt(np.diag(Mv @ H @ Mv.T))
+    for route in ('eigh', 'cholesky'):
+        s = core.LinearRidge(B, U, route, prior=prior)
+        sol = s.solve(y, alpha2, beta)
+        assert np.allclose(sol['theta'], z[:k + 1], atol=1e-10) and np.allclose(sol['x'], z[k + 1:], atol=1e-10)
+        assert np.isclose(s.log_evidence(y, alpha2, fit_sigma=False, beta=beta), profile, atol=1e-8)
+        m = core.LinearRidge(B, U, route, level='marginal', prior=prior)
+        assert np.isclose(m.log_evidence(y, alpha2, fit_sigma=False, beta=beta), marginal, atol=1e-8)
+        if route == 'eigh':
+            assert np.allclose(s.cell_sd(alpha2, 1., scale, np.hstack([np.ones((K, 1)), D]), beta), sd_direct,
+                               atol=1e-10)
+    a2, b = core.LinearRidge(B, U, 'eigh', prior=prior).by_evidence_beta(y)
+    assert a2 > 0 and b > 0

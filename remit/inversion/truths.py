@@ -3,6 +3,9 @@ Truths for synthetic data (CONTEXT.md): cell VIS (SI.km) from a spec.
   {'kind': 'uniform', 'value': 1.0}
   {'kind': 'crust_thickness', 'chi': 0.04, 'grid': path}   chi x crustal thickness (km) at the cell centres
                                                             (a lon/lat grid such as CRUST1.0, nearest node)
+  {'kind': 'layout_levels', 'layout': 'groups', 'mean': 0.7, 'sd': 0.2, 'seed': 1}
+                                                            one level per domain of a layout (parameterise.layouts,
+                                                            passed in by the method), drawn from N(mean, sd^2)
 """
 import os
 
@@ -10,7 +13,11 @@ import numpy as np
 import xarray as xr
 
 
-def truth(spec, cells):
+def truth(spec, cells, layouts=None):
+    if spec['kind'] == 'layout_levels':
+        label, names = layouts[spec['layout']]
+        levels = np.random.default_rng(spec['seed']).normal(spec['mean'], spec['sd'], len(names))
+        return levels[label]
     if spec['kind'] == 'uniform':
         return np.full(len(cells), float(spec['value']))
     if spec['kind'] == 'crust_thickness':
