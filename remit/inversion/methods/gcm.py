@@ -23,6 +23,7 @@ Config keys used:
 """
 import os
 import time
+from types import SimpleNamespace
 
 import numpy as np
 from scipy import sparse
@@ -33,10 +34,10 @@ from ..cache import Cache, save_atomic
 EIG_VERSION = 2                     # 2: the eigenvectors of the decomposed side (data or cells), not always cells
 
 
-def run(cfg, cache=None, log=print):
-    cache = cache or Cache()
-    t0 = time.time()
-    say = lambda msg: log(f'[{(time.time() - t0)/60:5.1f} min] {msg}')
+def global_problem(cfg, cache, say):
+    """the global coefficient fit (ADR 0002), shared by GCM and DF-GLC: the whitened, area-scaled matrix
+    B = W^1/2 F G A^-1/2 (data x cells), u = B sqrt(a) (the field of a uniform level), the whitened data y, and what
+    they were made from"""
     tg, geo, comp, d = cfg['target'], cfg['geometry'], cfg['compute'], cfg['data']
     if len(geo['layers']) != 1:
         raise NotImplementedError('one layer')
@@ -80,7 +81,7 @@ def run(cfg, cache=None, log=print):
     truth = None
     if synthetic:
         lays = None
-        if d['truth']['kind'] == 'layout_levels':
+        if d['truth']['kind'] in ('layout_levels', 'layout_fractal'):
             lays = parameterise.layouts(fine, cfg['parameterisation']['tables'], cache, tg['area'],
                                         [d['truth']['layout']])[0]
         truth_fine = truths.truth(d['truth'], fine, lays)
@@ -92,6 +93,20 @@ def run(cfg, cache=None, log=print):
             y = y + w*F[band.l]*band.rows(err)
     else:
         y = w*(band.rows(c_model) - F[band.l]*band.rows(C_bg))
+
+    return SimpleNamespace(cells=cells, fine=fine, parent=parent, store=store, band=band, B=B, u=u, a=a, y=y, w=w, F=F,
+                           truth=truth, model=model, noise=noise, mask=mask)
+
+
+def run(cfg, cache=None, log=print):
+    cache = cache or Cache()
+    t0 = time.time()
+    say = lambda msg: log(f'[{(time.time() - t0)/60:5.1f} min] {msg}')
+    pb = global_problem(cfg, cache, say)
+    cells, store, band, B, u, a, y, w, F, truth, model, noise = (pb.cells, pb.store, pb.band, pb.B, pb.u, pb.a, pb.y,
+                                                                  pb.w, pb.F, pb.truth, pb.model, pb.noise)
+    comp, d = cfg['compute'], cfg['data']
+    lo, hi = d['band']
 
     # solve
     route = comp['solver']

@@ -381,6 +381,9 @@ def layouts(cells, cfg, cache, say):
 
 
 def run(cfg, cache=None, log=print):
+    if cfg.get('fit', {}).get('type') == 'global':              # DF-GLC (ADR 0010)
+        from . import df_global
+        return df_global.run(cfg, cache, log)
     cache = cache or Cache()
     t0 = time.time()
     say = lambda msg: log(f'[{(time.time() - t0)/60:5.1f} min] {msg}')

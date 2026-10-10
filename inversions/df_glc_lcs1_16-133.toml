@@ -1,0 +1,21 @@
+# DF-GLC (ADR 0010; docs/experiment-global-layouts.md step 6): DF's model in the global fit. A level v0, domain
+# offsets ~ N(0, tau^2) and a fractal pattern per domain (independent between domains, one shared strength), with the
+# measured noise and the ocean-model error at the amplitude chosen by the layout fits (16 nT). Layouts: one domain
+# (one pattern, no breaks), the groups and provinces, and random tiles as many as each (geology-blind controls).
+inherit = "gcm_glc_layouts_lcs1_16-133.toml"
+
+[errors.noise]
+amplitude = "fixed"
+
+[errors.background]
+kind = "ocean_cells"
+layer = { top = "basement", base = "basement+6" }
+rms_nT = [16.0]
+
+[method]
+name = "df"
+layouts = ["one", "groups", "voronoi_groups", "provinces", "voronoi_provinces"]
+bounds = [0.0, 4.0]
+beta_grid = [2.0, 2.5, 3.0]
+ell_grid_km = [350.0, 700.0, 1400.0]
+noise = "fixed"

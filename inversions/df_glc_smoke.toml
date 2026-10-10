@@ -1,0 +1,17 @@
+# DF-GLC smoke test: NSIDE 32 cells (summed from NSIDE 64), degrees 16-60, one shape, three layouts
+inherit = "df_glc_lcs1_16-133.toml"
+mode = "explore"
+
+[data]
+band = [16, 60]
+
+[compute]
+coarsen = 1
+solver = "eigh"
+products_backend = "numpy"
+columns_backend = "numpy"
+
+[method]
+layouts = ["one", "groups", "voronoi_groups"]
+beta_grid = [2.5]
+ell_grid_km = [700.0]
