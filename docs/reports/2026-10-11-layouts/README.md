@@ -54,6 +54,7 @@ Each domain's mean is now drawn from one shared distribution with a fitted sprea
 - Africa from 14% to **4%**;
 - South America from 11% to **4%**;
 - Zealandia from 3.2% to 2.5%.
+- Eurasia from 2.1% to 1.6%. Its domain means that lay outside 0–4 SI·km (South India and Sri Lanka, small Aegean and Anatolian units) are now all inside.
 
 Other continents are unchanged (0.3–1%).
 
