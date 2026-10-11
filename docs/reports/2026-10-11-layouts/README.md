@@ -95,7 +95,7 @@ DF-GLC is DF's model fitted to the global coefficients: a fractal pattern inside
 - **But geological boundaries are far closer to real VIS edges than random ones.** If breaks are imposed, those at group boundaries cost 368 less than breaks at random places, and those at provinces 532 less. On S5 (no edges in the truth) the groups did 83 worse than random tiles, not better.
 - **Together:** VIS changes more across geological boundaries than elsewhere, but it does not start afresh at each one. That is the soft-boundary model deferred in ADR 0010: one pattern shared across boundaries, plus independent domain patterns, with the split between the two fitted by the evidence.
 
-The DF-GLC map (one pattern) has v0 0.71 SI·km, 2.1% of cells below zero and an RMS misfit of 25.0 nT: `inversions/results/df_glc_lcs1_16-133_one_best_maps.png`.
+The DF-GLC map (one pattern) has v0 0.71 SI·km, 2.1% of cells below zero and an RMS misfit of 25.0 nT: `inversions/results/global/df_glc_lcs1_16-133_one_best_maps.png`.
 
 ## Caveats
 

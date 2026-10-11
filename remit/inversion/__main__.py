@@ -1,8 +1,8 @@
 """
 Run an inversion from its config:
     python -m remit.inversion run <config.toml> [--out result.nc] [--no-figures]
-The result (NetCDF) goes to results/<config name>.nc next to the config unless --out is given, with the standard
-figures beside it. Single-threaded BLAS and low priority are the caller's choice (OMP/VECLIB_MAXIMUM_THREADS, nice).
+The result (NetCDF) goes to results/<config name>.nc next to the config unless --out is given; the standard figures go
+to a folder per region beside it (results/global/, results/aus/, ...). Single-threaded BLAS and low priority are the caller's choice (OMP/VECLIB_MAXIMUM_THREADS, nice).
 """
 import argparse
 import os
@@ -15,6 +15,15 @@ METHODS = {'gcm': 'remit.inversion.methods.gcm', 'cm': 'remit.inversion.methods.
            'voronoi': 'remit.inversion.methods.voronoi', 'lvoronoi': 'remit.inversion.methods.lvoronoi',
            'partition': 'remit.inversion.methods.partition',
            'df': 'remit.inversion.methods.df'}
+
+
+def region(cfg):
+    """the figure folder of a config: 'global' for all continental crust, else the outline's continent tag"""
+    area = cfg['target']['area']
+    if area == 'continental_crust':
+        return 'global'
+    stem = os.path.splitext(os.path.basename(area))[0]
+    return {'australia': 'aus'}.get(stem, stem)
 
 
 def main(argv=None):
@@ -36,7 +45,9 @@ def main(argv=None):
     print('wrote', results.save(ds, out))
     if not a.no_figures:
         from . import figures
-        for f in figures.standard(ds, os.path.splitext(out)[0]):
+        fig_dir = os.path.join(os.path.dirname(out), region(cfg))         # one folder of figures per region
+        os.makedirs(fig_dir, exist_ok=True)
+        for f in figures.standard(ds, os.path.join(fig_dir, os.path.splitext(os.path.basename(out))[0])):
             print('wrote', f)
 
 
