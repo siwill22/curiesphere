@@ -76,6 +76,27 @@ The exception is Eurasia: its evidence rises by 60, the ring misfit falls from 2
 
 The rise of the continent means toward GCM's level, noted in the handover, is therefore mostly not the background's doing.
 
+## 6. DF-GLC: separate patterns per domain in the global fit (added 11 October, afternoon)
+
+DF-GLC is DF's model fitted to the global coefficients: a fractal pattern inside each domain, independent between domains, so the pattern breaks at every domain boundary, with the ocean-model error at 16 nT. It is compared against one pattern with no breaks anywhere. Each layout's pattern shape (β, patch size) was searched separately.
+
+| Layout | Real LCS-1 | S3: truth breaks at group edges | S5: truth with no breaks |
+|---|---|---|---|
+| One pattern, no breaks | **0** (β 2.5, 350 km) | −1170 | **0** |
+| Groups | −55 (β 2.0, 700 km) | **0** | −628 |
+| Provinces | −94 (β 2.0, 700 km) | — | — |
+| Random tiles as many as the groups | −423 | −1623 | −546 |
+| Random tiles as many as the provinces | −626 | — | — |
+
+(Log evidence relative to the best layout in each column.)
+
+- **The method works.** It finds breaks where the truth has them (S3: groups by 1170) and rejects them where it has none (S5). In S3 it also recovers the truth's strength (0.40 SI·km) and the spread of the levels (0.22 against 0.20).
+- **Real VIS shows no hard breaks at province boundaries.** One pattern running across all boundaries fits best, by 55 over groups and 94 over provinces.
+- **But geological boundaries are far closer to real VIS edges than random ones.** If breaks are imposed, those at group boundaries cost 368 less than breaks at random places, and those at provinces 532 less. On S5 (no edges in the truth) the groups did 83 worse than random tiles, not better.
+- **Together:** VIS changes more across geological boundaries than elsewhere, but it does not start afresh at each one. That is the soft-boundary model deferred in ADR 0010: one pattern shared across boundaries, plus independent domain patterns, with the split between the two fitted by the evidence.
+
+The DF-GLC map (one pattern) has v0 0.71 SI·km, 2.1% of cells below zero and an RMS misfit of 25.0 nT: `inversions/results/df_glc_lcs1_16-133_one_best_maps.png`.
+
 ## Caveats
 
 - Each synthetic check uses one noise draw.
@@ -84,6 +105,6 @@ The rise of the continent means toward GCM's level, noted in the handover, is th
 
 ## Decisions for you
 
-1. **Start DF-GLC (idea 2)?** The local results suggest the boundaries act through the patterns, not the levels.
+1. ~~Start DF-GLC (idea 2)?~~ Done, see section 6. Next candidate: **the soft-boundary model** (ADR 0010, deferred). It adds one hyperparameter (the split), so it costs about the same as a DF-GLC layout.
 2. **Run the local null for Eurasia, South America, Africa and Zealandia?** About 6 h, mostly Eurasia.
 3. **Which background should local fits use from now on?** The global layout fit, or GCM-GLC.

@@ -56,6 +56,8 @@ The ocean-cell columns of ADR 0009 (29,627 cells, basement to 6 km below, magnet
 
 Globally, with the ocean-model error (best 16 nT; +3300 log evidence over noise alone), the polygons beat random tiles of the same number on LCS-1: provinces +217, groups +156. On S5 they lose: −460 and −311. Locally (DF, Gaussian means), the polygons beat random tiles in EUR +257, NAM +127, ANT +63 and AUS +34 (nulls: NAM −55, ANT −9, AUS −23), but not in SAM +6, AFR +4 or ZEA −4. The spread of the domain means falls to its lower bound in AFR, NAM, ANT and EUR: where the polygons help locally, they do so through independent patterns, not levels.
 
+**2026-10-11, steps 4–6 (DF-GLC).** One pattern without breaks fits LCS-1 best (β 2.5, 350 km). Groups score −55 and provinces −94; random tiles as many as each score −423 and −626. S3 (truth with breaks at group edges) picks groups by 1170 and recovers s and tau; S5 (no breaks) picks one pattern, with groups 83 below random tiles. So real VIS does not break at the boundaries, but changes more across geological boundaries than across random ones. Step 7 (per-class strengths) is on hold: the soft-boundary model is the sharper next test. Report: [reports/2026-10-11-layouts](reports/2026-10-11-layouts/README.md), section 6.
+
 ## Deferred
 
 - Soft boundaries: a shared global pattern plus the domain patterns, with the split fitted by the evidence (ADR 0010).

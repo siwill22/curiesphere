@@ -1,0 +1,5 @@
+# DF-GLC on LCS-1, the one layout alone (the layouts run side by side; their evidences compare directly)
+inherit = "df_glc_lcs1_16-133.toml"
+
+[method]
+layouts = ["one"]

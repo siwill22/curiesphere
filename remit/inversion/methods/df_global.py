@@ -153,7 +153,7 @@ class Shape:
         sd = np.sqrt(np.maximum(prior - red + bt**2/Au, 0.))
         resid_w = self.y - self.u*v0 - self.G @ (v - v0)
         resid = (Lc @ resid_w if Lc is not None else resid_w)/w
-        level = v0 + (S @ delta if S is not None else 0.)
+        level = v0 + (S @ delta if S is not None else np.zeros(n))
         return dict(v=v, sd=sd, level=level, v0=v0, delta=delta, resid=resid)
 
 
@@ -179,7 +179,9 @@ def search(make, beta_grid, ell_grid, fit_h, say, name):
     ell_mid = ell_grid[len(ell_grid)//2]
     b_best = max(beta_grid, key=lambda b: at(b, ell_mid)['ll'])
     e_best = max(ell_grid, key=lambda e: at(b_best, e)['ll'])
-    if e_best == ell_grid[0]:
+    if len(ell_grid) == 1:                               # a fixed shape: no search
+        pass
+    elif e_best == ell_grid[0]:
         at(b_best, ell_grid[0]/2)
     elif e_best == ell_grid[-1]:
         at(b_best, ell_grid[-1]*2)
