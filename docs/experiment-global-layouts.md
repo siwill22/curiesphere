@@ -64,7 +64,7 @@ Globally, with the ocean-model error (best 16 nT; +3300 log evidence over noise 
 
 - Soft boundaries: a shared global pattern plus the domain patterns, with the split fitted by the evidence (ADR 0010).
 - Null tests over many noise draws: only once a result is worth calibrating.
-- FD-merge layouts globally: merge partitions exist only for Australia.
+- FD-merge layouts on the other continents: in Australia (report section 8), once set against fake data without boundaries, merge domains do no better than the polygons (excess over the fake data +100 to +117 at 2–100 domains; polygons +111).
 
 ## Caveat to watch
 

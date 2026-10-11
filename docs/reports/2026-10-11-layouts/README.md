@@ -124,6 +124,29 @@ The same 100 layouts were also fitted to the null (S5: a smooth random truth tha
 
 Top: the layouts (colours only tell the domains apart). Bottom: the fitted VIS averaged over each domain. With the real provinces the averages follow known structures: the Congo low, the high cratons of West Africa and North America, and Wilkes Land. The best random and spun layouts break these up or smear them across several domains.
 
+## 8. Domains made from the data (FD-merge), Australia (added 12 October)
+
+FD-merge draws domains from the data alone: it starts with every cell as its own domain and repeatedly joins the two neighbours whose levels differ least. Here its partitions from 2 to 100 domains were each scored with DF (a fractal pattern inside each domain, domain levels from one shared spread), alongside the 39 polygons and 39 random tiles (`df_aus_lcs1_16-133_gcmbg_gm_mpath.toml`).
+
+On real data the merge domains' score keeps rising up to 100 domains, so it can't pick a number. The reason is that the domains are drawn from the same data that score them. To measure that effect, the same steps were run on 20 fake data sets with no boundaries at all (drawn from DF's one-domain fit to Australia: `acceptance/df_merge_path_null.py`).
+
+![](mpath_aus.png)
+
+| Layout | Gain over one domain, real data | Same, fake data (mean ± s.d.) | Real minus fake |
+|---|---|---|---|
+| 39 polygons | +101 | −10 ± 9 | **+111** |
+| Merge, 14 domains | +302 | +186 ± 19 | **+117** |
+| Merge, 50 domains | +449 | +336 ± 15 | +112 |
+| Merge, 2–100 domains | | | +70 to +117 |
+| 39 random tiles | +67 | −1 ± 11 | +68 |
+
+- **Most of the merge domains' apparent gain is an artefact** of choosing them from the data: on fake data they gain 36–421 without any real boundary.
+- **Beyond that artefact, the merge domains do no better than the polygons.** The real excess is about the same, 100–117, at every number of domains, and the polygons reach 111 without being drawn from the data.
+- **So the evidence can't choose the number of merge domains,** and the earlier result that FD-merge's 14 domains beat the polygons by 212 was mostly this artefact.
+- **What works:** the polygons, which carry the information from outside the data. FD-merge is still useful for showing where the data alone would draw lines, but its scores must be set against fake data before they are compared.
+
+The sampling FD methods (FD-vor, FD-lvor, FD-part), which draw many random partitions, did not settle on an answer in Australia, so they were left out here.
+
 ## Caveats
 
 - Each synthetic check uses one noise draw, and the 100-layout test one noise draw of the null.
