@@ -20,9 +20,12 @@ Config keys used, besides those of problem.local (weighting 'full', model_error 
   [parameterisation] kind = 'domains', table (as PD)
   [method] means ('box' or 'gaussian'), tau_range (SI km, for 'gaussian'), bounds ([lo, hi] of the means), beta_range, ell_range (km), s_range (SI km), noise ('fixed' or 'fitted'),
            hyper_sd (Laplace s.d. of the hyperparameters), layouts = {one = true, merge = <FD-merge result>,
-           merge_settings = [i, ...], controls = true, polygons = false} (further layouts, ranked by the evidence with
-           the table's; controls: random Voronoi tiles, as many as the table's domains, blind to geology; polygons =
-           false leaves the table's own layout out, the first remaining layout is then mapped),
+           merge_settings = [i, ...], merge_path = {mu = 0.1, gamma = 0, K = [2, 3, ...]}, controls = true,
+           polygons = false} (further layouts, ranked by the evidence with the table's; merge_path: FD-merge's merge
+           path run on this problem's data, its partitions with K domains each scored by DF, so DF's evidence picks the
+           number of domains; controls: random Voronoi tiles, as many as the table's domains, blind to geology;
+           polygons = false leaves the table's own layout out, the first remaining layout is then mapped),
+           main = 'best' (map the layout with the highest evidence instead of the first),
            ring_error = {beyond_km = 50} (an extra error at the data points farther than beyond_km from every cell
            centre, i.e. the ring of points around the target: correlated with the field model's own spectrum in the
            band, its RMS sigma_ring (nT) fitted; for errors of the background there, which no domain can explain),
@@ -39,7 +42,7 @@ import numpy as np
 from scipy.linalg import cho_factor, cho_solve, cholesky, block_diag
 from scipy.optimize import minimize
 
-from .. import errors, parameterise, problem, results, sampling
+from .. import errors, graph, parameterise, problem, results, sampling
 from ..cache import Cache
 from ..geometry import area_name
 from ..graph import unit
@@ -353,7 +356,7 @@ def rhat(chains):
     return np.sqrt(((n - 1)/n*W + B/n)/np.where(W > 0, W, np.nan))
 
 
-def layouts(cells, cfg, cache, say):
+def layouts(cells, cfg, cache, say, Gw=None, yw=None):
     """dict name -> (label, domain names): the table's layout first, then those of [method.layouts]"""
     par, spec = cfg['parameterisation'], cfg['method'].get('layouts', {})
     label, params, coverage = parameterise.domains(cells, par['table'], cache, area_name(cfg['target']['area']))
@@ -369,6 +372,14 @@ def layouts(cells, cfg, cache, say):
             lab = np.unique(ds[f'domain_{i}'].values, return_inverse=True)[1]
             out[f'merging lam x{r["lam_rel"]:.2g} gamma {r["gamma_rel"]:g} (K {lab.max() + 1})'] = \
                 (lab, [f'unit {k}' for k in range(lab.max() + 1)])
+    if spec.get('merge_path'):                         # FD-merge's path on these data; DF scores each K
+        from . import merge
+        mp = spec['merge_path']
+        edges, _ = graph.cell_edges(cells)
+        saved = merge.path(merge.setup(Gw, edges), yw, mp.get('mu', 0.1), mp.get('gamma', 0.))
+        for k in mp.get('K', [2, 3, 5, 8, 10, 14, 20, 30, 50, 100]):
+            lab = np.unique(saved[k], return_inverse=True)[1]
+            out[f'merge path K {k}'] = (lab, [f'unit {j}' for j in range(k)])
     if spec.get('controls'):
         k = len(out['polygons'][1])
         lab = np.unique(parameterise.voronoi(cells, k, parameterise.VORONOI_SEED + k), return_inverse=True)[1]
@@ -399,7 +410,7 @@ def run(cfg, cache=None, log=print):
                 ell_range=tuple(me.get('ell_range', [50., 5000.])))
     fit_h = me.get('noise', 'fixed') == 'fitted'
     cell_km2 = 4*np.pi*R_KM**2/(12*cells.nside**2)
-    lays, coverage = layouts(cells, cfg, cache, say)
+    lays, coverage = layouts(cells, cfg, cache, say, pb.Gw, pb.yw)
     say(f'{len(lays)} layouts: {list(lays)}')
     xyz_c, xyz_p = unit(cells.clon, cells.clat), unit(pb.plon, pb.plat)
     dist_km = np.arccos(np.clip((xyz_p @ xyz_c.T).max(1), -1., 1.))*R_KM          # to the nearest cell centre
@@ -424,7 +435,7 @@ def run(cfg, cache=None, log=print):
             f'ell {f["ell"]:.0f} km, h {f["h"]:.2f}' + (f', ring error {f["sig"][0]:.1f} nT' if extra else '') +
             (f', spread of the domain means {tau:.2f} SI km' if m.gaussian else '') +
             f', {f["n_eval"]} evaluations' + ('' if f['converged'] else ' NOT CONVERGED'))
-        if main is None:
+        if main is None or (me.get('main') == 'best' and f['ll'] > main[2]['ll']):
             main = (name, m, f, names)
     name, m, f, names = main
     profile = []
