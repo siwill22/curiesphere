@@ -97,11 +97,38 @@ DF-GLC is DF's model fitted to the global coefficients: a fractal pattern inside
 
 The DF-GLC map (one pattern) has v0 0.71 SI·km, 2.1% of cells below zero and an RMS misfit of 25.0 nT: `inversions/results/global/df_glc_lcs1_16-133_one_best_maps.png`.
 
+## 7. Could any polygons do as well? 100 layouts that ignore geology (added 11 October, evening)
+
+Using the polygons assumes they carry real information about magnetisation. This tests that assumption. The 724 provinces (global fit, as in section 1, ocean-model error 16 nT) were ranked against:
+- **50 random tilings:** 724 Voronoi tiles each, seeds drawn at random over the continents.
+- **50 spun province sets:** each continent's real polygons rotated about its centre by a random 60–300°, then trimmed to the continent. They keep the polygons' shapes and their mix of sizes; only their position relative to the geology changes.
+
+The same 100 layouts were also fitted to the null (S5: a smooth random truth that ignores geology).
+
+![](ensemble_evidence.png)
+
+| | Best | Median | Worst | Beat the provinces |
+|---|---|---|---|---|
+| Random tilings, real data | −83 | −277 | −404 | 0 of 50 |
+| Spun provinces, real data | −360 | −454 | −531 | 0 of 50 |
+| Random tilings, null | +502 | +407 | +332 | 50 of 50 |
+| Spun provinces, null | +44 | −58 | −138 | 5 of 50 |
+
+(Log evidence relative to the real provinces.)
+
+- **On real data, none of the 100 beats the provinces.** The best random tiling falls 83 log units short, and the best spun set 360 short.
+- **On the null, the provinces have no advantage.** They sit among the spun sets (5 of 50 beat them), and every random tiling beats them. Random tiles are more even in size, which suits a truth that is equally smooth everywhere.
+- **Position is what matters, not shape or size.** The spun sets have the same shapes and sizes as the provinces. They match the provinces on the null but lose by 360–530 on real data.
+
+![](ensemble_maps.png)
+
+Top: the layouts (colours only tell the domains apart). Bottom: the fitted VIS averaged over each domain. With the real provinces the averages follow known structures: the Congo low, the high cratons of West Africa and North America, and Wilkes Land. The best random and spun layouts break these up or smear them across several domains.
+
 ## Caveats
 
-- Each synthetic check uses one noise draw.
+- Each synthetic check uses one noise draw, and the 100-layout test one noise draw of the null.
 - Locally, the null was run only for North America, Antarctica and Australia.
-- Random tiles are more even in size than the polygons. That cuts against the polygons on the null, so a null closer in size could narrow the margins.
+- Random tiles are more even in size than the polygons. That cuts against the polygons on the null, so a null closer in size could narrow the margins. The spun province sets (section 7) remove this difference and give the same answer.
 
 ## Decisions for you
 

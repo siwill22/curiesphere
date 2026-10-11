@@ -1,0 +1,8 @@
+# As gcm_glc_layouts_ens1_lcs1_16-133.toml on the null S5 (smooth random truth, blind to geology)
+inherit = "gcm_glc_layouts_oc_syn_s5_ctrl.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["voronoi_provinces:17", "voronoi_provinces:18", "voronoi_provinces:19", "voronoi_provinces:20", "voronoi_provinces:21", "voronoi_provinces:22", "voronoi_provinces:23", "voronoi_provinces:24", "voronoi_provinces:25", "voronoi_provinces:26", "voronoi_provinces:27", "voronoi_provinces:28", "voronoi_provinces:29", "voronoi_provinces:30", "voronoi_provinces:31", "voronoi_provinces:32", "voronoi_provinces:33", "rotated_provinces:17", "rotated_provinces:18", "rotated_provinces:19", "rotated_provinces:20", "rotated_provinces:21", "rotated_provinces:22", "rotated_provinces:23", "rotated_provinces:24", "rotated_provinces:25", "rotated_provinces:26", "rotated_provinces:27", "rotated_provinces:28", "rotated_provinces:29", "rotated_provinces:30", "rotated_provinces:31", "rotated_provinces:32", "rotated_provinces:33"]

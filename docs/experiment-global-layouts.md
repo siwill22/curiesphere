@@ -58,6 +58,8 @@ Globally, with the ocean-model error (best 16 nT; +3300 log evidence over noise 
 
 **2026-10-11, steps 4–6 (DF-GLC).** One pattern without breaks fits LCS-1 best (β 2.5, 350 km). Groups score −55 and provinces −94; random tiles as many as each score −423 and −626. S3 (truth with breaks at group edges) picks groups by 1170 and recovers s and tau; S5 (no breaks) picks one pattern, with groups 83 below random tiles. So real VIS does not break at the boundaries, but changes more across geological boundaries than across random ones. Step 7 (per-class strengths) is on hold: the soft-boundary model is the sharper next test. Report: [reports/2026-10-11-layouts](reports/2026-10-11-layouts/README.md), section 6.
 
+**2026-10-11, evening (100 geology-blind layouts).** The provinces against 50 random Voronoi tilings (724 tiles) and 50 spun province sets (each continent's polygons rotated about its centre by 60–300°, keeping their shapes and sizes), global fit, ocean-model error 16 nT. Real data: none of the 100 beats the provinces (best tiling −83, best spun set −360). Null S5: every tiling beats them (+332 to +502), and the provinces sit among the spun sets (5 of 50 above). Report: section 7.
+
 ## Deferred
 
 - Soft boundaries: a shared global pattern plus the domain patterns, with the split fitted by the evidence (ADR 0010).

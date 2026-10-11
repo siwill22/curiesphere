@@ -17,7 +17,11 @@ Parameterisations (ADR 0001): every one is a grouping of cells, G_param = G_cell
             (the continent of the nearest cell in a polygon) in every layout.
             Controls blind to geology (CONTROLS): 'tiles<nside>' (the HEALPix pixels of that NSIDE) and
             'voronoi_groups', 'voronoi_provinces' (as many random Voronoi tiles on the sphere as the geological layout
-            has domains; seeds drawn uniformly by area, seeded so they repeat).
+            has domains; seeds drawn uniformly by area, seeded so they repeat). A suffix ':i' draws the i-th of an
+            ensemble ('voronoi_provinces:7'). 'rotated_provinces:i' / 'rotated_groups:i' (a spin test): each
+            continent's polygons turned rigidly by a random angle (60-300 deg) about the axis through the
+            continent's centre, so shapes, sizes and neighbours are kept and only their place on the geology is lost;
+            cells no rotated polygon covers take the label of the nearest covered cell of their continent.
 """
 import hashlib
 import os
@@ -94,15 +98,48 @@ def _continent(path):
 LAYOUTS = ('one', 'continents', 'groups', 'provinces', 'class')
 CONTROLS = ('tiles8', 'tiles16', 'voronoi_groups', 'voronoi_provinces')
 VORONOI_SEED = 20261010
+ROTATION_SEED = 20261012
 
 
 def _control(name, cells, xyz, by):
     """label of each cell for a control layout"""
+    base, _, draw = name.partition(':')
+    i = int(draw) if draw else 0
+    if base.startswith('rotated_'):
+        return rotated(by[base.split('_')[1]], by['continents'], xyz, ROTATION_SEED + i)
+    if draw:
+        k = len(np.unique(by[base.split('_')[1]].astype(str)))
+        return voronoi(cells, k, VORONOI_SEED + k + 1000*(i + 1))
     if name.startswith('tiles'):
         from astropy_healpix import healpy as hp
         return hp.ang2pix(int(name[5:]), cells.clon, cells.clat, lonlat=True)
     k = len(np.unique(by[name.split('_')[1]].astype(str)))
     return voronoi(cells, k, VORONOI_SEED + k)
+
+
+def rotated(labels, continent, xyz, seed, min_deg=60., max_deg=300.):
+    """labels of each cell after each continent's labels are spun by a random angle about the axis through the
+    continent's centre (Rodrigues, exact on the sphere); a cell takes the label found at its back-rotated position
+    (the nearest cell of the same continent within one cell spacing), else that of the nearest covered cell"""
+    from scipy.spatial import cKDTree
+    rng = np.random.default_rng(seed)
+    labels, continent = np.asarray(labels).astype(str), np.asarray(continent).astype(str)
+    out = np.empty(len(labels), object)
+    spacing = np.median(cKDTree(xyz).query(xyz, k=2)[0][:, 1])
+    for c in np.unique(continent):
+        idx = np.flatnonzero(continent == c)
+        axis = xyz[idx].mean(0)
+        axis /= np.linalg.norm(axis)
+        t = np.radians(rng.uniform(min_deg, max_deg))
+        p = xyz[idx]                                          # rotate back by -t: where each cell came from
+        back = (p*np.cos(-t) + np.cross(axis, p)*np.sin(-t) + np.outer(p @ axis, axis)*(1 - np.cos(-t)))
+        d, j = cKDTree(p).query(back)
+        hit = d < 1.5*spacing
+        lab = np.where(hit, labels[idx][j], None)
+        if hit.any() and (~hit).any():
+            lab[~hit] = lab[hit][cKDTree(p[hit]).query(p[~hit])[1]]
+        out[idx] = [f'{c} {v}' for v in lab]
+    return out
 
 
 def voronoi(cells, k, seed):
@@ -161,7 +198,7 @@ def layouts(cells, tables, cache, area_name, names=LAYOUTS, g=None):
     for name in names:
         if name == 'one':
             out[name] = (np.zeros(len(cells), int), ['all'])
-        elif name in CONTROLS:
+        elif name.partition(':')[0] in CONTROLS or name.startswith('rotated_'):
             lab = np.unique(_control(name, cells, xyz, by), return_inverse=True)[1]
             out[name] = (lab, [f'{name} {j}' for j in range(lab.max() + 1)])
         else:

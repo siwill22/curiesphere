@@ -247,8 +247,8 @@ def _run_layouts(cfg, cells, B, u, a, y, w, F, band, base, fit_sigma, truth, cac
         cell_vars['vis_sd'] = sd
     for n in rows:
         mn, _, _, ln, _ = fits[n, rows[n]['ocean_error_rms_nT']][1]
-        cell_vars[f'layout_vis_{n}'] = mn
-        cell_vars[f'layout_domain_{n}'] = ln.astype(float)
+        cell_vars[f'layout_vis_{n.replace(":", "_")}'] = mn
+        cell_vars[f'layout_domain_{n.replace(":", "_")}'] = ln.astype(float)
     if truth is not None:
         cell_vars['truth'] = truth
     r = rows[best]
