@@ -38,15 +38,15 @@ The same test in the continent fits (DF, with GCM-GLC as the background outside 
 
 | Continent | Polygons vs random tiles | Null (random truth) |
 |---|---|---|
-| Eurasia | **+257** | not run |
+| Eurasia | **+257** | −42 |
 | North America | **+127** | −55 |
 | Antarctica | **+63** | −9 |
 | Australia | **+34** | −23 |
-| South America | +6 | not run |
-| Africa | +4 | not run |
-| Zealandia | −4 | not run |
+| South America | +6 | +5 |
+| Africa | +4 | −34 |
+| Zealandia | −4 | −10 |
 
-The polygons carry information in Eurasia, North America, Antarctica and Australia. In South America, Africa and Zealandia, random tiles do as well.
+The polygons carry information in Eurasia, North America, Antarctica and Australia: they beat random tiles on real data and not on the null. In South America and Zealandia the real-data result is no better than the null. In Africa the polygons do 38 better than on the null, a weak signal at most. (Nulls for South America, Africa, Zealandia and Eurasia added 12 October.)
 
 ## 3. Sharing one spread for the domain means removes most negative VIS
 
@@ -130,7 +130,7 @@ The same 100 layouts were also fitted to the null (S5: a smooth random truth tha
 
 Top: the layouts (colours only tell the domains apart). Bottom: the fitted VIS averaged over each domain. With the real provinces the averages follow known structures: the Congo low, the high cratons of West Africa and North America, and Wilkes Land. The best random and spun layouts break these up or smear them across several domains.
 
-## 8. Domains made from the data (FD-merge), Australia (added 12 October)
+## 8. Domains made from the data (FD-merge) (added 12–13 October)
 
 FD-merge draws domains from the data alone: it starts with every cell as its own domain and repeatedly joins the two neighbours whose levels differ least. Here its partitions from 2 to 100 domains were each scored with DF (a fractal pattern inside each domain, domain levels from one shared spread), alongside the 39 polygons and 39 random tiles (`df_aus_lcs1_16-133_gcmbg_gm_mpath.toml`).
 
@@ -151,16 +151,38 @@ On real data the merge domains' score keeps rising up to 100 domains, so it can'
 - **So the evidence can't choose the number of merge domains,** and the earlier result that FD-merge's 14 domains beat the polygons by 212 was mostly this artefact.
 - **What works:** the polygons, which carry the information from outside the data. FD-merge is still useful for showing where the data alone would draw lines, but its scores must be set against fake data before they are compared.
 
+**All continents (added 13 October).** The same test on the other continents except Eurasia (merge partitions at 4, 14, 30 and 50 domains; 10 fake data sets for Zealandia, South America and Antarctica, 5 for Africa and North America; `df_<continent>_lcs1_16-133_gcmbg_gm_mpath`). The fake data are drawn from each continent's own one-domain DF fit.
+
+![](mpath_all.png)
+
+| Continent | Polygons | Best merge partition | Random tiles |
+|---|---|---|---|
+| Africa | **+484** | +374 | +470 |
+| North America | **+289** | +182 | +130 |
+| Antarctica | **+151** | +101 | +81 |
+| Australia | +111 | +117 | +68 |
+| South America | +76 | **+123** | +52 |
+| Zealandia | +29 | +41 | +31 |
+
+(Log evidence gained over one domain, minus the same gain on the fake data: what each layout captures beyond chance.)
+
+- **The polygons match or beat the domains made from the data almost everywhere.** They are clearly better in Africa, North America and Antarctica, level in Australia, and behind only in South America (by 47) and Zealandia (by 12, within the spread of the fake data).
+- **In Africa any division helps:** random tiles gain nearly as much as the polygons. Africa's VIS is far from one uniform pattern, but the polygons add little beyond that there (as in section 2).
+- **So domains drawn from the data are no substitute for the polygons.** Once the advantage of fitting the same data is removed, they carry no more information, and the evidence can't choose their number.
+
 The sampling FD methods (FD-vor, FD-lvor, FD-part), which draw many random partitions, did not settle on an answer in Australia, so they were left out here.
+
+## 9. The thickness of the magnetic layer hardly matters (added 13 October)
+
+All fits put the magnetic layer from the top of basement to a constant 30 km. The global layout fit was rerun with its base at the LithoRef18 Moho (Afonso et al. 2019) instead (`gcm_glc_layouts_oc_moho_lcs1_16-133`). Cell VIS correlates at 0.999 between the two (typical difference 0.03 SI·km against a spread of 0.35), the province levels at 0.998, and the mean drops from 0.725 to 0.706 SI·km. The data slightly prefer the constant 30 km (by 17 log units). VIS is what the data fix; a susceptibility needs a thickness model on top (VIS divided by the magnetic thickness) and changes none of the results here.
 
 ## Caveats
 
 - Each synthetic check uses one noise draw, and the 100-layout test one noise draw of the null.
-- Locally, the null was run only for North America, Antarctica and Australia.
 - Random tiles are more even in size than the polygons. That cuts against the polygons on the null, so a null closer in size could narrow the margins. The spun province sets (section 7) remove this difference and give the same answer.
 
 ## Decisions for you
 
 1. ~~Start DF-GLC (idea 2)?~~ Done, see section 6. Next candidate: **the soft-boundary model** (ADR 0010, deferred). It adds one hyperparameter (the split), so it costs about the same as a DF-GLC layout.
-2. **Run the local null for Eurasia, South America, Africa and Zealandia?** About 6 h, mostly Eurasia.
+2. ~~Run the local null for Eurasia, South America, Africa and Zealandia?~~ Done (section 2).
 3. ~~Which background should local fits use from now on?~~ The global layout fit (ADR 0011): every continent's evidence rises with it (+5 to +60). GCM-GLC stays as a check for the polygon tests.

@@ -60,11 +60,13 @@ Globally, with the ocean-model error (best 16 nT; +3300 log evidence over noise 
 
 **2026-10-11, evening (100 geology-blind layouts).** The provinces against 50 random Voronoi tilings (724 tiles) and 50 spun province sets (each continent's polygons rotated about its centre by 60–300°, keeping their shapes and sizes), global fit, ocean-model error 16 nT. Real data: none of the 100 beats the provinces (best tiling −83, best spun set −360). Null S5: every tiling beats them (+332 to +502), and the provinces sit among the spun sets (5 of 50 above). Report: section 7.
 
+**2026-10-12/13, overnight.** Local nulls for every continent: the polygons beat random tiles beyond the null in Eurasia, North America, Antarctica and Australia, not in South America or Zealandia, weakly in Africa. FD-merge partitions scored by DF and set against fake data without boundaries on all continents but Eurasia: the polygons match or beat them everywhere except South America (−47) and Zealandia (−12). The layer base at the LithoRef18 Moho instead of 30 km leaves VIS unchanged (correlation 0.999). Report: sections 2, 8, 9.
+
 ## Deferred
 
 - Soft boundaries: a shared global pattern plus the domain patterns, with the split fitted by the evidence (ADR 0010).
 - Null tests over many noise draws: only once a result is worth calibrating.
-- FD-merge layouts on the other continents: in Australia (report section 8), once set against fake data without boundaries, merge domains do no better than the polygons (excess over the fake data +100 to +117 at 2–100 domains; polygons +111).
+- FD-merge for Eurasia (about 5 h per layout).
 
 ## Caveat to watch
 

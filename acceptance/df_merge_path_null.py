@@ -74,8 +74,11 @@ def draw(i):
 
 
 if __name__ == '__main__':
-    with mp.get_context('fork').Pool(WORKERS) as pool:
-        out = pool.map(draw, range(N_DRAWS))
+    if WORKERS == 1:                   # in-process: forking after threaded BLAS can deadlock the child
+        out = [draw(i) for i in range(N_DRAWS)]
+    else:
+        with mp.get_context('fork').Pool(WORKERS) as pool:
+            out = pool.map(draw, range(N_DRAWS))
     json.dump(dict(truth=dict(v0=float(o['theta'][0]), s=float(f1['s'][0]), beta=f1['beta'], ell_km=f1['ell'],
                               sigma_ring_nT=float(f1['sig'][0])), K=KS, draws=out), open(OUT, 'w'), indent=1)
     print('wrote', OUT)
