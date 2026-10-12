@@ -1,8 +1,10 @@
 """
 Run an inversion from its config:
     python -m remit.inversion run <config.toml> [--out result.nc] [--no-figures]
+    python -m remit.inversion gallery [--open]
 The result (NetCDF) goes to results/<config name>.nc next to the config unless --out is given; the standard figures go
-to a folder per region beside it (results/global/, results/aus/, ...). Single-threaded BLAS and low priority are the caller's choice (OMP/VECLIB_MAXIMUM_THREADS, nice).
+to a folder per region beside it (results/global/, results/aus/, ...), and the gallery of all figures
+(results/index.html, gallery.py) is rewritten. Single-threaded BLAS and low priority are the caller's choice (OMP/VECLIB_MAXIMUM_THREADS, nice).
 """
 import argparse
 import os
@@ -33,7 +35,17 @@ def main(argv=None):
     r.add_argument('config')
     r.add_argument('--out')
     r.add_argument('--no-figures', action='store_true')
+    g = sub.add_parser('gallery', help='rewrite results/index.html, the page of all figures')
+    g.add_argument('--open', action='store_true')
     a = ap.parse_args(argv)
+    if a.cmd == 'gallery':
+        from . import gallery
+        out = gallery.write()
+        print('wrote', out)
+        if a.open:
+            import webbrowser
+            webbrowser.open('file://' + out)
+        return
     cfg = config.load(a.config)
     name = cfg['method']['name']
     if name not in METHODS:
@@ -49,6 +61,8 @@ def main(argv=None):
         os.makedirs(fig_dir, exist_ok=True)
         for f in figures.standard(ds, os.path.join(fig_dir, os.path.splitext(os.path.basename(out))[0])):
             print('wrote', f)
+        from . import gallery
+        print('wrote', gallery.write())
 
 
 if __name__ == '__main__':
