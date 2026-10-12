@@ -70,7 +70,7 @@ The ocean-model error of ADR 0009 was confined to the oceans, and the evidence c
 
 The local fits were run again, with the best global layout fit as the background outside each continent in place of GCM-GLC. Every continent changed only slightly:
 - the mean levels fell by 0.01–0.03 SI·km (e.g. Australia 0.65 to 0.62);
-- the evidence and the ring misfit barely moved.
+- the evidence rose a little and the ring misfit fell a little (below).
 
 The exception is Eurasia: its evidence rises by 60, the ring misfit falls from 27 to 26 nT, and its mean level drops from 0.60 to 0.55 SI·km.
 
