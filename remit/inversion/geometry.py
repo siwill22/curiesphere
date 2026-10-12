@@ -26,6 +26,9 @@ from remit import depth
 from remit.data.models import load_ocean_age_model
 
 AGE_GRID = 'Seton2020_Muller2019_Merdith2021'
+# LithoRef18 Moho depth (Afonso et al. 2019, GJI): m below sea level, 2 deg cell-centred grid
+MOHO_GRID = os.path.expanduser(os.environ.get(
+    'CURIESPHERE_MOHO_GRID', '~/Library/CloudStorage/OneDrive-UniversityofTasmania/Data/LithoRef_model/LithoRef_moho.nc'))
 KM2_PER_NODE = (np.radians(0.1)*depth.R0/1e3)**2          # a 0.1 deg node at the equator
 
 
@@ -165,10 +168,23 @@ def _basement(_key):
     return depth.top_of_basement_radius(grid().ocean)
 
 
+@functools.lru_cache(maxsize=1)
+def _moho_depth():
+    """LithoRef18 Moho depth (m) on the grid, bilinear in lon/lat with longitude wrapped"""
+    import xarray as xr
+    z = xr.open_dataset(MOHO_GRID).z
+    z = xr.concat([z.isel(x=[-1]).assign_coords(x=[z.x[-1].item() - 360]), z,
+                   z.isel(x=[0]).assign_coords(x=[z.x[0].item() + 360])], 'x')
+    g = grid()
+    return depth._to_grid(z, g.lon, g.lat, 'x', 'y')
+
+
 def surface_radius(surface, g=None):
-    """radius (m) of a layer surface on the grid: 'basement', 'basement+<km>' (that far below the basement), or a
-    constant depth (km) below the ellipsoid"""
+    """radius (m) of a layer surface on the grid: 'basement', 'basement+<km>' (that far below the basement), 'moho'
+    (LithoRef18), or a constant depth (km) below the ellipsoid"""
     g = g or grid()
+    if surface == 'moho':
+        return depth.ellipsoid_radius(g.lat)[:, None] - _moho_depth()
     if surface == 'basement':
         return _basement(AGE_GRID)
     if isinstance(surface, str) and surface.startswith('basement+'):
@@ -181,6 +197,8 @@ def surface_radius(surface, g=None):
 def layer_radii(layer, mask=None, g=None):
     """(r_top, r_base) of a layer {'top': ..., 'base': ...} on the grid, checked to be the right way up"""
     r_top, r_base = surface_radius(layer['top'], g), surface_radius(layer['base'], g)
+    if layer['base'] == 'moho':                    # the 2 deg Moho can rise above deep basement: keep 1 km of layer
+        r_base = np.minimum(r_base, r_top - 1e3)
     sel = np.ones(r_top.shape, bool) if mask is None else mask
     if not (r_top[sel] > r_base[sel]).all():
         raise ValueError(f'layer {layer}: base above top at some nodes')

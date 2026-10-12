@@ -1,0 +1,13 @@
+# The global layout fit (gcm_glc_layouts_oc_lcs1_16-133.toml, ocean-model error at its best 16 nT) with the magnetic
+# layer's base at the LithoRef18 Moho (Afonso et al. 2019) instead of a constant 30 km, kept at least 1 km below the
+# top of basement: does VIS depend on the assumed layer thickness? One level and the provinces only.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[geometry]
+layers = [{ top = "basement", base = "moho" }]
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "provinces"]

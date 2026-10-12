@@ -1,0 +1,9 @@
+# DF-AFR (GCM-GLC background, Gaussian domain means) with FD-merge's partitions as layouts, as
+# df_aus_lcs1_16-133_gcmbg_gm_mpath.toml: the merge path run on DF's own data (mu 0.1, no boundary penalty), its
+# partitions at 4, 14, 30 and 50 domains each scored by DF, against the polygons, one domain and random tiles. Set
+# against null data without boundaries with acceptance/df_merge_path_null.py.
+inherit = "df_afr_lcs1_16-133_gcmbg_gm.toml"
+
+[method]
+layouts = { one = true, controls = true, merge_path = { mu = 0.1, gamma = 0.0, K = [4, 14, 30, 50] } }
+main = "best"

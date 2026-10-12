@@ -4,8 +4,9 @@ same data that score them, so the log evidence rises with K whatever the truth. 
 drawn from DF's one-domain fit to LCS-1 (its v0, strength, beta, ell and ring error; noise as the error model). Each
 null data set gets the same merge path and DF scoring, plus the 39 polygons and the random tiles, so the gain over one
 domain that chance alone gives at each K can be set against the real data's.
-Run from the repo root (env curiesphere): python acceptance/df_merge_path_null.py [n_draws] [workers]
-Writes inversions/results/df_aus_mpath_null.json.
+Run from the repo root (env curiesphere): python acceptance/df_merge_path_null.py [n_draws] [workers] [config stem]
+(default stem df_aus_lcs1_16-133_gcmbg_gm_mpath, scored at 2-100 domains; other stems use their config's K list).
+Writes inversions/results/<stem>_null.json (Australia: df_aus_mpath_null.json, the first run).
 """
 import json
 import multiprocessing as mp
@@ -21,11 +22,14 @@ from remit.inversion.methods import df
 
 N_DRAWS = int(sys.argv[1]) if len(sys.argv) > 1 else 20
 WORKERS = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-KS = [2, 4, 8, 14, 20, 30, 50, 100]
-OUT = 'inversions/results/df_aus_mpath_null.json'
+STEM = sys.argv[3] if len(sys.argv) > 3 else 'df_aus_lcs1_16-133_gcmbg_gm_mpath'
+AUS = STEM == 'df_aus_lcs1_16-133_gcmbg_gm_mpath'
+OUT = 'inversions/results/' + ('df_aus_mpath_null.json' if AUS else f'{STEM}_null.json')
 
-cfg = config.load('inversions/df_aus_lcs1_16-133_gcmbg_gm_mpath.toml')
-cfg['method']['layouts']['merge_path']['K'] = KS
+cfg = config.load(f'inversions/{STEM}.toml')
+if AUS:
+    cfg['method']['layouts']['merge_path']['K'] = [2, 4, 8, 14, 20, 30, 50, 100]
+KS = cfg['method']['layouts']['merge_path']['K']
 me = cfg['method']
 cache = Cache()
 pb = problem.local(cfg, cache, print)

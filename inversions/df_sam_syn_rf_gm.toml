@@ -1,0 +1,9 @@
+# DF-SAM on synthetic data: a random smooth field (beta 2.5, ~500 km patches, mean 0.75, s.d. 0.4 SI km), blind to
+# geology (the local version of global check S5): the polygons should not beat random tiles of the same number here
+inherit = "df_sam_lcs1_16-133_gcmbg_gm.toml"
+
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "random_field", mean = 0.75, sd = 0.4, beta = 2.5, ell_km = 500.0, seed = 20261010 }
+seed = 20261010
