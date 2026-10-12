@@ -76,6 +76,12 @@ The exception is Eurasia: its evidence rises by 60, the ring misfit falls from 2
 
 The rise of the continent means toward GCM's level, noted in the handover, is therefore mostly not the background's doing.
 
+The changes are small but all go the same way: the log evidence rises on every continent (Africa +30, South America +22, North America +9, Australia +5, Antarctica +10, Eurasia +60, Zealandia +10). This is now the default background (ADR 0011).
+
+The seven continent fits with this background, on one world map against the global fit itself (cells shared by two continents averaged; 92.5% of the global cells are covered, Central America, Greenland and some islands are not):
+
+![](mosaic_vis.png)
+
 ## 6. DF-GLC: separate patterns per domain in the global fit (added 11 October, afternoon)
 
 DF-GLC is DF's model fitted to the global coefficients: a fractal pattern inside each domain, independent between domains, so the pattern breaks at every domain boundary, with the ocean-model error at 16 nT. It is compared against one pattern with no breaks anywhere. Each layout's pattern shape (β, patch size) was searched separately.
@@ -157,4 +163,4 @@ The sampling FD methods (FD-vor, FD-lvor, FD-part), which draw many random parti
 
 1. ~~Start DF-GLC (idea 2)?~~ Done, see section 6. Next candidate: **the soft-boundary model** (ADR 0010, deferred). It adds one hyperparameter (the split), so it costs about the same as a DF-GLC layout.
 2. **Run the local null for Eurasia, South America, Africa and Zealandia?** About 6 h, mostly Eurasia.
-3. **Which background should local fits use from now on?** The global layout fit, or GCM-GLC.
+3. ~~Which background should local fits use from now on?~~ The global layout fit (ADR 0011): every continent's evidence rises with it (+5 to +60). GCM-GLC stays as a check for the polygon tests.
