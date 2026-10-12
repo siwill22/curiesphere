@@ -99,3 +99,35 @@ def mosaic():
         fig.colorbar(cmap=True, frame='xaf+lSI km', position='JBC+w6c/0.25c+o0c/0.5c')
     fig.savefig(OUT + 'mosaic_vis.png', dpi=200)
     print(f'cells covered by a continent fit: {np.mean(n > 0):.1%}; shared: {int((n > 1).sum())}')
+
+
+def province_averages():
+    """VIS averaged over each province: the seven continent fits (laybg) and the global layout fit, with the
+    Hasterok et al. (2022) province outlines (lon/lat, WGS84)"""
+    from remit.inversion import covariates
+    g = xr.load_dataset(R + 'gcm_glc_layouts_oc_lcs1_16-133.nc')
+    cell = figures.cell_grid(g)
+    pos = {c: i for i, c in enumerate(g.cell_id.values)}
+    s, n = np.zeros(len(g.cell)), np.zeros(len(g.cell))
+    for c in ('afr', 'ant', 'aus', 'eur', 'nam', 'sam', 'zea'):
+        ds = xr.load_dataset(R + f'df_{c}_lcs1_16-133_laybg_gm.nc')
+        i = np.array([pos[k] for k in ds.cell_id.values])
+        s[i] += ds.vis_domain.values
+        n[i] += 1
+    local = np.where(n > 0, s/np.maximum(n, 1), np.nan)
+    prov = covariates.provinces()
+    outlines = prov.loc[prov.crust_type != 'oceanic', ['geometry']]
+    panels = [(local, 'VIS averaged over each province: the seven continent fits (DF, global layout fit as background)'),
+              (g.vis_domain.values, 'Province levels: the global fit (one level per province)')]
+    fig = pygmt.Figure()
+    pygmt.config(FONT_TITLE='10p', FONT_ANNOT_PRIMARY='7p', FONT_LABEL='8p', MAP_FRAME_TYPE='plain')
+    pygmt.makecpt(cmap=figures.VIS_CPT[0], series='0/1.5/0.05', background=True)
+    for k, (v, title) in enumerate(panels):
+        if k:
+            fig.shift_origin(yshift='-14c')
+        fig.basemap(region=[-180, 180, -90, 85], projection='N0/24c', frame=['af', '+t' + title])
+        fig.grdimage(figures.cell_map(cell, v), cmap=True, nan_transparent=True)
+        fig.plot(data=outlines, pen='0.15p,gray15')
+        fig.coast(shorelines='0.25p,white', resolution='c', area_thresh=5000)
+    fig.colorbar(cmap=True, frame='xaf+lVIS (SI km)', position='JBC+w8c/0.3c+o0c/0.6c')
+    fig.savefig(OUT + 'province_averages.png', dpi=200)
