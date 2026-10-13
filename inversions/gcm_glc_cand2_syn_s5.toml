@@ -1,0 +1,9 @@
+# Candidate geology maps (batch 2) on the S5 synthetic data (random smooth truth, blind to geology). Same layouts as
+# gcm_glc_cand2_lcs1_16-133.toml.
+inherit = "gcm_glc_layouts_oc_syn_s5_ctrl.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "cand:nrcan", "cand:cgmw"]

@@ -5,6 +5,10 @@ evidence can rank them and spun copies of each can serve as its own null. Maps t
 
   sources      polygons, one unit per polygon (point in polygon on the sphere, pygplates):
                  merdith      Merdith et al. (2021, v1.1) static polygons less the oceanic ones (gpml:Basin)
+               polygons of a geological map, one unit per legend entry (so touching polygons of one entry are
+               one patch); holes kept, and where polygons overlap the smallest holding the node wins:
+                 nrcan        NRCan surface geology (gprm), legend: rock type and age range
+                 cgmw         CGMW Geological Map of the World, legend: CODE_G (lakes and glaciers left out)
                lon/lat class grids, the unit of a node being the class of the grid cell holding it:
                  tc1          tectono-thermal age bins (Artemieva 2006; grid by C. Heine)
                  ecm1         ECM1 crustal type (Mooney et al. 2023), 1 deg
@@ -32,8 +36,9 @@ SL2013 = f'{DATA}/SeismicTomography/SL2013SV/SL2013sv_tri-grd_v2/SL2013sv_25k-k.
 SL2013_DEPTHS = (50., 300.)
 TC1 = f'{DATA}/GMTdata/TectonoThermalAge/TC1_TectThermAge_RevEng_AgeBins.nc'
 ECM1 = os.path.expanduser('~/Downloads/ECM1/ECM1.txt')
+CGMW = f'{DATA}/Geology/CGMW_GeologicalUnits.shp'
 MERDITH = 'Merdith2021/SM2-Merdith_et_al_1_Ga_reconstruction_v1.1/shapes_static_polygons_Merdith_et_al.gpml'
-SOURCES = ('tc1', 'ecm1', 'merdith')                       # plus sl2013_k<k>
+SOURCES = ('tc1', 'ecm1', 'merdith', 'nrcan', 'cgmw')                       # plus sl2013_k<k>
 
 
 def _west(lon):
@@ -107,10 +112,44 @@ def _merdith(lon, lat):
     return np.array([-1 if h is None else h for h in hit])
 
 
+def _map_units(gdf, unit, lon, lat):
+    """legend unit (codes of the column unit) of the smallest polygon of gdf holding each point; -1 where none"""
+    import pandas as pd
+    import pygplates
+    from ptt.utils.points_in_polygons import find_polygons
+    code = pd.factorize(gdf[unit])[0]
+    polygons, proxies = [], []
+    for geom, c in zip(gdf.geometry, code):
+        for part in getattr(geom, 'geoms', [geom]):
+            outer = geometry._densified_polygon(part.exterior)
+            holes = [list(geometry._densified_polygon(h).get_exterior_ring_points()) for h in part.interiors]
+            polygons.append(pygplates.PolygonOnSphere(list(outer.get_exterior_ring_points()), holes) if holes else outer)
+            proxies.append(len(polygons) - 1)
+    area = np.array([p.get_area() for p in polygons])
+    unit_of = np.repeat(code, [len(getattr(g, 'geoms', [g])) for g in gdf.geometry])
+    points = [pygplates.PointOnSphere(float(a), float(o)) for o, a in zip(lon, lat)]
+    hits = find_polygons(points, polygons, proxies, all_polygons=True, subdivision_depth=6)
+    return np.array([-1 if not h else unit_of[min(h, key=lambda k: area[k])] for h in hits])
+
+
+def _nrcan(lon, lat):
+    from gprm.datasets import Geology
+    g = Geology.fetch_SurfaceGeology().to_crs('EPSG:4326')     # supplied in WGS72
+    g['unit'] = g.AGERXTP.astype(str) + '|' + g.FROMAGE.astype(str) + '|' + g.TOAGE.astype(str)
+    return _map_units(g, 'unit', lon, lat)
+
+
+def _cgmw(lon, lat):
+    import geopandas as gpd
+    g = gpd.read_file(CGMW)
+    g = g[~g.LITHOLOG_1.str.startswith(('Lake', 'Glacier'))]
+    return _map_units(g, 'CODE_G', lon, lat)
+
+
 def _source(name):
     if name.startswith('sl2013_k'):
         return lambda lon, lat: _sl2013(int(name[8:]), lon, lat)
-    return {'tc1': _tc1, 'ecm1': _ecm1, 'merdith': _merdith}[name]
+    return {'tc1': _tc1, 'ecm1': _ecm1, 'merdith': _merdith, 'nrcan': _nrcan, 'cgmw': _cgmw}[name]
 
 
 def node_units(name, cells, cache, area_name, g=None):

@@ -45,3 +45,14 @@ def test_class_grid_wraps_at_the_dateline():
     values = np.tile(np.arange(360.), (180, 1))
     got = candidates._class_grid(values, lon_c, lat_c, np.array([179.9, 180.1, 359.9, 0.2]), np.zeros(4))
     assert list(got) == [359, 0, 179, 180]
+
+
+def test_map_units_keep_holes_and_take_the_smallest_polygon():
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+    outer = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)], [[(4, 4), (6, 4), (6, 6), (4, 6)]])
+    lake = Polygon([(4.5, 4.5), (5.5, 4.5), (5.5, 5.5), (4.5, 5.5)])      # sits in part of the hole
+    big = Polygon([(-1, -1), (11, -1), (11, 11), (-1, 11)])               # overlaps everything
+    g = gpd.GeoDataFrame(dict(u=['outer', 'lake', 'big']), geometry=[outer, lake, big], crs='EPSG:4326')
+    got = candidates._map_units(g, 'u', np.array([2., 5., 4.2, 10.5]), np.array([2., 5., 4.2, 10.5]))
+    assert list(got) == [0, 1, 2, 2]                 # outer; lake; in the hole only 'big'; outside outer: 'big'

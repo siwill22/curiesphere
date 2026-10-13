@@ -1,6 +1,6 @@
-"""Batch 1 of the candidate-map test: each map's evidence against the Hasterok provinces, against 20 spun copies of
+"""The candidate-map test (batches 1 and 2): each map's evidence against the Hasterok provinces, against 20 spun copies of
 itself, and on the S5 synthetic data; and maps of each map's domains and fitted VIS.
-Read from the runs gcm_glc_cand1_*. Run from the repository root."""
+Read from the runs gcm_glc_cand1_* and gcm_glc_cand2_*. Run from the repository root."""
 import glob
 import re
 
@@ -17,7 +17,9 @@ REF = 'cand:hasterok'
 NAMES = {'cand:hasterok': 'Hasterok provinces', 'cand:sl2013_k4': 'SL2013sv clusters, k = 4',
          'cand:sl2013_k6': 'SL2013sv clusters, k = 6', 'cand:sl2013_k8': 'SL2013sv clusters, k = 8',
          'cand:sl2013_k12': 'SL2013sv clusters, k = 12', 'cand:tc1': 'TC1 tectono-thermal age',
-         'cand:ecm1': 'ECM1 crustal type', 'cand:merdith': 'Merdith (2021) static polygons'}
+         'cand:ecm1': 'ECM1 crustal type', 'cand:merdith': 'Merdith (2021) static polygons',
+         'cand:nrcan': 'NRCan surface geology', 'cand:cgmw': 'CGMW geological map'}
+BATCHES = ('cand1', 'cand2')
 
 
 def evidence(path):
@@ -30,22 +32,27 @@ def evidence(path):
     return out
 
 
+def runs(tag):
+    """log evidence of every layout of the batches run so far, on real data (tag 'lcs1_16-133') or S5 ('syn_s5')"""
+    out = {}
+    for b in BATCHES:
+        for f in glob.glob(R + f'gcm_glc_{b}_{tag}.log'):
+            out = {**evidence(f), **out}                     # the first batch's value of a layout run twice
+    return out
+
+
 def spun(cand):
     """log evidence of the spun copies of a candidate, if its null run has finished"""
-    f = glob.glob(R + f'gcm_glc_cand1_null_{cand[5:]}_lcs1_16-133.log')
+    f = glob.glob(R + f'gcm_glc_cand*_null_{cand[5:]}_lcs1_16-133.log')
     return np.array([v for v, _ in evidence(f[0]).values()]) if f else np.array([])
 
 
 def chart():
-    real = evidence(R + 'gcm_glc_cand1_lcs1_16-133.log')
-    try:
-        syn = evidence(R + 'gcm_glc_cand1_syn_s5.log')
-    except FileNotFoundError:
-        syn = {}
-    cands = sorted(NAMES, key=lambda c: real[c][0])
+    real, syn = runs('lcs1_16-133'), runs('syn_s5')
+    cands = sorted((c for c in NAMES if c in real), key=lambda c: real[c][0])
     ref = real[REF][0]
     INK, MUTED, REAL, SPIN, SYN = '#0b0b0b', '#52514e', '#2a78d6', '#eb6834', '#8a8984'
-    fig, (ax, bx) = plt.subplots(1, 2, figsize=(10, 4.2), dpi=200, gridspec_kw=dict(width_ratios=[3, 1.2]))
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(10, 1.2 + 0.4*len(cands)), dpi=200, gridspec_kw=dict(width_ratios=[3, 1.2]))
     rng = np.random.default_rng(1)
     for y, c in enumerate(cands):
         s = spun(c) - ref
@@ -84,18 +91,20 @@ def chart():
 
 def maps():
     """for each map: its domains (random colours) and the fitted VIS averaged over each domain"""
-    ds = xr.load_dataset(R + 'gcm_glc_cand1_lcs1_16-133.nc')
+    sets = [xr.load_dataset(f) for b in BATCHES for f in glob.glob(R + f'gcm_glc_{b}_lcs1_16-133.nc')]
+    ds = sets[0]
     cell = figures.cell_grid(ds)
     a = ds.area_km2.values
-    real = evidence(R + 'gcm_glc_cand1_lcs1_16-133.log')
-    cands = sorted(NAMES, key=lambda c: -real[c][0])
+    real = runs('lcs1_16-133')
+    cands = sorted((c for c in NAMES if c in real), key=lambda c: -real[c][0])
     fig = pygmt.Figure()
     pygmt.config(FONT_TITLE='8p', FONT_ANNOT_PRIMARY='6p', FONT_LABEL='7p', MAP_FRAME_TYPE='plain',
                  MAP_TITLE_OFFSET='3p')
     rng = np.random.default_rng(3)
     for k, c in enumerate(cands):
         v = c.replace(':', '_')
-        vis, dom = ds[f'layout_vis_{v}'].values, ds[f'layout_domain_{v}'].values.astype(int)
+        d = next(x for x in sets if f'layout_vis_{v}' in x)
+        vis, dom = d[f'layout_vis_{v}'].values, d[f'layout_domain_{v}'].values.astype(int)
         if k:
             fig.shift_origin(xshift='-10.5c', yshift='-6.0c')
         fig.basemap(region=[-180, 180, -90, 85], projection='N0/10c', frame=['f', f'+t{NAMES[c]}: domains'])

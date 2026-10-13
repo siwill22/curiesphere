@@ -55,10 +55,24 @@ The spin test turns each continent's units by a random angle about the continent
 - **SL2013sv does not pass.** At every k, some spun copies fit as well as or better than the real clustering. So the 50–300 km velocity structure shows no clear link to where the magnetic sources change. Its score rises with k because it has more, smaller domains.
 - **The synthetic check** (right of the chart; data with no geology in it) shows what domain count alone does. Maps with about 800 domains score best, and Merdith comes out ahead of Hasterok. So Hasterok's lead on real data is not an artefact of its domain count. TC1's low raw rank, however, is mostly due to its few domains. For TC1, the spin test is the fairer measure.
 
+### Batch 2: detailed surface geology (NRCan, CGMW)
+
+The same test, for two detailed surface-geology maps. Here a unit is a legend entry: rock type plus age range for NRCan (439 entries), and `CODE_G` for CGMW (51 entries). Touching polygons of the same entry form one patch. Polygons keep their holes, and where polygons overlap the smallest one wins. CGMW lakes and glaciers are left out. The chart above includes both maps.
+
+| Map | Domains | Evidence vs Hasterok | Real minus median spun copy | Spun copies that beat it |
+|---|---|---|---|---|
+| NRCan surface geology | 990 | −210 | +237 | 0 of 20 |
+| CGMW geological map | 966 | −296 | +115 | 0 of 20 |
+
+- **Both maps pass the spin test.** NRCan has the second-best evidence of all ten maps, behind only Hasterok.
+- **The synthetic check rules out domain count as the explanation.** On data with no geology, both maps score below Hasterok (NRCan −284, CGMW −179), even though they have more domains. Their real-data gap to Hasterok is therefore not caused by their domain count.
+
+So six maps carry information about the magnetic field: Hasterok, NRCan, ECM1, Merdith, CGMW and TC1. The Hasterok provinces carry the most.
+
 ### Domains and fitted VIS
 
 ![](candidate_maps.png)
 
 Left: each map's domains in random colours. Right: the fitted VIS averaged over each domain. The maps are ordered by evidence, best first.
 
-Made by `make_ranking.py` from the runs `inversions/gcm_glc_cand1_*` (queue: `acceptance/cand1_queue.sh`).
+Made by `make_ranking.py` from the runs `inversions/gcm_glc_cand1_*` and `gcm_glc_cand2_*` (queues: `acceptance/cand1_queue.sh`, `cand2_queue.sh`).
