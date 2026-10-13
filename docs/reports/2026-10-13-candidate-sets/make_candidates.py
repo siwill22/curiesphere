@@ -23,7 +23,6 @@ OUT = 'docs/reports/2026-10-13-candidate-sets/'
 CACHE = Path(pooch.os_cache('gprm'))
 SL2013 = '/Users/simon/Data/SeismicTomography/SL2013SV/SL2013sv_tri-grd_v2/SL2013sv_25k-k.mod'
 ECM1 = '/Users/simon/Downloads/ECM1/ECM1.txt'
-TC1 = '/Users/simon/Data/GMTdata/TectonoThermalAge/TC1_TectThermAge_RevEng_MidpointAge.nc'
 CGMW = '/Users/simon/Data/Geology/CGMW_GeologicalUnits.shp'
 GLIM = '/Users/simon/Data/Geology/GLiM/glim_wgs84_0point5deg.txt.asc'    # PANGAEA doi:10.1594/PANGAEA.788537
 # GLiM classes (Hartmann & Moosdorf 2012); water bodies, no data and ice are not rock types and are left blank
@@ -139,7 +138,8 @@ def glim_classes():
 
 
 def tc1_ages():
-    return xr.open_dataarray(TC1)
+    from gprm.datasets import Geology
+    return Geology.fetch_TC1().age
 
 
 # ---------- the figure ----------

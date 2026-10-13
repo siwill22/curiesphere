@@ -12,7 +12,7 @@ The Hasterok provinces beat random and shifted versions of themselves. These are
 - **GLiM lithology** (Hartmann & Moosdorf 2012): the 0.5° grid from PANGAEA (doi:10.1594/PANGAEA.788537), saved in `~/Data/Geology/GLiM/`. Water bodies, no-data cells and ice are left blank because they are not rock types.
 - **SL2013sv clusters**: k-means (k = 6) on absolute S-wave velocity profiles from 50 to 300 km at the 7842 model knots. Each 0.5° node takes the nearest knot along a great circle. The number of clusters and the depth range are free choices for now.
 - **ECM1 crustal type** (Mooney et al. 2023): the 1° `Type` column of `ECM1.txt`.
-- **TC1 tectono-thermal age** (Artemieva 2006): the 1° age-bin grid digitised by C. Heine.
+- **TC1 tectono-thermal age** (Artemieva 2006). The results below used a 1° age-bin grid digitised by C. Heine. The code now reads TC1 from the age map in C. B. Keller's [StatisticalGeochemistry](https://github.com/brenhinkeller/StatisticalGeochemistry) (MIT licence) through gprm's `Geology.fetch_TC1`. The two maps agree on 82% of the continental area, so the TC1 rows need rerunning.
 - **Merdith et al. (2021, v1.1) static polygons**: from the gprm cache, leaving out the oceanic ones (feature type `gpml:Basin`).
 
 For the gridded maps, the patch counts treat cells of the same class that touch (4 neighbours, across the dateline) as one patch.

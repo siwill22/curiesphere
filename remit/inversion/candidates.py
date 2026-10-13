@@ -10,7 +10,8 @@ evidence can rank them and spun copies of each can serve as its own null. Maps t
                  nrcan        NRCan surface geology (gprm), legend: rock type and age range
                  cgmw         CGMW Geological Map of the World, legend: CODE_G (lakes and glaciers left out)
                lon/lat class grids, the unit of a node being the class of the grid cell holding it:
-                 tc1          tectono-thermal age bins (Artemieva 2006; grid by C. Heine)
+                 tc1          tectono-thermal age bins (Artemieva 2006), 1/3 deg, from the map image in
+                              Keller's StatisticalGeochemistry (MIT; gprm Geology.fetch_TC1)
                  ecm1         ECM1 crustal type (Mooney et al. 2023), 1 deg
                a clustering, the unit of a node being the cluster of the nearest knot (great circle):
                  sl2013_k<k>  k-means on SL2013sv absolute Vs profiles over SL2013_DEPTHS km at the knots on
@@ -34,7 +35,6 @@ MIN_CELLS = 3
 DATA = os.path.expanduser('~/Data')
 SL2013 = f'{DATA}/SeismicTomography/SL2013SV/SL2013sv_tri-grd_v2/SL2013sv_25k-k.mod'
 SL2013_DEPTHS = (50., 300.)
-TC1 = f'{DATA}/GMTdata/TectonoThermalAge/TC1_TectThermAge_RevEng_AgeBins.nc'
 ECM1 = os.path.expanduser('~/Downloads/ECM1/ECM1.txt')
 CGMW = f'{DATA}/Geology/CGMW_GeologicalUnits.shp'
 MERDITH = 'Merdith2021/SM2-Merdith_et_al_1_Ga_reconstruction_v1.1/shapes_static_polygons_Merdith_et_al.gpml'
@@ -55,9 +55,9 @@ def _class_grid(values, lon_c, lat_c, lon, lat):
 
 
 def _tc1(lon, lat):
-    import xarray as xr
-    g = xr.open_dataarray(TC1)                                # dims (lat, lon) under any names, both ascending
-    return _class_grid(g.values, g[g.dims[1]].values, g[g.dims[0]].values, lon, lat)
+    from gprm.datasets import Geology
+    g = Geology.fetch_TC1().age                               # bin midpoints (Ma) as the class
+    return _class_grid(g.values, g.lon.values, g.lat.values, lon, lat)
 
 
 def _ecm1(lon, lat):
@@ -158,6 +158,8 @@ def node_units(name, cells, cache, area_name, g=None):
     spec = dict(area=area_name, source=name, version=VERSION)
     if name.startswith('sl2013'):
         spec['depths'] = list(SL2013_DEPTHS)
+    if name == 'tc1':
+        spec['tc1'] = 'keller'                                 # not the earlier grid by C. Heine
 
     def compute():
         i, j = np.nonzero(cells.cell >= 0)
