@@ -22,6 +22,11 @@ Parameterisations (ADR 0001): every one is a grouping of cells, G_param = G_cell
             continent's polygons turned rigidly by a random angle (60-300 deg) about the axis through the
             continent's centre, so shapes, sizes and neighbours are kept and only their place on the geology is lost;
             cells no rotated polygon covers take the label of the nearest covered cell of their continent.
+            Candidate maps (candidates.py): 'cand:<source>' takes the units of another map ('cand:hasterok' the
+            provinces above), cells no unit holds forming the rest domains of the continents, and makes every
+            connected patch of a unit its own domain (pieces under candidates.MIN_CELLS cells merged into a
+            neighbour); 'rotated_cand:<source>:i' spins the units as 'rotated_provinces:i' does, then applies the
+            same patch rule.
 """
 import hashlib
 import os
@@ -195,8 +200,25 @@ def layouts(cells, tables, cache, area_name, names=LAYOUTS, g=None):
           'provinces': np.where(inside, np.array(params, object)[np.maximum(prov, 0)], rest),
           'class': np.where(inside, class_of[np.maximum(prov, 0)], rest)}
     out = {}
+    cand_units, cell_graph = {}, None
     for name in names:
-        if name == 'one':
+        if name.startswith(('cand:', 'rotated_cand:')):
+            from . import candidates
+            base, _, draw = name.partition(':')[2].partition(':')
+            if base not in cand_units:
+                if base == 'hasterok':
+                    cand_units[base] = by['provinces'].astype(str)
+                else:
+                    u = candidates.cell_units(base, cells, cache, area_name, g)
+                    cand_units[base] = np.where(u >= 0, np.char.add(f'{base} ', u.astype(str)), rest.astype(str))
+            lab = cand_units[base]
+            if name.startswith('rotated_'):
+                lab = rotated(lab, by['continents'], xyz, ROTATION_SEED + int(draw or 0))
+            if cell_graph is None:
+                cell_graph = graph.cell_edges(cells)
+            dom, lab = np.unique(candidates.patches(lab, *cell_graph).astype(str), return_inverse=True)
+            out[name] = (lab, [str(x) for x in dom])
+        elif name == 'one':
             out[name] = (np.zeros(len(cells), int), ['all'])
         elif name.partition(':')[0] in CONTROLS or name.startswith('rotated_'):
             lab = np.unique(_control(name, cells, xyz, by), return_inverse=True)[1]

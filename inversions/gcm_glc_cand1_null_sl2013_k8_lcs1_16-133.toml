@@ -1,0 +1,10 @@
+# Spin test for the candidate map sl2013_k8: its units on each continent turned by a random angle about the
+# continent's centre (20 draws, the same angles as rotated_provinces), then the same patch rule. Does the real map
+# beat its spun copies?
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["rotated_cand:sl2013_k8:0", "rotated_cand:sl2013_k8:1", "rotated_cand:sl2013_k8:2", "rotated_cand:sl2013_k8:3", "rotated_cand:sl2013_k8:4", "rotated_cand:sl2013_k8:5", "rotated_cand:sl2013_k8:6", "rotated_cand:sl2013_k8:7", "rotated_cand:sl2013_k8:8", "rotated_cand:sl2013_k8:9", "rotated_cand:sl2013_k8:10", "rotated_cand:sl2013_k8:11", "rotated_cand:sl2013_k8:12", "rotated_cand:sl2013_k8:13", "rotated_cand:sl2013_k8:14", "rotated_cand:sl2013_k8:15", "rotated_cand:sl2013_k8:16", "rotated_cand:sl2013_k8:17", "rotated_cand:sl2013_k8:18", "rotated_cand:sl2013_k8:19"]
