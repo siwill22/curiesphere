@@ -182,3 +182,7 @@ notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
 /inversions/results/*.nc
 /acceptance/*.out
 /inversions/results/index.html
+
+# GDAL side files and the inversion cell cache
+*.aux.xml
+/notebooks/inversion/cells/

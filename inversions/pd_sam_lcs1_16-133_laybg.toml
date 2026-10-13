@@ -1,0 +1,6 @@
+# PD-SAM (polygon domains) with the global layout fit as the background outside the target (ADR 0011), as
+# the recommended DF runs (df_sam_lcs1_16-133_laybg_gm), so the three main methods compare on one background
+inherit = "pd_sam_lcs1_16-133.toml"
+
+[fit.background]
+outside = "results/gcm_glc_layouts_oc_lcs1_16-133.nc"
