@@ -1,6 +1,8 @@
 """The candidate-map test (batches 1 and 2): each map's evidence against the Hasterok provinces, against 20 spun copies of
-itself, and on the S5 synthetic data; and maps of each map's domains and fitted VIS.
-Read from the runs gcm_glc_cand1_* and gcm_glc_cand2_*. Run from the repository root."""
+itself, and on 11 draws of S5 synthetic data (geology-blind), with the score corrected for geometry (real minus the
+S5 mean); and maps of each map's domains and fitted VIS.
+Read from the runs gcm_glc_cand1_*, gcm_glc_cand2_*, gcm_glc_cand_syn_s5_d* and gcm_glc_cand_tc1k_* (TC1 rerun with the
+Keller grid, which supersedes the cand1 TC1 rows). Run from the repository root."""
 import glob
 import re
 
@@ -20,6 +22,7 @@ NAMES = {'cand:hasterok': 'Hasterok provinces', 'cand:sl2013_k4': 'SL2013sv clus
          'cand:ecm1': 'ECM1 crustal type', 'cand:merdith': 'Merdith (2021) static polygons',
          'cand:nrcan': 'NRCan surface geology', 'cand:cgmw': 'CGMW geological map'}
 BATCHES = ('cand1', 'cand2')
+TC1K = 'cand_tc1k'                                        # TC1 rerun with the Keller grid
 
 
 def evidence(path):
@@ -38,7 +41,20 @@ def runs(tag):
     for b in BATCHES:
         for f in glob.glob(R + f'gcm_glc_{b}_{tag}.log'):
             out = {**evidence(f), **out}                     # the first batch's value of a layout run twice
+    for f in glob.glob(R + f'gcm_glc_{TC1K}_{tag}.log'):
+        out.update({k: v for k, v in evidence(f).items() if k == 'cand:tc1'})
     return out
+
+
+def s5_draws():
+    """evidence of every layout in each S5 draw: draw 0 from the batches, draws 1-10 from their own runs"""
+    files = sorted(glob.glob(R + 'gcm_glc_cand_syn_s5_d*.log'), key=lambda f: int(re.search(r'_d(\d+)', f).group(1)))
+    return [d for d in [runs('syn_s5')] + [evidence(f) for f in files] if REF in d]
+
+
+def s5_relative(c, draws):
+    """a map's S5 evidence minus Hasterok's, in each draw that has it"""
+    return np.array([d[c][0] - d[REF][0] for d in draws if c in d])
 
 
 def spun(cand):
@@ -48,7 +64,7 @@ def spun(cand):
 
 
 def chart():
-    real, syn = runs('lcs1_16-133'), runs('syn_s5')
+    real, draws = runs('lcs1_16-133'), s5_draws()
     cands = sorted((c for c in NAMES if c in real), key=lambda c: real[c][0])
     ref = real[REF][0]
     INK, MUTED, REAL, SPIN, SYN = '#0b0b0b', '#52514e', '#2a78d6', '#eb6834', '#8a8984'
@@ -64,8 +80,10 @@ def chart():
         note = f'{(s > d).sum()} of {len(s)} spun copies beat it' if len(s) else 'spin test pending'
         ax.annotate(note, (max([d] + list(s)), y), xytext=(8, 0), textcoords='offset points', fontsize=7,
                     color=MUTED, va='center')
-        if c in syn:
-            bx.scatter([syn[c][0] - syn[REF][0]], [y], s=30, color=SYN, zorder=3)
+        z = s5_relative(c, draws)
+        if len(z):
+            bx.scatter(z, y + rng.uniform(-0.15, 0.15, len(z)), s=10, color=SYN, alpha=0.7, lw=0, zorder=3)
+            bx.plot([z.mean()]*2, [y - 0.3, y + 0.3], color=INK, lw=1.6, zorder=4)
     labels = [f'{NAMES[c]}  ({real[c][1]} domains)' for c in cands]
     for a in (ax, bx):
         a.axvline(0, color=INK, lw=1, zorder=2)
@@ -78,20 +96,28 @@ def chart():
     ax.margins(x=0.3)
     ax.set_xlabel('Log evidence minus that of the Hasterok provinces  (> 0: fits better)', fontsize=8, color=MUTED)
     ax.set_title('Real data: each map (blue) and 20 spun copies of it (orange)', fontsize=9, loc='left', color=INK)
-    bx.set_xlabel('Same, synthetic data', fontsize=8, color=MUTED)
-    bx.set_title('Synthetic check (S5)', fontsize=9, loc='left', color=INK)
+    bx.set_xlabel('Same, synthetic data (bar: mean)', fontsize=8, color=MUTED)
+    bx.set_title(f'Synthetic check: {len(draws)} S5 draws', fontsize=9, loc='left', color=INK)
     fig.tight_layout()
     fig.savefig(OUT + 'ranking.png')
+    rows = []
     for c in cands[::-1]:
-        s = spun(c) - ref
-        print(f'{NAMES[c]:32s} {real[c][1]:4d} domains  {real[c][0] - ref:+8.1f}'
-              + (f'  spun best {s.max():+.1f} median {np.median(s):+.1f}' if len(s) else '')
-              + (f'  S5 {syn[c][0] - syn[REF][0]:+.1f}' if c in syn else ''))
+        s, z = spun(c), s5_relative(c, draws)
+        d = real[c][0] - ref
+        rows.append(dict(map=NAMES[c], domains=real[c][1], real_vs_hasterok=round(d, 1),
+                         real_minus_median_spun=round(real[c][0] - np.median(s), 1) if len(s) else np.nan,
+                         spun_beating_it=int((s > real[c][0]).sum()) if len(s) else np.nan,
+                         s5_draws=len(z), s5_mean=round(z.mean(), 1), s5_sd=round(z.std(ddof=1), 1) if len(z) > 1 else np.nan,
+                         corrected=round(d - z.mean(), 1)))
+    import pandas as pd
+    t = pd.DataFrame(rows).sort_values('corrected', ascending=False)
+    t.to_csv(OUT + 'corrected.csv', index=False)
+    print(t.to_string(index=False))
 
 
 def maps():
     """for each map: its domains (random colours) and the fitted VIS averaged over each domain"""
-    sets = [xr.load_dataset(f) for b in BATCHES for f in glob.glob(R + f'gcm_glc_{b}_lcs1_16-133.nc')]
+    sets = [xr.load_dataset(f) for b in (TC1K,) + BATCHES for f in glob.glob(R + f'gcm_glc_{b}_lcs1_16-133.nc')]
     ds = sets[0]
     cell = figures.cell_grid(ds)
     a = ds.area_km2.values

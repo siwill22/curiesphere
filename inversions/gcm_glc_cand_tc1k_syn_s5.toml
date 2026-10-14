@@ -1,0 +1,8 @@
+# TC1 rerun with the Keller grid on S5 draw 0 (the seeds of gcm_glc_cand1_syn_s5); supersedes its cand:tc1 row.
+inherit = "gcm_glc_layouts_oc_syn_s5_ctrl.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "cand:tc1"]
