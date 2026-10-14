@@ -1,0 +1,9 @@
+# Spin test for the candidate map ee2025_poly (batch 3): its units on each continent turned by a random angle about
+# the continent's centre (20 draws, the same angles as rotated_provinces), then the same patch rule.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["rotated_cand:ee2025_poly:0", "rotated_cand:ee2025_poly:1", "rotated_cand:ee2025_poly:2", "rotated_cand:ee2025_poly:3", "rotated_cand:ee2025_poly:4", "rotated_cand:ee2025_poly:5", "rotated_cand:ee2025_poly:6", "rotated_cand:ee2025_poly:7", "rotated_cand:ee2025_poly:8", "rotated_cand:ee2025_poly:9", "rotated_cand:ee2025_poly:10", "rotated_cand:ee2025_poly:11", "rotated_cand:ee2025_poly:12", "rotated_cand:ee2025_poly:13", "rotated_cand:ee2025_poly:14", "rotated_cand:ee2025_poly:15", "rotated_cand:ee2025_poly:16", "rotated_cand:ee2025_poly:17", "rotated_cand:ee2025_poly:18", "rotated_cand:ee2025_poly:19"]

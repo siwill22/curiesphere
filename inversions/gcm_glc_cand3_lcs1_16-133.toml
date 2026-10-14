@@ -1,0 +1,10 @@
+# Candidate geology maps (batch 3): GLiM lithology (0.5 deg), the Eglington & Evans (2025) continental plate
+# polygons (one unit per plate ID, or per polygon), and NRCan surface geology rerun with ice left out (it supersedes
+# the batch-2 NRCan rows). Each connected patch its own domain (candidates.py), against the Hasterok provinces.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "cand:glim", "cand:ee2025_plate", "cand:ee2025_poly", "cand:nrcan"]

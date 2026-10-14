@@ -7,12 +7,18 @@ evidence can rank them and spun copies of each can serve as its own null. Maps t
                  merdith      Merdith et al. (2021, v1.1) static polygons less the oceanic ones (gpml:Basin)
                polygons of a geological map, one unit per legend entry (so touching polygons of one entry are
                one patch); holes kept, and where polygons overlap the smallest holding the node wins:
-                 nrcan        NRCan surface geology (gprm), legend: rock type and age range
+                 nrcan        NRCan surface geology (gprm), legend: rock type and age range (ice left out)
                  cgmw         CGMW Geological Map of the World, legend: CODE_G (lakes and glaciers left out)
+               the continental polygons (COTID 'C') of the Eglington & Evans (2025) plate model, holes and
+               overlaps as above:
+                 ee2025_plate one unit per plate ID (the reconstruction block)
+                 ee2025_poly  one unit per polygon
                lon/lat class grids, the unit of a node being the class of the grid cell holding it:
                  tc1          tectono-thermal age bins (Artemieva 2006), 1/3 deg, from the map image in
                               Keller's StatisticalGeochemistry (MIT; gprm Geology.fetch_TC1)
                  ecm1         ECM1 crustal type (Mooney et al. 2023), 1 deg
+                 glim         GLiM lithology (Hartmann & Moosdorf 2012), 0.5 deg grid (PANGAEA 788537): 13 rock
+                              classes; water bodies, no data and ice left out
                a clustering, the unit of a node being the cluster of the nearest knot (great circle):
                  sl2013_k<k>  k-means on SL2013sv absolute Vs profiles over SL2013_DEPTHS km at the knots on
                               continental crust (Schaeffer & Lebedev 2013)
@@ -37,8 +43,11 @@ SL2013 = f'{DATA}/SeismicTomography/SL2013SV/SL2013sv_tri-grd_v2/SL2013sv_25k-k.
 SL2013_DEPTHS = (50., 300.)
 ECM1 = os.path.expanduser('~/Downloads/ECM1/ECM1.txt')
 CGMW = f'{DATA}/Geology/CGMW_GeologicalUnits.shp'
+GLIM = f'{DATA}/Geology/GLiM/glim_wgs84_0point5deg.txt.asc'
+GLIM_NOT_ROCK = (11, 15, 16)                              # water bodies, no data, ice and glaciers
+EE2025 = os.path.expanduser('~/Downloads/EglingtonEvans2025_supporting/PlatePolygons_All.shp')
 MERDITH = 'Merdith2021/SM2-Merdith_et_al_1_Ga_reconstruction_v1.1/shapes_static_polygons_Merdith_et_al.gpml'
-SOURCES = ('tc1', 'ecm1', 'merdith', 'nrcan', 'cgmw')                       # plus sl2013_k<k>
+SOURCES = ('tc1', 'ecm1', 'merdith', 'nrcan', 'cgmw', 'glim', 'ee2025_plate', 'ee2025_poly')                       # plus sl2013_k<k>
 
 
 def _west(lon):
@@ -135,6 +144,7 @@ def _map_units(gdf, unit, lon, lat):
 def _nrcan(lon, lat):
     from gprm.datasets import Geology
     g = Geology.fetch_SurfaceGeology().to_crs('EPSG:4326')     # supplied in WGS72
+    g = g[g.RXTYP != 'ice']
     g['unit'] = g.AGERXTP.astype(str) + '|' + g.FROMAGE.astype(str) + '|' + g.TOAGE.astype(str)
     return _map_units(g, 'unit', lon, lat)
 
@@ -146,10 +156,26 @@ def _cgmw(lon, lat):
     return _map_units(g, 'CODE_G', lon, lat)
 
 
+def _glim(lon, lat):
+    raw = np.loadtxt(GLIM, skiprows=6)                        # ESRI ASCII grid: 0.5 deg, north row first
+    raw[(raw < 0) | np.isin(raw, GLIM_NOT_ROCK)] = np.nan
+    lon_c, lat_c = -179.75 + 0.5*np.arange(raw.shape[1]), -89.75 + 0.5*np.arange(raw.shape[0])
+    return _class_grid(raw[::-1], lon_c, lat_c, lon, lat)
+
+
+def _ee2025(unit):
+    def units(lon, lat):
+        import geopandas as gpd
+        g = gpd.read_file(EE2025)
+        return _map_units(g[g.COTID == 'C'], unit, lon, lat)
+    return units
+
+
 def _source(name):
     if name.startswith('sl2013_k'):
         return lambda lon, lat: _sl2013(int(name[8:]), lon, lat)
-    return {'tc1': _tc1, 'ecm1': _ecm1, 'merdith': _merdith, 'nrcan': _nrcan, 'cgmw': _cgmw}[name]
+    return {'tc1': _tc1, 'ecm1': _ecm1, 'merdith': _merdith, 'nrcan': _nrcan, 'cgmw': _cgmw, 'glim': _glim,
+            'ee2025_plate': _ee2025('PlateID'), 'ee2025_poly': _ee2025('PolyID')}[name]
 
 
 def node_units(name, cells, cache, area_name, g=None):
@@ -160,6 +186,8 @@ def node_units(name, cells, cache, area_name, g=None):
         spec['depths'] = list(SL2013_DEPTHS)
     if name == 'tc1':
         spec['tc1'] = 'keller'                                 # not the earlier grid by C. Heine
+    if name == 'nrcan':
+        spec['nrcan'] = 'no ice'                               # ice was a unit in the first runs
 
     def compute():
         i, j = np.nonzero(cells.cell >= 0)

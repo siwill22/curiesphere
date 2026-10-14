@@ -1,0 +1,9 @@
+# Spin test for the candidate map glim (batch 3): its units on each continent turned by a random angle about
+# the continent's centre (20 draws, the same angles as rotated_provinces), then the same patch rule.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["rotated_cand:glim:0", "rotated_cand:glim:1", "rotated_cand:glim:2", "rotated_cand:glim:3", "rotated_cand:glim:4", "rotated_cand:glim:5", "rotated_cand:glim:6", "rotated_cand:glim:7", "rotated_cand:glim:8", "rotated_cand:glim:9", "rotated_cand:glim:10", "rotated_cand:glim:11", "rotated_cand:glim:12", "rotated_cand:glim:13", "rotated_cand:glim:14", "rotated_cand:glim:15", "rotated_cand:glim:16", "rotated_cand:glim:17", "rotated_cand:glim:18", "rotated_cand:glim:19"]

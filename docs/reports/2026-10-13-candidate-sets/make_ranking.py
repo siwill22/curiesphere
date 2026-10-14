@@ -20,9 +20,11 @@ NAMES = {'cand:hasterok': 'Hasterok provinces', 'cand:sl2013_k4': 'SL2013sv clus
          'cand:sl2013_k6': 'SL2013sv clusters, k = 6', 'cand:sl2013_k8': 'SL2013sv clusters, k = 8',
          'cand:sl2013_k12': 'SL2013sv clusters, k = 12', 'cand:tc1': 'TC1 tectono-thermal age',
          'cand:ecm1': 'ECM1 crustal type', 'cand:merdith': 'Merdith (2021) static polygons',
-         'cand:nrcan': 'NRCan surface geology', 'cand:cgmw': 'CGMW geological map'}
-BATCHES = ('cand1', 'cand2')
-TC1K = 'cand_tc1k'                                        # TC1 rerun with the Keller grid
+         'cand:nrcan': 'NRCan surface geology', 'cand:cgmw': 'CGMW geological map',
+         'cand:glim': 'GLiM lithology', 'cand:ee2025_plate': 'Eglington & Evans (2025), per plate',
+         'cand:ee2025_poly': 'Eglington & Evans (2025), per polygon'}
+# runs in order: where a layout was run again later (TC1 with the Keller grid; NRCan without ice), the later run wins
+BATCHES = ('cand1', 'cand2', 'cand_tc1k', 'cand3')
 
 
 def evidence(path):
@@ -40,16 +42,22 @@ def runs(tag):
     out = {}
     for b in BATCHES:
         for f in glob.glob(R + f'gcm_glc_{b}_{tag}.log'):
-            out = {**evidence(f), **out}                     # the first batch's value of a layout run twice
-    for f in glob.glob(R + f'gcm_glc_{TC1K}_{tag}.log'):
-        out.update({k: v for k, v in evidence(f).items() if k == 'cand:tc1'})
+            out.update(evidence(f))
     return out
 
 
 def s5_draws():
-    """evidence of every layout in each S5 draw: draw 0 from the batches, draws 1-10 from their own runs"""
-    files = sorted(glob.glob(R + 'gcm_glc_cand_syn_s5_d*.log'), key=lambda f: int(re.search(r'_d(\d+)', f).group(1)))
-    return [d for d in [runs('syn_s5')] + [evidence(f) for f in files] if REF in d]
+    """evidence of every layout in each S5 draw (0-10), the later run of a layout winning as in runs()"""
+    out = []
+    for i in range(11):
+        first = ['cand1_syn_s5', 'cand2_syn_s5', 'cand_tc1k_syn_s5'] if i == 0 else [f'cand_syn_s5_d{i}']
+        d = {}
+        for stem in first + [f'cand3_syn_s5_d{i}']:
+            for f in glob.glob(R + f'gcm_glc_{stem}.log'):
+                d.update(evidence(f))
+        if REF in d:
+            out.append(d)
+    return out
 
 
 def s5_relative(c, draws):
@@ -59,8 +67,8 @@ def s5_relative(c, draws):
 
 def spun(cand):
     """log evidence of the spun copies of a candidate, if its null run has finished"""
-    f = glob.glob(R + f'gcm_glc_cand*_null_{cand[5:]}_lcs1_16-133.log')
-    return np.array([v for v, _ in evidence(f[0]).values()]) if f else np.array([])
+    f = [g for b in BATCHES for g in glob.glob(R + f'gcm_glc_{b}_null_{cand[5:]}_lcs1_16-133.log')]
+    return np.array([v for v, _ in evidence(f[-1]).values()]) if f else np.array([])        # the latest batch
 
 
 def chart():
@@ -117,7 +125,7 @@ def chart():
 
 def maps():
     """for each map: its domains (random colours) and the fitted VIS averaged over each domain"""
-    sets = [xr.load_dataset(f) for b in (TC1K,) + BATCHES for f in glob.glob(R + f'gcm_glc_{b}_lcs1_16-133.nc')]
+    sets = [xr.load_dataset(f) for b in BATCHES[::-1] for f in glob.glob(R + f'gcm_glc_{b}_lcs1_16-133.nc')]
     ds = sets[0]
     cell = figures.cell_grid(ds)
     a = ds.area_km2.values

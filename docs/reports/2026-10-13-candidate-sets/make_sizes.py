@@ -1,6 +1,6 @@
 """Size-frequency of the candidate maps' domains, as Bird (2003) plots plates: each domain's area (as fitted: the
 patches on the ~100 km cells, rest domains left out) against the number of domains at least that large.
-Read from gcm_glc_cand1/2_lcs1_16-133.nc (TC1 from the Keller-grid rerun gcm_glc_cand_tc1k). Run from the repository root."""
+Read from gcm_glc_cand1/2/3 and cand_tc1k _lcs1_16-133.nc (a later run of a map wins). Run from the repository root."""
 import glob
 import json
 
@@ -10,12 +10,13 @@ import xarray as xr
 
 R = 'inversions/results/'
 OUT = 'docs/reports/2026-10-13-candidate-sets/'
-# the six maps that beat their spun copies, in the fixed categorical order; SL2013sv (fails) in muted greys
-PASS = [('cand:hasterok', 'Hasterok provinces', '#2a78d6'), ('cand:nrcan', 'NRCan surface geology', '#eb6834'),
+# the eight maps that beat all their spun copies, in the fixed categorical order; GLiM and SL2013sv (spun copies beat them) in muted greys
+PASS = [('cand:hasterok', 'Hasterok provinces', '#2a78d6'), ('cand:ee2025_poly', 'Eglington & Evans, per polygon', '#4a3aa7'),
+        ('cand:ee2025_plate', 'Eglington & Evans, per plate', '#e34948'), ('cand:nrcan', 'NRCan surface geology', '#eb6834'),
         ('cand:ecm1', 'ECM1 crustal type', '#1baf7a'), ('cand:merdith', 'Merdith static polygons', '#eda100'),
         ('cand:cgmw', 'CGMW geological map', '#e87ba4'), ('cand:tc1', 'TC1 tectono-thermal age', '#008300')]
-FAIL = [(f'cand:sl2013_k{k}', f'SL2013sv k = {k}', g) for k, g in
-        [(4, '#c9c8c2'), (6, '#b0afa8'), (8, '#97968f'), (12, '#7e7d77')]]
+FAIL = [('cand:glim', 'GLiM lithology', '#a8a7a0')] + [(f'cand:sl2013_k{k}', f'SL2013sv k = {k}', g) for k, g in
+                                                     [(4, '#c9c8c2'), (6, '#b0afa8'), (8, '#97968f'), (12, '#7e7d77')]]
 INK, MUTED, GRID = '#0b0b0b', '#52514e', '#ecebe7'
 
 
@@ -31,10 +32,10 @@ def areas(name, sets):
 
 
 def main():
-    # the TC1 rerun with the Keller grid first, so its TC1 domains are the ones used
-    sets = [xr.load_dataset(f) for f in glob.glob(R + 'gcm_glc_cand_tc1k_lcs1_16-133.nc')
-            + sorted(glob.glob(R + 'gcm_glc_cand[12]_lcs1_16-133.nc'))]
-    fig, ax = plt.subplots(figsize=(7.5, 5), dpi=200)
+    # later runs first (NRCan without ice, TC1 with the Keller grid), so their domains are the ones used
+    sets = [xr.load_dataset(f) for b in ('cand3', 'cand_tc1k', 'cand2', 'cand1')
+            for f in glob.glob(R + f'gcm_glc_{b}_lcs1_16-133.nc')]
+    fig, ax = plt.subplots(figsize=(8, 5.5), dpi=200)
     for name, label, colour in FAIL + PASS[::-1]:
         a = areas(name, sets)
         n = np.arange(1, len(a) + 1)
