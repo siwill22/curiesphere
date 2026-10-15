@@ -85,6 +85,33 @@ The same test, for two detailed surface-geology maps. Here a unit is a legend en
 
 So eight maps carry information about the magnetic field: Eglington & Evans (both ways), Hasterok, NRCan, ECM1, Merdith, CGMW and TC1. The Eglington & Evans polygons carry the most.
 
+### Is it just the number of domains?
+
+An obvious objection is that more domains always give a better fit. To test it, the continents were cut into random Voronoi tilings (blind to geology) at 250 to 1,500 tiles: 10–20 tilings per count, plus the 50 tilings with 724 tiles from the earlier Hasterok ensemble. Their scores show what domain count alone earns.
+
+![](domain_count.png)
+
+- **Domain count matters, but it levels off.** The median random tiling rises from about −465 against Hasterok at 250 tiles to about −145 at 1,250, then stays there up to 1,500.
+- **Only Hasterok and Eglington & Evans are clearly above the random tilings.** Eglington & Evans per polygon (+129, 1,426 domains) beats all 20 tilings with the same number of tiles: by 143 over the best and 271 over the median.
+- **ECM1 and TC1 sit just above the band. NRCan and Merdith sit on the median line; CGMW sits just below the band, and GLiM and SL2013 well below it.** Against compact random tiles with the same count, those maps show no advantage.
+- **Spun copies (faint dots) mostly fall below the band.** A geology map moved to the wrong place fits worse than random compact tiles. Its irregular shapes, slivers and giant units suit the field badly once misplaced. So beating one's own spun copies is a weaker bar than beating random tilings.
+- **Caveat: random tilings are not neutral either.** Compact tiles of similar size are close to the most efficient way to cut a smoothly varying field into a given number of pieces. Maps with elongated belts, slivers or giant units start behind them, whether or not their boundaries are geologically right. The spin test controls for each map's own shapes but is too easy; the tilings control only for count and are too hard for irregular maps. The two bracket the answer.
+
+Made by `make_count.py` from `inversions/gcm_glc_vork<k>_lcs1_16-133` (queue `acceptance/vork_queue.sh`).
+
+### Per continent
+
+Each map was swapped in for the Hasterok provinces on one continent at a time, with Hasterok everywhere else. The change of the global evidence is that continent's share of the difference between the two maps. For each map the shares add up to close to its global result: Eglington & Evans per polygon totals +111 here against +129 globally, NRCan −194 against −200.
+
+![](swaps.png)
+
+- **Africa is where Hasterok is weakest.** Five maps beat it there: Eglington & Evans (+116 per polygon, +101 per plate), NRCan (+107), CGMW (+54) and Merdith (+17).
+- **North America, Antarctica and Australia are where Hasterok is strongest.** No map beats it on any of the three. In North America, Eglington & Evans per polygon is 59 behind despite having 126 more domains there.
+- **Eglington & Evans's global lead comes from Africa and Eurasia.** It is behind Hasterok in North America, the continent with most of its polygons. That argues against its lead coming from boundaries drawn on aeromagnetic maps, at least there.
+- **Part of each difference is domain count.** From the random tilings, an extra domain is worth roughly +0.2 to +0.3 log units up to about 1,250 domains. Eglington & Evans's +236 domains in Eurasia would therefore be worth about +45 to +75 by count alone, against its +62, so its Eurasian lead may be mostly count. Its African lead (+116 with +95 domains) is not.
+
+Values also in `swaps.csv`. Made by `make_swaps.py` from `inversions/gcm_glc_swap_<map>_lcs1_16-133` (queue `acceptance/swap_queue.sh`).
+
 ### Correcting for geometry with 11 synthetic draws
 
 A map can score well partly because of its domain geometry: the sizes and shapes of its domains, whatever their position. To estimate that part, every map was also fitted to 11 synthetic data sets. Each is a smooth random magnetization with no geology in it (S5: β 2.5, ℓ 500 km, mean 0.75, sd 0.4 SI·km), with realistic noise and new random seeds for each draw.

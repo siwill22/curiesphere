@@ -1,0 +1,10 @@
+# Baseline for "more domains give a better fit": 10 random Voronoi tilings of the continents with 250 tiles each
+# (seeds by area, blind to geology). With the other counts it gives the score random maps reach for a given number
+# of domains, against which every candidate map is compared.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "voronoi_k250:0", "voronoi_k250:1", "voronoi_k250:2", "voronoi_k250:3", "voronoi_k250:4", "voronoi_k250:5", "voronoi_k250:6", "voronoi_k250:7", "voronoi_k250:8", "voronoi_k250:9"]

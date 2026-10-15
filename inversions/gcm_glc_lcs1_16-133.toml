@@ -20,7 +20,7 @@ band = [16, 133]
 filter = "lcs1"
 
 [errors.noise]
-reference = "~/Library/CloudStorage/OneDrive-UniversityofTasmania/Data/StefanMausData/xDLFI/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901.shc"
+reference = "~/Data/StefanMausData/xDLFI/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901.shc"
 amplitude = "evidence"
 
 [method]

@@ -1,0 +1,10 @@
+# Per-continent comparison of the candidate map tc1 with the Hasterok provinces: on each continent in turn the
+# candidate's units replace the provinces, Hasterok elsewhere. The change of the global evidence from cand:hasterok
+# is that continent's share of the difference between the two maps.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "swap:tc1:afr", "swap:tc1:ant", "swap:tc1:aus", "swap:tc1:eur", "swap:tc1:nam", "swap:tc1:sam", "swap:tc1:zea"]

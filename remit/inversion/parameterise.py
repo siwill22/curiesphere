@@ -18,7 +18,8 @@ Parameterisations (ADR 0001): every one is a grouping of cells, G_param = G_cell
             Controls blind to geology (CONTROLS): 'tiles<nside>' (the HEALPix pixels of that NSIDE) and
             'voronoi_groups', 'voronoi_provinces' (as many random Voronoi tiles on the sphere as the geological layout
             has domains; seeds drawn uniformly by area, seeded so they repeat). A suffix ':i' draws the i-th of an
-            ensemble ('voronoi_provinces:7'). 'rotated_provinces:i' / 'rotated_groups:i' (a spin test): each
+            ensemble ('voronoi_provinces:7'); 'voronoi_k<k>:i' draws k tiles (a baseline for any domain count).
+            'rotated_provinces:i' / 'rotated_groups:i' (a spin test): each
             continent's polygons turned rigidly by a random angle (60-300 deg) about the axis through the
             continent's centre, so shapes, sizes and neighbours are kept and only their place on the geology is lost;
             cells no rotated polygon covers take the label of the nearest covered cell of their continent.
@@ -26,7 +27,8 @@ Parameterisations (ADR 0001): every one is a grouping of cells, G_param = G_cell
             provinces above), cells no unit holds forming the rest domains of the continents, and makes every
             connected patch of a unit its own domain (pieces under candidates.MIN_CELLS cells merged into a
             neighbour); 'rotated_cand:<source>:i' spins the units as 'rotated_provinces:i' does, then applies the
-            same patch rule.
+            same patch rule; 'swap:<source>:<continent>' takes the candidate's units on one continent and the
+            Hasterok provinces on the others (the evidence change from 'cand:hasterok' is that continent's share).
 """
 import hashlib
 import os
@@ -112,6 +114,9 @@ def _control(name, cells, xyz, by):
     i = int(draw) if draw else 0
     if base.startswith('rotated_'):
         return rotated(by[base.split('_')[1]], by['continents'], xyz, ROTATION_SEED + i)
+    if base.startswith('voronoi_k'):                          # a given number of tiles
+        k = int(base[9:])
+        return voronoi(cells, k, VORONOI_SEED + k + 1000*(i + 1))
     if draw:
         k = len(np.unique(by[base.split('_')[1]].astype(str)))
         return voronoi(cells, k, VORONOI_SEED + k + 1000*(i + 1))
@@ -202,25 +207,29 @@ def layouts(cells, tables, cache, area_name, names=LAYOUTS, g=None):
     out = {}
     cand_units, cell_graph = {}, None
     for name in names:
-        if name.startswith(('cand:', 'rotated_cand:')):
+        if name.startswith(('cand:', 'rotated_cand:', 'swap:')):
             from . import candidates
             base, _, draw = name.partition(':')[2].partition(':')
-            if base not in cand_units:
-                if base == 'hasterok':
-                    cand_units[base] = by['provinces'].astype(str)
-                else:
-                    u = candidates.cell_units(base, cells, cache, area_name, g)
-                    cand_units[base] = np.where(u >= 0, np.char.add(f'{base} ', u.astype(str)), rest.astype(str))
+            for b in (base, 'hasterok') if name.startswith('swap:') else (base,):
+                if b not in cand_units:
+                    if b == 'hasterok':
+                        cand_units[b] = by['provinces'].astype(str)
+                    else:
+                        u = candidates.cell_units(b, cells, cache, area_name, g)
+                        cand_units[b] = np.where(u >= 0, np.char.add(f'{b} ', u.astype(str)), rest.astype(str))
             lab = cand_units[base]
             if name.startswith('rotated_'):
                 lab = rotated(lab, by['continents'], xyz, ROTATION_SEED + int(draw or 0))
+            if name.startswith('swap:'):                       # the candidate on one continent, Hasterok elsewhere
+                on = by['continents'].astype(str) == draw
+                lab = np.where(on, np.char.add('C ', lab), np.char.add('H ', cand_units['hasterok']))
             if cell_graph is None:
                 cell_graph = graph.cell_edges(cells)
             dom, lab = np.unique(candidates.patches(lab, *cell_graph).astype(str), return_inverse=True)
             out[name] = (lab, [str(x) for x in dom])
         elif name == 'one':
             out[name] = (np.zeros(len(cells), int), ['all'])
-        elif name.partition(':')[0] in CONTROLS or name.startswith('rotated_'):
+        elif name.partition(':')[0] in CONTROLS or name.startswith(('rotated_', 'voronoi_k')):
             lab = np.unique(_control(name, cells, xyz, by), return_inverse=True)[1]
             out[name] = (lab, [f'{name} {j}' for j in range(lab.max() + 1)])
         else:

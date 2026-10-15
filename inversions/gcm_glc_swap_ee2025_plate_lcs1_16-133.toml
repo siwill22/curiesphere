@@ -1,0 +1,10 @@
+# Per-continent comparison of the candidate map ee2025_plate with the Hasterok provinces: on each continent in turn the
+# candidate's units replace the provinces, Hasterok elsewhere. The change of the global evidence from cand:hasterok
+# is that continent's share of the difference between the two maps.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "swap:ee2025_plate:afr", "swap:ee2025_plate:ant", "swap:ee2025_plate:aus", "swap:ee2025_plate:eur", "swap:ee2025_plate:nam", "swap:ee2025_plate:sam", "swap:ee2025_plate:zea"]
