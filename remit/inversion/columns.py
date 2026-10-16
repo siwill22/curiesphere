@@ -55,6 +55,10 @@ class Setup:
     def legendre(self, rows):
         """Schmidt P_lm and dP_lm/dtheta (packed) at grid rows: (len(rows), 2, n_lm)"""
         for i in rows:
+            if i == 0 and i not in self._legendre:
+                # the north-pole row has zero quadrature weight (w = wsin = 0), and pyshtools cannot take the
+                # derivative at cos(theta) = 1; found by the verification suite (docs/verification)
+                self._legendre[i] = np.zeros((2, len(self.L)))
             if i not in self._legendre:
                 th = i*np.pi/self.nth
                 p, dp = pyshtools.legendre.PlmSchmidt_d1(self.lmax, np.cos(th))

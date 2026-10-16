@@ -1,0 +1,24 @@
+case,altitude_km,lmax,check,value,rms_dipole_nT,max_abs_diff_nT,rms_diff_nT,rel_rms_diff,rel_rms_above_L
+cells,,185,columns vs remit transform (max rel),4.224e-14,,,,,
+cells,1.000e+02,185,,,1.450e+00,8.170e+00,1.582e-01,1.091e-01,1.091e-01
+cells,1.000e+02,400,,,1.450e+00,4.815e-02,9.492e-04,6.548e-04,6.548e-04
+cells,1.000e+02,899,,,1.450e+00,7.067e-05,3.225e-07,2.225e-07,
+cells,3.000e+02,185,,,2.082e-01,1.022e-02,2.772e-04,1.331e-03,1.331e-03
+cells,3.000e+02,400,,,2.082e-01,9.134e-08,2.402e-09,1.153e-08,1.153e-08
+cells,3.000e+02,899,,,2.082e-01,1.334e-13,8.755e-15,4.205e-14,
+cont_checker,,185,float64 columns vs remit transform (max rel),3.012e-14,,,,,
+cont_checker,,185,float32 columns vs remit transform (max rel),1.683e-06,,,,,
+cont_checker,1.000e+02,185,,,2.235e+01,8.884e+00,8.600e-01,3.847e-02,3.847e-02
+cont_checker,1.000e+02,600,,,2.235e+01,8.471e-03,5.838e-04,2.612e-05,
+cont_checker,3.000e+02,185,,,1.020e+01,1.323e-02,1.691e-03,1.657e-04,1.657e-04
+cont_checker,3.000e+02,600,,,1.020e+01,4.365e-11,3.902e-12,3.825e-13,
+cont_checker,,185,"float32 minus float64 columns, Br at 100 km (max, relative to the RMS field)",6.643e-06,,,,,
+cont_checker,,185,"float32 minus float64 columns, Br at 300 km (max, relative to the RMS field)",1.905e-06,,,,,
+cont_geology,,185,float64 columns vs remit transform (max rel),4.695e-14,,,,,
+cont_geology,,185,float32 columns vs remit transform (max rel),3.068e-06,,,,,
+cont_geology,1.000e+02,185,,,1.137e+01,6.119e+00,3.939e-01,3.464e-02,3.464e-02
+cont_geology,1.000e+02,600,,,1.137e+01,7.278e-03,3.103e-04,2.729e-05,
+cont_geology,3.000e+02,185,,,4.774e+00,1.051e-02,7.925e-04,1.660e-04,1.660e-04
+cont_geology,3.000e+02,600,,,4.774e+00,4.350e-11,1.952e-12,4.090e-13,
+cont_geology,,185,"float32 minus float64 columns, Br at 100 km (max, relative to the RMS field)",1.064e-05,,,,,
+cont_geology,,185,"float32 minus float64 columns, Br at 300 km (max, relative to the RMS field)",1.676e-06,,,,,
