@@ -145,6 +145,14 @@ The smallest and largest value of a summary (a craton's mean VIS, a contrast) ov
 **Null test**:
 A synthetic check of a method's uncertainties: truths without the effect being estimated (e.g. no covariate effect), many noise draws, and the spread of the estimates compared with the uncertainties the method reports.
 
+**Correctness check**:
+A comparison of a calculation with an independent calculation of the same equations, or with a case whose answer is known exactly. The two should agree to rounding error; a difference means a coding error.
+_Avoid_: pass/fail test, validation
+
+**Limitation study**:
+A synthetic experiment that shows what a correctly coded method cannot recover, or where its reported uncertainties are too narrow or too wide. Reported as maps and numbers, with no pass mark.
+_Avoid_: characterisation, test, validation
+
 **ORP23**:
 The method of Olsen, Ravat & Purucker (2023): point dipoles at 70 km, damped toward an a-priori thickness model. Referred to, not implemented.
 

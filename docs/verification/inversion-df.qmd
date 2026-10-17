@@ -1,0 +1,287 @@
+---
+title: "Inversion benchmarks: DF"
+subtitle: "Checking the domain-fractal inversion with synthetic data for Australia"
+date: 2026-10-17
+date-format: "D MMMM YYYY"
+abstract: |
+  Draft prepared with Claude Code. This is the first part of the inversion benchmarks, the companion to
+  "Verification of the forward models". It checks DF, the domain-fractal inversion, in two ways: whether it is coded
+  correctly, by comparing it with independent calculations and with cases whose answer is known exactly; and what
+  it can and cannot recover, with synthetic truths from simple checkerboards upwards. All tests use the Australian
+  problem of the real runs. The same framework will then be applied to the other methods.
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 2
+    number-sections: true
+    embed-resources: true
+    theme: cosmo
+    grid:
+      body-width: 1100px
+      sidebar-width: 260px
+    fig-cap-location: bottom
+    tbl-cap-location: top
+  typst:
+    papersize: a4
+    margin:
+      x: 2cm
+      y: 2cm
+    fontsize: 10pt
+    section-numbering: "1."
+    fig-format: png
+---
+
+<!-- Rebuild from the repository root:
+  export PYTHONPATH=benchmarks/verification:benchmarks:notebooks:$PYTHONPATH OMP_NUM_THREADS=1
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py v1        # a few minutes
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py v1maps
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py v2 45     # ~30 min, 3 workers
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py checker   # ~3 min
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py shrink    # ~25 min, 3 workers
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py mismatch  # ~15 min, 3 workers
+  conda run -n curiesphere python docs/verification/make_df_figures.py
+  conda run -n riftsclimate quarto render docs/verification/inversion-df.qmd
+-->
+
+# In brief {.unnumbered}
+
+**DF is coded correctly.**
+
+- It agrees with an independent solver of the same equations to rounding error (10⁻¹⁴).
+- It returns checkerboards exactly when they are recoverable in principle.
+- Its uncertainties are exactly right when its settings are known.
+
+**Its limitations, in the order they matter for reading real DF maps:**
+
+1. **Fitting the settings makes DF overconfident.** With the settings fitted, as in a run without sampling, the
+   actual errors are about 1.25 times the reported s.d. The fitted patch size tends to come out too long, and the
+   spread of the domain levels collapses to zero in 40% of cases.
+2. **The smallest pattern DF can see is about 2° (220 km).** At 1.5° (170 km) a checkerboard disappears completely.
+3. **A small s.d. can mean "nothing seen here".** Where the data see no variation, DF reports a flat map with a
+   *small* s.d., not a large one.
+4. **Sharp edges are blurred** unless the domains follow them. DF recovers 85% of the contrast of 900 km squares and
+   67% of 450 km squares.
+5. **Wrong domains are rejected by the evidence**, and the polygons do not beat random tiles when the truth has
+   nothing to do with geology. But a wrong domain boundary can leave a visible step in the map.
+6. **The fit can stop short of the best settings**: once in three starts, by 0.5 in log evidence.
+
+# What is checked, and how {#sec-method}
+
+## Two aims
+
+Each test has one of two aims:
+
+- **Correctness checks** compare DF with an independent calculation of the same equations, or with a case whose
+  answer is known exactly. They should agree to rounding error; a difference would mean a coding error.
+- **Limitation studies** show what a correctly coded DF cannot recover, or where its uncertainties are too narrow
+  or too wide. They have no pass mark: they are maps and numbers that help to read real results.
+
+## DF in one paragraph
+
+DF maps VIS as **a level per domain plus a random fractal pattern inside each domain**. The domains are given in
+advance: the geological polygons (Hasterok et al. 2022), random tiles as a geology-blind control, or the whole area
+as one domain. The pattern of each domain starts afresh at its boundary. Four kinds of *settings* control the
+model, and are fitted to the data by the *evidence* (a score of how well a model explains the data, which
+penalises extra freedom):
+
+- the **strength** of the pattern in each domain;
+- the **exponent** β of its power spectrum (how rough it is), shared by all domains;
+- the **largest patch size** ℓ, shared by all domains;
+- the **spread of the domain levels** τ around one shared level ("Gaussian means", the default). The alternative,
+  "box means", lets each domain level take any value between 0 and 4 SI·km with no pull toward the others.
+
+Given the settings, DF's map and its s.d. follow exactly from the data. An extra error is fitted in the ring of
+data points around Australia, where errors of the background field show up.
+
+## The test problem
+
+All tests use the Australian problem of the real DF runs:
+
+- 1406 cells of about 100 km;
+- data points at about 50 km spacing out to 300 km beyond the coast, compressed to 849 independent data;
+- degrees 16–133 of the field;
+- the noise of the LCS-1 field model (20 nT RMS at the points), with its correlations;
+- the extra error in the ring of points around Australia.
+
+The synthetic data are the truth's field, computed with the inversion's own cell columns, plus a random draw of
+the noise. The cell columns were verified in part 1. Using the inversion's own forward model is deliberate for the
+correctness checks. It also means the limitation studies here cannot show errors from the cell size or the layer
+depth; that is a later step.
+
+# Correctness checks {#sec-correct}
+
+## The algebra
+
+DF's map, its s.d. and its log evidence were recomputed by an independent solver, which shares no code with DF. For
+given settings, DF's map and s.d. follow from the data by standard formulas for Gaussian models. DF evaluates them
+with Cholesky factors; the independent solver uses a different route (one combined linear system, the
+"universal kriging" form). The test used a smooth synthetic truth (@fig-v1), with the domain levels both Gaussian
+and box.
+
+| Check | Result |
+|---|---|
+| Log evidence, Gaussian means / box means | Equal to 9×10⁻¹³ / 5×10⁻¹³ |
+| Map, every cell | Equal to 2×10⁻¹⁴ SI·km |
+| s.d., every cell | Equal to 2×10⁻¹⁴ (relative) |
+| Rate of change of the evidence with each setting, as DF computes it for the fitting | Equal to 3×10⁻⁸ (strengths, errors) and 1×10⁻⁵ (β; DF uses finite differences there) |
+| The fractal pattern's correlation, from DF's stored table, against a direct sum | Equal to 2×10⁻⁶; DF's cut of the sum at degree 2000 adds 7×10⁻⁶. Together they move the map by less than 10⁻⁶ SI·km |
+| The noise weighting: weighted noise draws should have unit variance and no correlation | Variance 1.000; correlations 0.022, exactly what 2000 draws give by chance |
+
+![DF against the independent solver, for a smooth synthetic truth (random field, geology-blind), at fixed settings,
+with the polygons as domains (white). The two maps are the same to 10⁻¹⁴.](figures/df_v1_maps.png){#fig-v1}
+
+## Checkerboards recovered exactly
+
+A checkerboard can be recovered exactly if each square is one of DF's domains, the domain levels are free (box
+means), and the data have no noise. The estimated level of each domain then equals the true one, whatever settings
+the fit chooses. DF does this to rounding error for squares of every size tried:
+
+- HEALPix checkerboards of 12, 33 and 113 tiles: errors of 2×10⁻¹⁵ to 7×10⁻¹⁴ SI·km (@fig-checker, second
+  column);
+- lon/lat checkerboards down to 1.5° squares, which is 624 domains against 849 data (@sec-shrink).
+
+## Uncertainties with the settings known
+
+45 truths were drawn from DF's own model (domain levels spread by 0.3 SI·km about 0.75, a pattern of strength 0.3
+with β 2.25 and ℓ 1000 km), each with its own noise draw, and inverted with the settings fixed at their true values.
+If the code is right, the errors divided by the reported s.d. follow a standard bell curve. They do
+(@fig-spread, left): 68% of cells fall within 1 s.d. and 95% within 2 s.d., exactly as they should, and the spread
+of the errors is 1.00 times the reported s.d. The same holds for domain averages (67% and 96%).
+
+# Limitations {#sec-limits}
+
+## Fitted settings make DF overconfident {#sec-overconfident}
+
+The same 45 truths inverted with the settings fitted, as in a real run without sampling (@fig-spread, right;
+@fig-v2-maps): the errors are **1.25 times** the reported s.d., with 63% of cells within 1 s.d. (should be 68%) and
+91% within 2 s.d. (95%). The map is computed as if the fitted settings were exact, so their own uncertainty is
+left out.
+
+How well the settings come back:
+
+| Setting | True | Fitted, middle 68% of truths | Note |
+|---|---|---|---|
+| Exponent β | 2.25 | 2.13 – 2.55 | Good |
+| Largest patch size ℓ | 1000 km | 460 – 5000 km (median 1800) | Too long; at the 5000 km limit in 22% of truths |
+| Spread of domain levels τ | 0.30 SI·km | 0.01 – 0.35 (median 0.26) | At its lower limit (no spread) in 40% of truths |
+| Pattern strength | 0.30 SI·km | median 0.31 | Good |
+
+The patch size and the spread of the domain levels trade off: a pattern with very long patches can stand in for
+different domain levels, so the fit sometimes moves the differences between domains into the pattern.
+
+The real Australian DF run samples the settings instead of fixing them at the best fit, which should take their
+uncertainty into account. Whether that restores the coverage has not been tested yet. The DF runs of the other
+continents, and explore mode, do not sample.
+
+![The spread of DF's errors in units of its reported s.d., over all cells of 45 truths. Left: settings fixed at
+their true values. Right: settings fitted.](figures/df_v2_spread.png){#fig-spread}
+
+![Three of the 45 truths (rows): the truth, DF's map with the true settings and with fitted settings, the error,
+the reported s.d. and the error in units of the s.d. Much of the error is a shift of the whole map: the data, which
+start at degree 16 (about 2500 km), barely see the overall level.](figures/df_v2_maps.png){#fig-v2-maps}
+
+## Gaussian means pull small domains toward the shared level
+
+With the default Gaussian means, each domain level is pulled toward the shared level, more strongly the less the
+data see the domain. For checkerboards with no noise (@fig-checker, third column) the pull is 0.02 SI·km for
+tiles of about 15° and 0.06 for 7°. For 3.7° tiles it reaches 0.5 SI·km in small fragments of tiles at the edge
+of the area. DF's s.d. covers these errors.
+
+## Noise makes broad errors
+
+With noise (@fig-checker, last two columns), most of the error is broad: patterns spanning many tiles, 0.1–0.3
+SI·km, such as the east too high and the west too low. Such broad differences are poorly seen by data that start
+at degree 16. The largest single errors are again in small fragments at the edge, up to 2.3 SI·km with box means.
+
+![HEALPix checkerboards of 12, 33 and 113 tiles (rows), VIS 1.5 / 0.5 SI·km, each tile one domain. Columns: the
+truth, then DF's map minus the truth for box and Gaussian means, without and with noise. The colour scale is
+±0.05 SI·km without noise and ±0.2 with noise.](figures/df_checker.png){#fig-checker}
+
+## How small a pattern DF can see {#sec-shrink}
+
+Lon/lat checkerboards of 8° down to 1.5° squares (about 900 to 170 km), inverted two ways: **told** the squares
+(one domain per square) and **not told** (the whole area as one domain, so the fractal pattern must find the
+squares by itself). @fig-shrink-contrast shows how much of the contrast between high and low squares comes back;
+@fig-shrink-maps shows the maps.
+
+- **Not told**, DF never recovers the full contrast, because its pattern is smooth and rounds off the sharp
+  edges: 85% at 8° (900 km), about 67% at 3–5°, 56% at 2°. Noise makes almost no difference.
+- **Told**, with Gaussian means, at least 92% of the contrast comes back down to 2.5° (280 km). At 2° it drops to
+  86% without noise, and only 54% of cells are within 1 s.d.
+- **Told**, with box means and noise, the map is good down to about 4°, and the errors then grow quickly: 0.5–1.4
+  SI·km at 2–3°, and an RMS of 6.6 SI·km at 1.5°, where 624 free levels must be estimated from 849 data.
+- **At 1.5° (170 km) the checkerboard is lost** in every setting except box means without noise: the map is flat
+  (with box means and noise it is wildly wrong instead). This is not a failure of the fit: the evidence prefers "no variation" by a wide margin (a log evidence of
+  −1037 against −1591 with the true settings), and refitting from the true settings gives the same answer. Most of
+  the field of 170 km squares lies above degree 133, so the data barely contain it.
+- **When DF sees nothing, it reports a small s.d.** The flat maps at 1.5° come with s.d. so small that almost no
+  cell is within 1 s.d. of the truth: the fit sets the pattern's strength near zero, and the s.d. follows it.
+  **A small s.d. in a real DF map can therefore mean "the data see no variation here", not "VIS is known here".**
+
+The smallest squares are also limited by the cells: at 2° and 1.5° the 100 km cells cannot draw the squares
+cleanly, so the truth there is already a pattern of crosses and zig-zags (@fig-shrink-maps, first column).
+
+![The recovered contrast (high squares minus low squares, as a fraction of the true contrast) against the size of
+the squares.](figures/df_shrink_contrast.png){#fig-shrink-contrast}
+
+![Checkerboards of 8°, 4°, 2.5° and 1.5° squares (rows). Columns: the truth, then DF told the squares (Gaussian
+means) and not told (one domain), each without and with noise.](figures/df_shrink_maps.png){#fig-shrink-maps}
+
+## Wrong domains {#sec-mismatch}
+
+The 8° and 4° checkerboards were inverted with the layouts used on real data: the 39 geological polygons, 39
+random tiles (the geology-blind control), and one domain, with the squares themselves as a reference
+(@fig-mismatch). The truth has nothing to do with the polygons.
+
+- **The evidence ranks the layouts correctly** in all four cases (two sizes, without and with noise): the true
+  squares first, by 530–810 in log evidence; then one domain; then the random tiles and the polygons, 25–60 below
+  one domain. The polygons never beat the random tiles, as they should not here.
+- **Wrong domains barely change the recovered contrast**: 85% at 8° and 67% at 4° with the polygons, the random
+  tiles or one domain alike. The pattern finds the squares whatever the layout.
+- **But wrong boundaries leave steps** where a polygon edge cuts across a square. A sharp break in a DF map can come
+  from the layout rather than from the data.
+- **With any layout but the true one, DF is overconfident**: 40–72% of cells within 1 s.d. A smooth pattern cannot
+  draw sharp edges, and the reported s.d. does not allow for that.
+
+![Checkerboards of 8° and 4° squares, without and with noise (rows), inverted with different domains (white
+boundaries). Each title gives the recovered contrast and the log evidence relative to the best layout of the row
+(higher is better).](figures/df_mismatch.png){#fig-mismatch}
+
+## The fit can stop short
+
+Fitting the settings of the real Australian problem (39 polygons) from three starting points, two fits reached the
+same best log evidence and one stopped 0.53 lower, at almost the same β and ℓ. The difference is small next to the
+differences between layouts seen here (tens to hundreds), but a single fit is not guaranteed to find the best
+settings.
+
+# What this means for real DF maps {#sec-meaning}
+
+- **Read the s.d. with care.** In an unsampled run it is about 25% too small even when the model is right. Where
+  the fitted strength of a domain is near its lower limit, a small s.d. may only mean that the data saw no
+  variation.
+- **Do not interpret features smaller than about 2° (220 km)**, and expect contrasts at 400–900 km to be
+  underestimated by 15–35% unless they follow the domain boundaries.
+- **Sharp breaks at polygon boundaries** may come from the layout. The evidence comparison with random tiles and one
+  domain is the check: here it correctly rejected the polygons.
+- **The overall level of a map is the least certain part**, because the data start at degree 16.
+- **The fitted patch size and spread of the domain levels** are only loosely determined, and can stand in for each
+  other.
+
+# Still to do {#sec-todo}
+
+- **The matching check**: a truth built with the polygons (a level per polygon plus a pattern inside). Does the
+  evidence pick the polygons when they are right, and by how much? This completes the wrong-domains test.
+- **Sampling the settings**: does the sampling of the real Australian run restore the coverage of the s.d.?
+- **Data from finer truths**: truths on the 0.1° grid, with variation inside cells and a different source depth,
+  with their field computed by remit, so that the cell size and the layer show up as errors.
+- **The small-s.d.-where-unseen problem**: how to flag it in the maps.
+- **The fit stopping short**: whether several starting points should be the default.
+- **The global fit (DF-GLC)**, then the other methods (CM, PD, GCM) with the same framework.
+
+# Rerunning {#sec-rerun}
+
+The code is `benchmarks/verification/df_checks.py` (tests `v1`, `v1maps`, `v2`, `checker`, `shrink`, `mismatch`),
+with the maps drawn by `docs/verification/make_df_figures.py`; the commands are at the top of this document's
+source. The tests use the configuration `inversions/df_aus_syn_rf_gm.toml` and the inversions' cache, run at low
+priority with at most 3 workers, and write their results to `benchmarks/verification/results/df_*`.

@@ -1,0 +1,55 @@
+{
+ "V1a correlation, max abs difference (direct to degree 2000)": 1.807462053915465e-06,
+ "V1a correlation, max abs difference (direct to degree 4000)": 7.327072408136459e-06,
+ "V1a cap window: closed form vs quadrature, max abs difference": 7.469580509678053e-13,
+ "V1b gaussian means": {
+  "log evidence: df": -1945.3307726208177,
+  "log evidence: reference": -1945.3307726208186,
+  "log evidence: difference": 9.094947017729282e-13,
+  "posterior mean: max abs difference (SI km)": 1.609823385706477e-14,
+  "posterior mean: max relative to the s.d.": 1.6204635384625643e-13,
+  "posterior s.d.: max relative difference": 2.042810365310288e-14,
+  "log evidence: df vs reference with the direct correlation": 3.632810467024683e-05,
+  "posterior mean: max abs difference with the direct correlation": 6.977499632521145e-07
+ },
+ "V1b box means": {
+  "log evidence: df": -1990.2564552677293,
+  "log evidence: reference": -1990.2564552677297,
+  "log evidence: difference": 4.547473508864641e-13,
+  "posterior mean: max abs difference (SI km)": 5.384581669432009e-15,
+  "posterior mean: max relative to the s.d.": 5.412673871079793e-14,
+  "posterior s.d.: max relative difference": 8.881784197001252e-15,
+  "log evidence: df vs reference with the direct correlation": 3.916654395652586e-05,
+  "posterior mean: max abs difference with the direct correlation": 6.676436896668747e-07
+ },
+ "V1c gradient: max relative difference": 1.0589834889080296e-05,
+ "V1c gradient: max relative difference, strengths and errors (analytic)": 2.9265759621440202e-08,
+ "V1c gradient: beta and log ell (central differences in df)": [
+  1.0589834889080296e-05,
+  9.523584754093793e-08
+ ],
+ "V1d log evidence of three fits": [
+  -1693.1937019045063,
+  -1693.1937018829062,
+  -1693.7275590023378
+ ],
+ "V1d spread of the log evidence": 0.5338571194315591,
+ "V1d beta, ell of three fits": [
+  [
+   3.0,
+   676.3735787854597
+  ],
+  [
+   3.0,
+   676.3774940586535
+  ],
+  [
+   3.0,
+   678.0479539170365
+  ]
+ ],
+ "V1d gradient at the best fit, free parameters (max abs)": 0.00029419766178762075,
+ "V1e whitened draws: mean variance": 0.9996085552013017,
+ "V1e whitened draws: RMS off-diagonal covariance": 0.022337737902577946,
+ "V1e expected sampling error (1/sqrt(n))": 0.022360679774997897
+}
