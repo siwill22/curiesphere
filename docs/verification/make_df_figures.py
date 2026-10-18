@@ -10,6 +10,7 @@ Maps for the DF part of the verification document, from benchmarks/verification/
 Run from the repository root:
     conda run -n curiesphere python docs/verification/make_df_figures.py
 """
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -268,7 +269,72 @@ def mismatch_maps():
     print('df_mismatch.png')
 
 
+def matching_figures():
+    """maps for the first truth of three cases, and the evidence of every layout against the polygons"""
+    import json
+    rows = json.load(open(RES / 'df_matching.json'))
+    z = np.load(RES / 'df_matching.npz')
+    lon, lat = z['clon'], z['clat']
+    edges = boundaries(lon, lat, z['label_polygons'])
+    show = ['polygons', 'random tiles 1', 'one domain']
+    cases = [(0.0, True, 'breaks only'), (0.3, True, 'breaks and steps'), (0.3, False, 'steps only')]
+    fig = pygmt.Figure()
+    pygmt.config(FONT_TITLE='7.5p', FONT_SUBTITLE='6.5p', FONT_ANNOT_PRIMARY='5.5p', FONT_LABEL='6p',
+                 MAP_TITLE_OFFSET='3p', MAP_FRAME_TYPE='plain')
+    for k, (tau, restart, name) in enumerate(cases):
+        sel = {r['layout']: r for r in rows if r['tau'] == tau and r['restart'] == restart and r['draw'] == 0}
+        best = sel['polygons']['ll']
+        sub = f'level s.d. {tau:g}, {"pattern restarts" if restart else "one pattern"}'
+        panels = [(z[f'truth_{tau:g}_{int(restart)}'], f'Truth: {name}', sub, edges)]
+        for lay in show:
+            r = sel[lay]
+            e = boundaries(lon, lat, z[f'label_{lay}']) if lay != 'one domain' else None
+            panels.append((z[f'{tau:g}_{int(restart)}_{lay}'][:, 0], f'DF with {lay} ({r["domains"]})',
+                           f'log evidence {r["ll"] - best:+.0f}, RMS error {r["rms_error"]:.2f}', e))
+        for jj, (v, title, sub, e) in enumerate(panels):
+            with fig.shift_origin(xshift=f'{jj*(W + 0.5)}c', yshift=f'{BASE + (len(cases) - 1 - k)*(0.9*W + 1.8)}c'):
+                pygmt.makecpt(cmap='batlow', series=[0, 2], background=True)
+                fig.basemap(region=REGION, projection=f'M{W}c', frame=['af', f'+t{title}+s{sub}'])
+                fig.grdimage(cell_grid(lon, lat, v), cmap=True, nan_transparent=True)
+                if e is not None and len(e[0]):
+                    fig.plot(x=e[0], y=e[1], style='p0.02c', fill='white')
+                fig.coast(shorelines='0.2p,gray30')
+                fig.colorbar(position=f'JBC+w{0.8*W}c/0.13c+o0/0.3c+h+e', frame=['x+lVIS (SI km)'])
+    fig.savefig(OUT / 'df_matching_maps.png', dpi=170)
+    print('df_matching_maps.png')
+
+    # log evidence of each layout minus that of the polygons, every truth; one column per case
+    order = [(0.0, True), (0.1, True), (0.3, True), (0.6, True), (0.3, False)]
+    names = ['0, breaks only', '0.1', '0.3', '0.6', '0.3, steps only']
+    poly = {(r['tau'], r['restart'], r['draw']): r['ll'] for r in rows if r['layout'] == 'polygons'}
+    d = [r['ll'] - poly[(r['tau'], r['restart'], r['draw'])] for r in rows]
+    lo = min(d) - 30
+    fig = pygmt.Figure()
+    pygmt.config(FONT_ANNOT_PRIMARY='7p', FONT_LABEL='8p', FONT_TITLE='9p', MAP_FRAME_TYPE='plain',
+                 MAP_LABEL_OFFSET='0.55c')
+    fig.basemap(region=[0.4, len(order) + 0.6, lo, 20], projection='X13c/7c',
+                frame=['WSne+tEvidence when the polygons are right', 'xa100+lpolygon level s.d. (SI km); pattern restarts at polygon edges unless marked',
+                       'yaf+llog evidence minus polygons'])
+    fig.plot(x=[0.4, len(order) + 0.6], y=[0, 0], pen='0.5p,gray40,-')
+    fig.plot(x=[4.5, 4.5], y=[lo, 20], pen='0.4p,gray60')
+    for name, sym, col, dx in (('random tiles', 'c0.16c', 'orange', -0.12), ('one domain', 's0.17c', 'steelblue', 0.12)):
+        xs, ys = [], []
+        for r, dd in zip(rows, d):
+            if r['layout'].startswith(name):
+                xs.append(order.index((r['tau'], r['restart'])) + 1 + dx + 0.04*(r['draw'] - 1))
+                ys.append(dd)
+        fig.plot(x=xs, y=ys, style=sym, fill=col, pen='0.3p,black', label=name)
+    fig.text(x=list(range(1, len(order) + 1)), y=[lo]*len(order), text=names, font='7p', justify='CT',
+             offset='0/-0.15c', no_clip=True)
+    fig.legend(position='JBL+jBL+o0.2c', box='+gwhite+p0.3p')
+    fig.savefig(OUT / 'df_matching_evidence.png', dpi=200)
+    print('df_matching_evidence.png')
+
 if __name__ == '__main__':
+    if (RES / 'df_matching.json').exists():
+        matching_figures()
+    if 'matching' in sys.argv:
+        sys.exit()
     if (RES / 'df_v1.npz').exists():
         v1_maps()
     if (RES / 'df_mismatch.json').exists():

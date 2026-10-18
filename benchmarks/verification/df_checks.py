@@ -16,7 +16,7 @@ V2  calibration: truths drawn from DF's own model (domain means from N(v0, tau^2
 
 Run from the repository root (V1 a few minutes; V2 about 50 min with 3 workers):
     PYTHONPATH=benchmarks/verification:benchmarks:notebooks:$PYTHONPATH OMP_NUM_THREADS=1 \
-        nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py v1|v2 [n_draws]
+        nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py v1|v1maps|v2 [n]|checker|shrink|mismatch|matching
 Outputs: benchmarks/verification/results/df_v1.json, df_v2.npz
 """
 import json
@@ -29,7 +29,7 @@ from types import SimpleNamespace
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 
-from remit.inversion import config, errors, problem
+from remit.inversion import config, errors, parameterise, problem
 from remit.inversion.cache import Cache
 from remit.inversion.graph import unit
 from remit.inversion.methods import df
@@ -474,8 +474,92 @@ def mismatch():
     log('mismatch done')
 
 
+# ---------------------------------------------------------------- the matching check (polygons right)
+
+MATCH_CASES = [(0.0, True), (0.1, True), (0.3, True), (0.6, True), (0.3, False)]
+# (s.d. of the polygon levels, pattern restarts at polygon edges); the pattern has s 0.3. (0, True): the polygons show
+# only as breaks in the pattern; (0.3, False): only as steps in the level, on one pattern across Australia
+MATCH_DRAWS = 3
+MATCH_RANDOM = 3                                     # random tilings, as many tiles as polygons
+
+
+def matching_job(job):
+    (tau, restart), draw, layout = job
+    P = P2
+    pb = P.pb
+    v_true = P.truths[(tau, restart, draw)]
+    label = P.match_layouts[layout]
+    yw = pb.Gw @ v_true + P.noise[draw]
+    m = df.DomainFractal(pb.Gw, yw, label, pb.cells.clon, pb.cells.clat, P.cell_km2, P.lo, P.hi, P.extra, 'gaussian',
+                         P.tau_range)
+    f = m.fit(**P.opts)
+    post = m.posterior(f, pb.cells.area_km2)
+    v, sd = post['v'], post['v_sd']
+    err = v - v_true
+    c = P.S*pb.cells.area_km2[:, None]                # area means of the true polygons, true and recovered
+    c /= c.sum(0)
+    lev_true, lev = c.T @ v_true, c.T @ v
+    r = dict(tau=tau, restart=restart, draw=draw, layout=layout, domains=int(m.K), ll=f['ll'], rms_error=float(np.sqrt(np.mean(err**2))),
+             within_1sd=float(np.mean(np.abs(err/sd) < 1)), within_2sd=float(np.mean(np.abs(err/sd) < 2)),
+             level_rms_error=float(np.sqrt(np.mean((lev - lev_true)**2))),
+             level_slope=float(np.polyfit(lev_true - lev_true.mean(), lev - lev.mean(), 1)[0]),
+             beta=f['beta'], ell_km=f['ell'], s_median=float(np.median(f['s'])),
+             tau_fit=float(f['sig'][m.tau]) if m.gaussian else None, v=v, sd=sd)
+    log(f'  tau {tau}, restart {restart}, draw {draw}, {layout}: log evidence {f["ll"]:.1f}, RMS error {r["rms_error"]:.3f}, '
+        f'polygon levels slope {r["level_slope"]:.2f}, within 1 s.d. {r["within_1sd"]:.2f}')
+    return r
+
+
+def matching():
+    """truths built with the polygons (a level per polygon from N(0.75, tau^2) plus DF's fractal pattern inside, s 0.3,
+    beta 2.25, ell 1000 km, restarting at polygon edges or one pattern across Australia), noisy data, inverted with the polygons, random tilings of as many tiles, and one domain.
+    Does the evidence pick the polygons when they are right, and by how much?"""
+    global P2
+    P2 = setup()
+    pb = P2.pb
+    m0 = model(P2, pb.yw)
+    P2.S = m0.S
+    P2.noise = [np.asarray(pb.W) @ pb.draw(np.random.default_rng(20261019 + d), model_error=False)
+                for d in range(MATCH_DRAWS)]
+    _, Ls = m0.factors(TRUE['beta'], TRUE['ell'])
+    m1 = df.DomainFractal(pb.Gw, pb.yw, np.zeros(len(P2.label), int), pb.cells.clon, pb.cells.clat, P2.cell_km2,
+                          P2.lo, P2.hi, P2.extra, 'box', P2.tau_range)
+    L1 = m1.factors(TRUE['beta'], TRUE['ell'])[1][0]
+    P2.truths = {}
+    for d in range(MATCH_DRAWS):                      # the same pattern and level offsets for each case
+        rng = np.random.default_rng(20261020 + d)
+        z, pattern = rng.standard_normal(m0.K), np.zeros(len(P2.label))
+        for b, L in zip(m0.blocks, Ls):
+            pattern[b] = TRUE['s']*(L @ rng.standard_normal(len(b)))
+        whole = TRUE['s']*(L1 @ rng.standard_normal(len(P2.label)))
+        for tau, restart in MATCH_CASES:
+            P2.truths[(tau, restart, d)] = TRUE['v0'] + tau*z[P2.label] + (pattern if restart else whole)
+    K = m0.K
+    P2.match_layouts = {'polygons': P2.label, 'one domain': np.zeros(len(P2.label), int)}
+    for i in range(MATCH_RANDOM):
+        lab = parameterise.voronoi(pb.cells, K, parameterise.VORONOI_SEED + 1000 + i)
+        P2.match_layouts[f'random tiles {i + 1}'] = np.unique(lab, return_inverse=True)[1]
+    jobs = [(c, d, lay) for c in MATCH_CASES for d in range(MATCH_DRAWS) for lay in P2.match_layouts]
+    log(f'matching check: {len(jobs)} fits, layouts {list(P2.match_layouts)}')
+    with mp.get_context('fork').Pool(WORKERS) as pool:
+        res = pool.map(matching_job, jobs, chunksize=1)
+    maps = {f'{r["tau"]:g}_{int(r["restart"])}_{r["layout"]}': np.c_[r.pop('v'), r.pop('sd')] for r in res
+            if r['draw'] == 0}
+    for r in res:
+        r.pop('v', None), r.pop('sd', None)
+    truths = {f'truth_{t:g}_{int(rs)}': P2.truths[(t, rs, 0)] for t, rs in MATCH_CASES}
+    labels = {f'label_{k}': v for k, v in P2.match_layouts.items()}
+    with open(os.path.join(RESULTS, 'df_matching.json'), 'w') as f:
+        json.dump(res, f, indent=1)
+    np.savez(os.path.join(RESULTS, 'df_matching.npz'), clon=pb.cells.clon, clat=pb.cells.clat, **maps, **truths,
+             **labels)
+    log('matching done')
+
+
 if __name__ == '__main__':
-    if sys.argv[1] == 'mismatch':
+    if sys.argv[1] == 'matching':
+        matching()
+    elif sys.argv[1] == 'mismatch':
         mismatch()
     elif sys.argv[1] == 'v1maps':
         v1_maps()

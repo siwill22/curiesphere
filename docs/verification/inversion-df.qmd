@@ -1,7 +1,7 @@
 ---
 title: "Inversion benchmarks: DF"
 subtitle: "Checking the domain-fractal inversion with synthetic data for Australia"
-date: 2026-10-17
+date: 2026-10-18
 date-format: "D MMMM YYYY"
 abstract: |
   Draft prepared with Claude Code. This is the first part of the inversion benchmarks, the companion to
@@ -40,6 +40,7 @@ format:
   nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py checker   # ~3 min
   nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py shrink    # ~25 min, 3 workers
   nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py mismatch  # ~15 min, 3 workers
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py matching  # ~20 min, 3 workers
   conda run -n curiesphere python docs/verification/make_df_figures.py
   conda run -n riftsclimate quarto render docs/verification/inversion-df.qmd
 -->
@@ -62,8 +63,10 @@ format:
    *small* s.d., not a large one.
 4. **Sharp edges are blurred** unless the domains follow them. DF recovers 85% of the contrast of 900 km squares and
    67% of 450 km squares.
-5. **Wrong domains are rejected by the evidence**, and the polygons do not beat random tiles when the truth has
-   nothing to do with geology. But a wrong domain boundary can leave a visible step in the map.
+5. **The evidence ranks domain layouts correctly.** It rejects the polygons when the truth has nothing to do with
+   geology, and picks them, by 33–425 in log evidence, when the truth is built with them. A wrong domain boundary
+   can still leave a visible step in the map. A polygon win shows that the field changes character at the polygon
+   edges, not necessarily that the polygons differ in mean VIS.
 6. **The fit can stop short of the best settings**: once in three starts, by 0.5 in log evidence.
 
 # What is checked, and how {#sec-method}
@@ -248,6 +251,40 @@ random tiles (the geology-blind control), and one domain, with the squares thems
 boundaries). Each title gives the recovered contrast and the log evidence relative to the best layout of the row
 (higher is better).](figures/df_mismatch.png){#fig-mismatch}
 
+## When the domains are right {#sec-matching}
+
+The previous section asked whether the evidence rejects wrong domains. Here we ask the opposite question: when the
+truth is built with the 39 polygons, does the evidence pick them, and by how much? Each truth has a level per polygon,
+drawn with s.d. 0, 0.1, 0.3 or 0.6 SI km, plus DF's fractal pattern (s.d. 0.3, β 2.25, ℓ 1000 km). In four cases the
+pattern starts afresh in each polygon, as DF assumes. In a fifth case one pattern runs across the whole continent.
+The polygons then show in two ways: as breaks in the pattern at their edges and as steps in the level. The case with
+level s.d. 0 has breaks only; the case with one pattern has steps only. Each case was drawn three times, with noise,
+and inverted with the polygons, three random tilings of 39 tiles and one domain (@fig-matching-maps,
+@fig-matching-evidence).
+
+- **The evidence picks the polygons in all 15 truths**, by 75–94 in log evidence with breaks only, 85–123 with level
+  s.d. 0.1, 125–226 with 0.3 and 250–425 with 0.6. With steps only (s.d. 0.3, one pattern) the margin is smaller and
+  more variable, 33–169. The random tilings and one domain score alike, within 40 of each other.
+- **Breaks in the pattern alone are enough for a clear win.** With no difference in level at all, the polygons beat
+  the other layouts by about 80. A polygon win on real data therefore shows that the field changes character at the
+  polygon edges. It does not show, on its own, that the polygons differ in mean VIS.
+- **The fitted spread of the polygon levels does not tell the two apart.** It came out at its lower bound (0.01) in 9
+  of the 15 polygon fits, including one with a true spread of 0.6. In those fits the steps are carried by a long
+  fitted patch size (often ℓ at its 5000 km bound) instead. The map is unaffected: the recovered polygon means follow
+  the true ones with a slope of 0.91–1.00, against 0.76–0.90 with one domain.
+- **The right domains give the best map**: an RMS error of 0.12–0.15 SI km in every case, against 0.15–0.32 with the
+  random tiles or one domain. The gain grows with the size of the steps.
+- **Coverage is close to that of fitted settings in general** (@sec-overconfident): 58–75% of cells within 1 s.d.
+  and 89–97% within 2 s.d.
+
+![Truths built with the polygons (white boundaries), first draw of three cases (rows): breaks in the pattern only,
+breaks and steps, and steps only. Columns: the truth, then DF with the polygons, with random tiles and with one
+domain. Each title gives the log evidence relative to the polygons and the RMS error of the
+map.](figures/df_matching_maps.png){#fig-matching-maps}
+
+![Log evidence of the random tilings and of one domain, minus that of the polygons, for every truth (three draws per
+case). Below zero means the polygons win.](figures/df_matching_evidence.png){#fig-matching-evidence}
+
 ## The fit can stop short
 
 Fitting the settings of the real Australian problem (39 polygons) from three starting points, two fits reached the
@@ -263,15 +300,16 @@ settings.
 - **Do not interpret features smaller than about 2° (220 km)**, and expect contrasts at 400–900 km to be
   underestimated by 15–35% unless they follow the domain boundaries.
 - **Sharp breaks at polygon boundaries** may come from the layout. The evidence comparison with random tiles and one
-  domain is the check: here it correctly rejected the polygons.
+  domain is the check: it rejected the polygons when they were wrong and picked them when they were right.
+- **A polygon win means the field changes character at the polygon edges.** Breaks in the pattern alone gave a win
+  of about 80 in log evidence, with no difference in mean VIS. Differences in mean VIS should be read from the map of
+  domain means and their s.d., not from the evidence or the fitted spread of the levels.
 - **The overall level of a map is the least certain part**, because the data start at degree 16.
 - **The fitted patch size and spread of the domain levels** are only loosely determined, and can stand in for each
   other.
 
 # Still to do {#sec-todo}
 
-- **The matching check**: a truth built with the polygons (a level per polygon plus a pattern inside). Does the
-  evidence pick the polygons when they are right, and by how much? This completes the wrong-domains test.
 - **Sampling the settings**: does the sampling of the real Australian run restore the coverage of the s.d.?
 - **Data from finer truths**: truths on the 0.1° grid, with variation inside cells and a different source depth,
   with their field computed by remit, so that the cell size and the layer show up as errors.
@@ -281,7 +319,8 @@ settings.
 
 # Rerunning {#sec-rerun}
 
-The code is `benchmarks/verification/df_checks.py` (tests `v1`, `v1maps`, `v2`, `checker`, `shrink`, `mismatch`),
+The code is `benchmarks/verification/df_checks.py` (tests `v1`, `v1maps`, `v2`, `checker`, `shrink`, `mismatch`,
+`matching`),
 with the maps drawn by `docs/verification/make_df_figures.py`; the commands are at the top of this document's
 source. The tests use the configuration `inversions/df_aus_syn_rf_gm.toml` and the inversions' cache, run at low
 priority with at most 3 workers, and write their results to `benchmarks/verification/results/df_*`.
