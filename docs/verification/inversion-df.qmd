@@ -250,7 +250,7 @@ squares by itself). @fig-shrink-contrast shows how much of the contrast between 
 @fig-shrink-maps shows the maps.
 
 - **Not told**, DF never recovers the full contrast, because its pattern is smooth and rounds off the sharp
-  edges: 85% at 8° (900 km), about 67% at 3–5°, 56% at 2°. Noise makes almost no difference.
+  edges: 85% at 8° (900 km), 79% at 5°, about 67% at 2.5–4°, 56% at 2°. Noise makes almost no difference.
 - **Told**, with Gaussian means, at least 92% of the contrast comes back down to 2.5° (280 km). At 2° it drops to
   86% without noise, and only 54% of cells are within 1 s.d.
 - **Told**, with box means and noise, the map is good down to about 4°, and the errors then grow quickly: 0.5–1.4
