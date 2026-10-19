@@ -330,7 +330,51 @@ def matching_figures():
     fig.savefig(OUT / 'df_matching_evidence.png', dpi=200)
     print('df_matching_evidence.png')
 
+def sample_figures():
+    """coverage with the settings fitted, sampled briefly (explore) and sampled in full; maps of the s.d."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    z = np.load(RES / 'df_sample.npz')
+    fig, axs = plt.subplots(1, 3, figsize=(12, 3.4), constrained_layout=True, sharey=True)
+    x = np.linspace(-4.5, 4.5, 400)
+    bell = np.exp(-x**2/2)/np.sqrt(2*np.pi)
+    for ax, (key, what) in zip(axs, [('z_fit', 'settings fitted'), ('z_explore', 'sampled, 2000 steps'),
+                                     ('z_sampled', 'sampled, 12000 steps')]):
+        v = z[key].ravel()
+        ax.hist(v, bins=np.linspace(-4.5, 4.5, 61), density=True, color='0.7', label='all cells of all truths')
+        ax.plot(x, bell, 'k', lw=1.2, label='what it should be')
+        ax.set_title(f'DF, {what}\nwithin 1 s.d.: {np.mean(np.abs(v) < 1):.0%} (should be 68%), '
+                     f'within 2 s.d.: {np.mean(np.abs(v) < 2):.0%} (95%)', fontsize=8.5, loc='left')
+        ax.set_xlabel('(DF map minus truth) / reported s.d.')
+    axs[0].legend(fontsize=7.5, frameon=False)
+    fig.savefig(OUT / 'df_sample_spread.png', dpi=170)
+    print('df_sample_spread.png')
+
+    lon, lat = z['clon'], z['clat']
+    fig = pygmt.Figure()
+    pygmt.config(FONT_TITLE='7.5p', FONT_ANNOT_PRIMARY='5.5p', FONT_LABEL='6p', MAP_TITLE_OFFSET='3p',
+                 MAP_FRAME_TYPE='plain')
+    n = len(z['v_true'])
+    for k in range(n):
+        vt, vf, vs, sf, ss = z['v_true'][k], z['v_fit'][k], z['v_sampled'][k], z['sd_fit'][k], z['sd_sampled'][k]
+        panels = [(vt, 'batlow', [0, 1.6], f'Truth {k + 1}', 'VIS (SI km)'),
+                  (vs, 'batlow', [0, 1.6], 'DF, settings sampled', 'VIS (SI km)'),
+                  (sf, 'lajolla', [0, 0.3], 's.d., settings fitted', 'SI km'),
+                  (ss, 'lajolla', [0, 0.3], 's.d., settings sampled', 'SI km'),
+                  ((vf - vt)/sf, 'vik', [-3, 3], 'Error / s.d., fitted', 'number of s.d.'),
+                  ((vs - vt)/ss, 'vik', [-3, 3], 'Error / s.d., sampled', 'number of s.d.')]
+        for j, (v, cpt, series, title, label) in enumerate(panels):
+            with fig.shift_origin(xshift=f'{j*(W + 0.4)}c', yshift=f'{BASE + (n - 1 - k)*(0.9*W + 1.6)}c'):
+                cells_map(fig, lon, lat, v, cpt, series, title, label)
+    fig.savefig(OUT / 'df_sample_maps.png', dpi=170)
+    print('df_sample_maps.png')
+
+
 if __name__ == '__main__':
+    if 'sample' in sys.argv:
+        sample_figures()
+        sys.exit()
     if (RES / 'df_matching.json').exists():
         matching_figures()
     if 'matching' in sys.argv:
@@ -347,3 +391,5 @@ if __name__ == '__main__':
         spread(z)
     if (RES / 'df_checker.npz').exists():
         checker_maps()
+    if (RES / 'df_sample.npz').exists():
+        sample_figures()

@@ -1,7 +1,7 @@
 ---
 title: "Inversion benchmarks: DF"
 subtitle: "Checking the domain-fractal inversion with synthetic data for Australia"
-date: 2026-10-18
+date: 2026-10-19
 date-format: "D MMMM YYYY"
 abstract: |
   Draft prepared with Claude Code. This is the first part of the inversion benchmarks, the companion to
@@ -41,6 +41,7 @@ format:
   nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py shrink    # ~25 min, 3 workers
   nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py mismatch  # ~15 min, 3 workers
   nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py matching  # ~20 min, 3 workers
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py sample    # ~3 h, 3 workers; resumes
   conda run -n curiesphere python docs/verification/make_df_figures.py
   conda run -n riftsclimate quarto render docs/verification/inversion-df.qmd
 -->
@@ -55,9 +56,10 @@ format:
 
 **Its limitations, in the order they matter for reading real DF maps:**
 
-1. **Fitting the settings makes DF overconfident.** With the settings fitted, as in a run without sampling, the
-   actual errors are about 1.25 times the reported s.d. The fitted patch size tends to come out too long, and the
-   spread of the domain levels collapses to zero in 40% of cases.
+1. **DF's s.d. is too small.** With the settings fitted, as in a run without sampling, the actual errors are about
+   1.2 times the reported s.d. The fitted patch size tends to come out too long, and the spread of the domain levels
+   collapses to zero in 40% of cases. Sampling the settings, as the Australian run does, only reduces this to about
+   1.1, and domain averages are still within 1 s.d. in only 62% of cases (should be 68%).
 2. **The smallest pattern DF can see is about 2° (220 km).** At 1.5° (170 km) a checkerboard disappears completely.
 3. **A small s.d. can mean "nothing seen here".** Where the data see no variation, DF reports a flat map with a
    *small* s.d., not a large one.
@@ -173,9 +175,9 @@ How well the settings come back:
 The patch size and the spread of the domain levels trade off: a pattern with very long patches can stand in for
 different domain levels, so the fit sometimes moves the differences between domains into the pattern.
 
-The real Australian DF run samples the settings instead of fixing them at the best fit, which should take their
-uncertainty into account. Whether that restores the coverage has not been tested yet. The DF runs of the other
-continents, and explore mode, do not sample.
+The real Australian DF run samples the settings instead of fixing them at the best fit, so that their uncertainty
+enters the map and its s.d. Whether that restores the coverage is tested in @sec-sampling. The DF runs of the other
+continents do not sample.
 
 ![The spread of DF's errors in units of its reported s.d., over all cells of 45 truths. Left: settings fixed at
 their true values. Right: settings fitted.](figures/df_v2_spread.png){#fig-spread}
@@ -183,6 +185,45 @@ their true values. Right: settings fitted.](figures/df_v2_spread.png){#fig-sprea
 ![Three of the 45 truths (rows): the truth, DF's map with the true settings and with fitted settings, the error,
 the reported s.d. and the error in units of the s.d. Much of the error is a shift of the whole map: the data, which
 start at degree 16 (about 2500 km), barely see the overall level.](figures/df_v2_maps.png){#fig-v2-maps}
+
+## Sampling the settings closes only part of the gap {#sec-sampling}
+
+Here we ask whether sampling the settings, as the real Australian run does, gives an s.d. that covers the errors.
+The first 12 of the 45 truths were inverted again, now with DF's own sampler: three chains of 12,000 steps from the
+best fit, the first third of each discarded, and the map and s.d. averaged over 150 of the remaining samples. The
+real run uses the same sampler with 60,000 steps; 12 truths at that length would take about 18 hours. Explore mode
+runs 2000 steps, so the first 2000 steps of each chain were also used on their own.
+
+| Settings | Error / s.d., spread (should be 1) | Cells within 1 s.d. (68%) | Within 2 s.d. (95%) | Domain averages within 1 s.d. |
+|---|---|---|---|---|
+| Fitted | 1.22 | 63% | 91% | 56% |
+| Sampled, 2000 steps (explore mode) | 1.14 | 64% | 92% | 62% |
+| Sampled, 12,000 steps | 1.12 | 65% | 93% | 62% |
+
+Sampling closes about half of the gap (@fig-sample-spread). The errors are still about 1.1 times the reported
+s.d., and the domain averages, which matter most for comparing domains, are still covered in only 62% of cases.
+The maps themselves hardly change (@fig-sample-maps): sampling raises the s.d. by 3–5% and leaves the errors as
+they were. For the three truths that also have a map with the true settings, the mean s.d. is 0.133 SI·km at the
+true settings, 0.122–0.133 with the settings fitted and 0.126–0.136 with them sampled.
+
+The samples do widen the settings in the right direction. The 90% range of β contains the true 2.25 in 11 of the
+12 truths, and that of ℓ contains 1000 km in 8. The spread of the domain levels, which the fit put at its lower
+limit in 6 of the 12 truths, is no longer stuck there: its sampled medians are 0.06–0.39 SI·km against the true 0.3.
+The map, however, depends only weakly on the settings over these ranges, so averaging over them adds little to the
+s.d. We do not yet know where the rest of the shortfall comes from. The 65% is itself uncertain by about 1.5 points,
+because neighbouring cells share their errors and each truth gives only a few independent tests.
+
+The chains had not fully converged at 12,000 steps. The Gelman–Rubin statistic (R-hat, 1 when the chains agree)
+reached 1.9 for β and 1.8 for ℓ, and up to 3.0 for the strengths of single small domains, against at most 1.05 in
+the real run at 60,000 steps. Longer chains are unlikely to change the coverage much, because 2000 and 12,000 steps
+already give nearly the same result.
+
+![The spread of DF's errors in units of its reported s.d., over all cells of 12 truths: settings fitted (left),
+sampled for 2000 steps as in explore mode (middle) and for 12,000 steps (right).](figures/df_sample_spread.png){#fig-sample-spread}
+
+![Three of the 12 truths (rows): the truth, DF's map with the settings sampled, the reported s.d. with the settings
+fitted and sampled, and the error in units of each s.d. The two s.d. maps are nearly the
+same.](figures/df_sample_maps.png){#fig-sample-maps}
 
 ## Gaussian means pull small domains toward the shared level
 
@@ -294,7 +335,8 @@ settings.
 
 # What this means for real DF maps {#sec-meaning}
 
-- **Read the s.d. with care.** In an unsampled run it is about 25% too small even when the model is right. Where
+- **Read the s.d. with care.** Even when the model is right, the errors are about 1.2 times the s.d. of an
+  unsampled run and about 1.1 times that of a sampled run. Where
   the fitted strength of a domain is near its lower limit, a small s.d. may only mean that the data saw no
   variation.
 - **Do not interpret features smaller than about 2° (220 km)**, and expect contrasts at 400–900 km to be
@@ -310,7 +352,8 @@ settings.
 
 # Still to do {#sec-todo}
 
-- **Sampling the settings**: does the sampling of the real Australian run restore the coverage of the s.d.?
+- **The rest of the overconfidence**: where the remaining 10% comes from, and whether a simple inflation of the
+  s.d. is enough.
 - **Data from finer truths**: truths on the 0.1° grid, with variation inside cells and a different source depth,
   with their field computed by remit, so that the cell size and the layer show up as errors.
 - **The small-s.d.-where-unseen problem**: how to flag it in the maps.
@@ -320,7 +363,7 @@ settings.
 # Rerunning {#sec-rerun}
 
 The code is `benchmarks/verification/df_checks.py` (tests `v1`, `v1maps`, `v2`, `checker`, `shrink`, `mismatch`,
-`matching`),
+`matching`, `sample`),
 with the maps drawn by `docs/verification/make_df_figures.py`; the commands are at the top of this document's
 source. The tests use the configuration `inversions/df_aus_syn_rf_gm.toml` and the inversions' cache, run at low
 priority with at most 3 workers, and write their results to `benchmarks/verification/results/df_*`.

@@ -16,7 +16,7 @@ V2  calibration: truths drawn from DF's own model (domain means from N(v0, tau^2
 
 Run from the repository root (V1 a few minutes; V2 about 50 min with 3 workers):
     PYTHONPATH=benchmarks/verification:benchmarks:notebooks:$PYTHONPATH OMP_NUM_THREADS=1 \
-        nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py v1|v1maps|v2 [n]|checker|shrink|mismatch|matching
+        nice -n 15 conda run -n curiesphere python benchmarks/verification/df_checks.py v1|v1maps|v2 [n]|checker|shrink|mismatch|matching|sample
 Outputs: benchmarks/verification/results/df_v1.json, df_v2.npz
 """
 import json
@@ -556,8 +556,114 @@ def matching():
     log('matching done')
 
 
+# ---------------------------------------------------------------- sampling the settings (coverage)
+
+SAMPLE_TRUTHS = 12                                   # the first V2 truths (same seeds), so results pair with V2's
+SAMPLE_CHAINS, SAMPLE_STEPS, SAMPLE_EXPLORE = 3, 12000, 2000
+SAMPLE_BURN, SAMPLE_NPOST = 1/3, 150                 # as the real DF-AUS run (which runs 60000 steps)
+
+
+def sample_data(i):
+    """V2's truth i and its data (the same random draws as one_draw)"""
+    P = P2
+    rng = np.random.default_rng(20261016 + i)
+    v_true = draw_truth(model(P, P.pb.yw), rng)
+    return v_true, P.pb.Gw @ v_true + np.asarray(P.pb.W) @ P.pb.draw(rng, model_error=False)
+
+
+def sample_fit(m):
+    f = m.fit(**P2.opts)
+    bnds = m.bounds(P2.opts['s_range'], P2.opts['beta_range'], P2.opts['ell_range'], False)
+    return f, bnds, df.proposal_cov(m.hessian(f), bnds)
+
+
+def sample_chain(job):
+    """one chain of df's own sampler, started as the real run starts it (the best fit, overdispersed)"""
+    i, c = job
+    path = os.path.join(HERE, 'cache', f'df_sample_{i}_{c}_{SAMPLE_STEPS}.npz')      # so that a stopped run resumes
+    if os.path.exists(path):
+        z = np.load(path)
+        return z['X'], z['LL'], float(z['acc'])
+    _, yw = sample_data(i)
+    m = model(P2, yw)
+    f, bnds, cov0 = sample_fit(m)
+    t0 = time.time()
+    X, LL, acc = m.chain(f, bnds, SAMPLE_STEPS, 20261009 + 100*i + c, cov0)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    np.savez(path, X=X, LL=LL, acc=acc)
+    log(f'  truth {i}, chain {c}: acceptance {acc:.2f}, beta {X[-SAMPLE_STEPS//2:, m.K].mean():.2f}, '
+        f'ell {np.exp(X[-SAMPLE_STEPS//2:, m.K + 1]).mean():.0f} km ({time.time() - t0:.0f} s)')
+    return X, LL, acc
+
+
+def sample_summary(job):
+    """the maps averaged over the samples (df.mixture), from the full chains and from their first SAMPLE_EXPLORE
+    steps, against the map at the best-fit settings"""
+    i, chains = job
+    v_true, yw = sample_data(i)
+    m = model(P2, yw)
+    area = P2.pb.cells.area_km2
+    c = m.S*area[:, None]
+    c /= c.sum(0)
+    avg_true = c.T @ v_true
+    f, bnds, _ = sample_fit(m)
+    width = np.array([b[1] - b[0] for b in bnds])
+    free = width > 0
+    out = dict(rhat=df.rhat(np.array([X[int(SAMPLE_STEPS*SAMPLE_BURN):] for X in chains])[:, :, free]),
+               rhat_explore=df.rhat(np.array([X[int(SAMPLE_EXPLORE*SAMPLE_BURN):SAMPLE_EXPLORE]
+                                              for X in chains])[:, :, free]),
+               free=free, x_fit=f['x'])
+    fitted = m.posterior(f, area)
+    out.update(z_fit=(fitted['v'] - v_true)/fitted['v_sd'], za_fit=(fitted['avg'] - avg_true)/fitted['avg_sd'])
+    for key, n in (('sampled', SAMPLE_STEPS), ('explore', SAMPLE_EXPLORE)):
+        pooled = np.concatenate([X[int(n*SAMPLE_BURN):n] for X in chains])
+        pick = pooled[np.linspace(0, len(pooled) - 1, SAMPLE_NPOST).astype(int)]
+        mix = df.mixture(m, [m.fit_at(x, False) for x in pick], area)
+        out[f'z_{key}'] = (mix['v'] - v_true)/mix['v_sd']
+        out[f'za_{key}'] = (mix['avg'] - avg_true)/mix['avg_sd']
+        if i < 3:
+            out[f'v_{key}'], out[f'sd_{key}'] = mix['v'], mix['v_sd']
+    if i < 3:
+        out.update(v_true=v_true, v_fit=fitted['v'], sd_fit=fitted['v_sd'])
+    log(f'  truth {i}: cells within 1 s.d.: fitted {np.mean(np.abs(out["z_fit"]) < 1):.2f}, explore '
+        f'{np.mean(np.abs(out["z_explore"]) < 1):.2f}, sampled {np.mean(np.abs(out["z_sampled"]) < 1):.2f}; '
+        f'R-hat max {np.nanmax(out["rhat"]):.2f} (explore {np.nanmax(out["rhat_explore"]):.2f})')
+    return out
+
+
+def sample():
+    """does sampling the settings, as the real DF-AUS run does, restore the coverage lost by fitting them (V2)?"""
+    global P2
+    P2 = setup()
+    jobs = [(i, c) for i in range(SAMPLE_TRUTHS) for c in range(SAMPLE_CHAINS)]
+    log(f'sampling: {SAMPLE_TRUTHS} truths x {SAMPLE_CHAINS} chains x {SAMPLE_STEPS} steps, {WORKERS} workers')
+    with mp.get_context('fork').Pool(WORKERS) as pool:
+        ch = pool.map(sample_chain, jobs, chunksize=1)
+        res = pool.map(sample_summary, [(i, [ch[i*SAMPLE_CHAINS + c][0] for c in range(SAMPLE_CHAINS)])
+                                        for i in range(SAMPLE_TRUTHS)], chunksize=1)
+    arrays = {}
+    for k in ('z_fit', 'za_fit', 'z_sampled', 'za_sampled', 'z_explore', 'za_explore', 'rhat', 'rhat_explore',
+              'x_fit'):
+        arrays[k] = np.array([r[k] for r in res])
+    for k in ('v_true', 'v_fit', 'sd_fit', 'v_sampled', 'sd_sampled', 'v_explore', 'sd_explore'):
+        arrays[k] = np.array([r[k] for r in res if k in r])
+    arrays['chains'] = np.array([X[::10] for X, _, _ in ch])            # every 10th step, for trace plots
+    arrays['acceptance'] = np.array([a for _, _, a in ch])
+    arrays['x_true'] = x_of(model(P2, P2.pb.yw), TRUE['s'], TRUE['beta'], TRUE['ell'], [TRUE['ring'], TRUE['tau']])
+    arrays.update(free=res[0]['free'], label=P2.label, clon=P2.pb.cells.clon, clat=P2.pb.cells.clat)
+    np.savez(os.path.join(RESULTS, 'df_sample.npz'), **arrays)
+    for key in ('fit', 'explore', 'sampled'):
+        for pre in ('z', 'za'):
+            z = arrays[f'{pre}_{key}']
+            log(f'  {pre}_{key}: s.d. of z {z.std():.3f}, within 1 s.d. {np.mean(np.abs(z) < 1):.3f}, within 2 s.d. '
+                f'{np.mean(np.abs(z) < 2):.3f} (expected 1, 0.683, 0.954)')
+    log('sampling done')
+
+
 if __name__ == '__main__':
-    if sys.argv[1] == 'matching':
+    if sys.argv[1] == 'sample':
+        sample()
+    elif sys.argv[1] == 'matching':
         matching()
     elif sys.argv[1] == 'mismatch':
         mismatch()
