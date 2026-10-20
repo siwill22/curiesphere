@@ -165,3 +165,46 @@ if __name__ == '__main__':
         g2_spread()
     if (RES / 'gcm_shrink.json').exists():
         shrink_figures()
+
+
+def compare_figure():
+    """GCM over Australia against CM-AUS on the same equal-area tiles, and the two noise references per degree"""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    c = json.load(open(RES / 'compare.json'))
+    sizes = {4: 1630, 8: 815, 16: 407, 32: 204}
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 3.6), constrained_layout=True)
+    x = [sizes[n] for n in sizes]
+    a1.plot(x, [c['gcm_over_australia'][f'{n}_noise'] for n in sizes], '-o', color='#d1495b', ms=4,
+            label='GCM (global fit), Australia\'s cells')
+    a1.plot(x, [c['cm'][f'{n}_noise_MLI_SHA_2E']['contrast'] for n in sizes], '-o', color='#1b6ca8', ms=4,
+            label='CM-AUS, the same noise as GCM (MLI_SHA_2E)')
+    a1.plot(x, [c['cm'][f'{n}_noise_MF7']['contrast'] for n in sizes], '--s', color='0.55', ms=3.5,
+            label='CM-AUS, its own noise (MF7)')
+    a1.axhline(1, color='0.6', lw=0.8)
+    a1.set_xscale('log')
+    a1.minorticks_off()
+    a1.set_xticks(x)
+    a1.set_xticklabels([str(s) for s in x])
+    a1.set_ylim(0, 1.05)
+    a1.set_xlabel('checkerboard tile size (km, equal-area tiles)')
+    a1.set_ylabel('recovered contrast / true contrast')
+    a1.set_title('The same truths over Australia, with noise', loc='left', fontsize=9.5)
+    a1.legend(fontsize=7, frameon=False, loc='lower center')
+    l = np.arange(134)
+    for name, colour in (('MF7', '0.45'), ('MLI_SHA_2E', '#d1495b')):
+        R = np.array(c['spectra'][name]['R_l'])
+        a2.plot(l[16:], np.sqrt(R[16:]), color=colour,
+                label=f'LCS-1 minus {name} ({c["spectra"][name]["noise_rms_points_nT"]:.1f} nT RMS over Australia)')
+    a2.set_yscale('log')
+    a2.set_xlabel('spherical harmonic degree')
+    a2.set_ylabel('RMS Br per degree (nT)')
+    a2.set_title('The noise of LCS-1 measured against two other models', loc='left', fontsize=9.5)
+    a2.legend(fontsize=7, frameon=False)
+    fig.savefig(OUT / 'gcm_compare.png', dpi=170)
+    print('gcm_compare.png')
+
+
+if (RES / 'compare.json').exists() and __name__ == '__main__':
+    compare_figure()

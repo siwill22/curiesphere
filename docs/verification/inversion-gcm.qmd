@@ -35,6 +35,7 @@ format:
   nice -n 15 conda run -n curiesphere python benchmarks/verification/gcm_checks.py g1   # ~3 min (eigendecomposition cached)
   nice -n 15 conda run -n curiesphere python benchmarks/verification/gcm_checks.py g2   # ~10 min
   nice -n 15 conda run -n curiesphere python benchmarks/verification/gcm_checks.py g3   # ~5 min
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/compare_checks.py  # ~5 min, after g3
   conda run -n curiesphere python docs/verification/make_gcm_figures.py
   conda run -n riftsclimate quarto render docs/verification/inversion-gcm.qmd
 -->
@@ -46,12 +47,15 @@ and its s.d. is exactly right when the data are as GCM assumes them, with its se
 
 **Its limitations:**
 
-1. **Small patterns are weakly recovered.** With the noise of LCS-1, GCM recovers 77% of the contrast of a
-   checkerboard of 815 km tiles, 67% at 407 km and 33% at 204 km. CM recovers about twice as much at 220 km for
-   Australia: GCM's cells are not correlated with their neighbours, so it cannot pool them.
-2. **Very broad patterns are lost too.** Tiles of 1630 km come back with only 44% of their contrast, because much of
-   such a pattern lies below degree 16, where there are no data.
-3. **A wrong ocean model lowers the whole map** by about 0.04 SI·km (4%) and changes 2–4% of the cells, near some
+1. **Small patterns are weakly recovered.** With noise, GCM recovers 77% of the contrast of a checkerboard of 815 km
+   tiles, 67% at 407 km and 33% at 204 km.
+2. **Very broad patterns are lost.** Tiles of 1630 km come back with only 44% of their contrast. CM, given the same
+   truths and noise over Australia, keeps 82%: its correlated field carries broad patterns that GCM's independent
+   cells, damped toward one level, cannot.
+3. **Much of the apparent gap to CM and DF is not the method** (@sec-why). The global fits measure the noise against
+   a different model (MLI_SHA_2E) than the local fits (MF7), which makes it a third larger; the two tests also used
+   different tiles. On equal terms GCM matches CM at 400–800 km and trails it at 204 km (0.38 against 0.46).
+4. **A wrong ocean model lowers the whole map** by about 0.04 SI·km (4%) and changes 2–4% of the cells, near some
    continental margins, by more than 0.2 SI·km.
 
 # What is checked, and how {#sec-method}
@@ -122,12 +126,10 @@ on the sphere, where squares of latitude and longitude shrink toward the poles.
 
 - **GCM sees patterns of about 400–800 km best.** With noise it recovers two-thirds to three-quarters of their
   contrast.
-- **Small patterns are weakly recovered.** At 204 km GCM recovers a third of the contrast, against about two-thirds
-  for CM over Australia at 220 km with similar noise. GCM's prior treats every cell as independent, so it cannot
-  pool neighbouring cells as CM's smooth field does.
+- **Small patterns are weakly recovered.** At 204 km GCM recovers a third of the contrast.
 - **Very broad patterns are lost as well.** The 1630 km tiles come back with less contrast (0.44) than the 815 km
-  tiles. Degree 16, the lowest in the data, has a half-wavelength of about 1200 km, so much of a pattern this broad is
-  not in the data at all. Without noise the sharp tile edges still reveal it; with noise they do not.
+  tiles. Without noise the sharp tile edges still reveal them; with noise they do not. @sec-why shows that this is
+  GCM's own limitation.
 - **The s.d. does not follow this.** For the checkerboards, 81–99% of cells are within 1 s.d. at 407–1630 km, but
   only 63% at 204 km: GCM's s.d. is too wide for broad patterns and slightly too narrow for the smallest.
 
@@ -136,6 +138,45 @@ noise, and with noise and a wrong ocean model.](figures/gcm_shrink_maps.png){#fi
 
 ![The recovered contrast against the tile size, for GCM and, for comparison, CM over Australia (local fit, squares
 of latitude and longitude).](figures/gcm_shrink_contrast.png){#fig-gcm-shrink-contrast}
+
+## Why GCM differs from CM and DF {#sec-why}
+
+The first comparison set GCM's 33% at 204 km against CM's 63% at 220 km over Australia, which suggested GCM was half
+as capable at small scales. That comparison differed in more than the method:
+
+- **The noise reference.** The global fits measure the noise of LCS-1 against MLI_SHA_2E; the local fits measure it
+  against MF7. Against MLI_SHA_2E the noise is three to five times larger at degrees 16–40, and above degree 100
+  it jumps to about 5 nT per degree, 1.6 times the difference from MF7 (@fig-gcm-compare, right). Over Australia the noise is then
+  27 nT RMS instead of 20 nT.
+- **The tiles.** The Australian test used squares of latitude and longitude, the global test equal-area tiles.
+- **The region.** GCM's score is an average over all continents; over Australia it recovers more (0.38 at 204 km).
+
+To separate these, GCM's global maps were scored over Australia's cells only, and CM-AUS was run on the same
+equal-area tiles with both noise references (@fig-gcm-compare, left).
+
+| Tile size | GCM, Australia's cells | CM-AUS, GCM's noise (MLI_SHA_2E) | CM-AUS, its own noise (MF7) |
+|---|---|---|---|
+| 1630 km | 0.56 | 0.82 | 0.89 |
+| 815 km | 0.84 | 0.87 | 0.89 |
+| 407 km | 0.72 | 0.70 | 0.71 |
+| 204 km | 0.38 | 0.46 | 0.53 |
+
+: The recovered contrast with noise, the same truths over Australia. {#tbl-gcm-compare}
+
+- **At 400–800 km the methods are equal.** Differences between their maps at these scales come from the data and
+  the background, not from the methods.
+- **At 204 km GCM trails CM by 0.08**, not by a factor of two. Of the original gap, the noise reference accounts for
+  0.07, the tile shape for 0.10 and the region for 0.05.
+- **At 1630 km GCM is clearly weaker**: 0.56 against 0.82 with the same noise. CM fits a correlation length of
+  about 3000 km and carries the broad pattern across Australia; GCM treats each cell as independent and pulls broad
+  departures toward its one level.
+- **The noise reference matters for every method.** Changing it from MF7 to MLI_SHA_2E costs CM 0.07 of the contrast
+  at both 204 km and 1630 km. The local and global runs use different references, so their s.d. and resolution are
+  not directly comparable until one reference is chosen for both.
+
+![Left: the recovered contrast for the same equal-area tiles over Australia, GCM (global fit) against CM-AUS with
+both noise references. Right: the noise of LCS-1 per degree, measured against MF7 and against
+MLI_SHA_2E.](figures/gcm_compare.png){#fig-gcm-compare}
 
 ## A wrong ocean model
 
@@ -154,8 +195,10 @@ continental margins, such as around the Bay of Bengal (@fig-gcm-ocean). The reco
 
 - **The s.d. is right if the model is right**, but GCM's model of independent cells fits geology poorly: the s.d.
   is then too wide for broad features and too narrow for the smallest.
-- **Read features of about 400–800 km**; expect a third to a half of the contrast to be lost at 200 km and at
-  1600 km and beyond.
+- **Read features of about 400–800 km**, where GCM does as well as CM; expect half or more of the contrast to be
+  lost at 200 km, and at 1600 km and beyond, where CM does better.
+- **Compare global and local results with care.** They use different noise references (MLI_SHA_2E and MF7), which
+  changes both the s.d. and the resolution.
 - **The overall level and the margins depend on the ocean model.** A different ocean remanence model shifts the
   map by about 4% and moves some margin cells by 0.2 SI·km or more.
 
@@ -163,10 +206,12 @@ continental margins, such as around the Bay of Bengal (@fig-gcm-ocean). The reco
 
 - **GCM with domain levels and the ocean-model error** (ADRs 0008, 0009), as GCM-GLC runs.
 - **DF-GLC**, the global DF.
+- **One noise reference for local and global fits**, or a reason for keeping two.
 
 # Rerunning {#sec-rerun}
 
-The code is `benchmarks/verification/gcm_checks.py` (tests `g1`, `g2`, `g3`), with the maps drawn by
+The code is `benchmarks/verification/gcm_checks.py` (tests `g1`, `g2`, `g3`) and, for @sec-why,
+`benchmarks/verification/compare_checks.py` (after `g3`), with the maps drawn by
 `docs/verification/make_gcm_figures.py`; the commands are at the top of this document's source. The tests use the
 configuration `inversions/gcm_glc_lcs1_16-133.toml` and its cached eigendecomposition, run in one process (10–20 GB
 of memory), and write their results to `benchmarks/verification/results/gcm_*`.
