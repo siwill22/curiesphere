@@ -182,6 +182,8 @@ notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
 /docs/verification/inversion-cm.pdf
 /docs/verification/inversion-pd.html
 /docs/verification/inversion-pd.pdf
+/docs/verification/inversion-gcm.html
+/docs/verification/inversion-gcm.pdf
 /docs/verification/.quarto/
 /notebooks/inversion/*.npz
 /notebooks/inversion/*.log
