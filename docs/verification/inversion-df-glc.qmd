@@ -114,7 +114,7 @@ with the shape searched, without noise and with the same noise draw as GCM (@fig
 | 1630 km | 0.75 | 0.78 | 0.44 | β 3, ℓ 700 km |
 | 815 km | 0.79 | 0.79 | 0.77 | β 2.5, ℓ 350 km |
 | 407 km | 0.66 | 0.66 | 0.67 | β 2.5, ℓ 350 km |
-| 204 km | 0.28 | 0.30 | 0.34 | β 2, ℓ 350 km |
+| 204 km | 0.28 | 0.30 | 0.33 | β 2, ℓ 350 km |
 
 : The recovered contrast, as a fraction of the true contrast. {#tbl-df-glc-shrink}
 

@@ -1,0 +1,106 @@
+---
+title: "Inversion benchmarks: overview"
+subtitle: "What the five inversion methods recover, how far to trust their uncertainties, and why they differ"
+date: 2026-10-21
+date-format: "D MMMM YYYY"
+abstract: |
+  Draft prepared with Claude Code. A summary of the inversion benchmarks, with links to the
+  reports on each method: [DF](inversion-df.html), [CM](inversion-cm.html) and [PD](inversion-pd.html) for
+  Australia, and [GCM](inversion-gcm.html) and [DF-GLC](inversion-df-glc.html) for the global fit. The forward
+  models they rest on are verified [separately](verification.html).
+format:
+  html:
+    toc: false
+    embed-resources: true
+    theme: cosmo
+    grid:
+      body-width: 1000px
+    tbl-cap-location: top
+  typst:
+    papersize: a4
+    margin:
+      x: 2cm
+      y: 2cm
+    fontsize: 10pt
+---
+
+<!-- No code: every number comes from the five method reports. Rebuild with
+  conda run -n riftsclimate quarto render docs/verification/inversion-overview.qmd
+-->
+
+**All five methods are coded correctly.** Each agrees with an independent solver of its equations to rounding
+error and, where tested, returns a truth it can represent exactly. Under its own assumptions about the data
+errors, each one's s.d. is right. The limitations below come from those assumptions and from the data, not from coding errors.
+
+| Method | Fit | s.d. on realistic data | Broad patterns (1600 km) | Main caveat |
+|---|---|---|---|---|
+| [DF](inversion-df.html) | Australia | 1.1–1.2× too small | not tested | s.d. too small with its settings fitted |
+| [CM](inversion-cm.html) | Australia | 1.08× too small | kept (0.82–0.89) | weighted errors of unequal size treated as equal |
+| [PD](inversion-pd.html) | Australia | about 3× too small | one level per domain | blind to variation inside a domain |
+| [GCM](inversion-gcm.html) | global | right, except at sharp edges | lost (0.44) | one level and independent cells |
+| [DF-GLC](inversion-df-glc.html) | global | right, except at sharp edges | kept (0.78) | noise held fixed |
+
+: Summary. "Realistic data" means noise as in the real data, and for PD also VIS varying inside the domains.
+Broad patterns: the fraction of the contrast of 1630 km tiles recovered with noise.
+{#tbl-summary}
+
+**The smallest pattern any of the mapping methods can see is about 200 km**, recovered at a third to two-thirds of
+its contrast depending on the tiles and the noise. At 170 km (tested over Australia) nothing comes back. PD maps
+domain levels only.
+
+# How much of a pattern each method recovers
+
+The fraction of a checkerboard's contrast that comes back, with noise. The local and global tests used different
+tiles and different noise references (see below), so compare along a row within each table, not between tables.
+
+| Square size | DF (one domain) | CM |
+|---|---|---|
+| 8° (900 km) | 0.85 | 0.86 |
+| 4° (450 km) | 0.67 | 0.69 |
+| 2.5° (280 km) | 0.66 | 0.68 |
+| 2° (220 km) | 0.58 | 0.63 |
+| 1.5° (170 km) | 0.03 | 0.05 |
+
+: Australia: squares of latitude and longitude, noise measured against MF7. {#tbl-local}
+
+| Tile size | GCM | DF-GLC (one domain) |
+|---|---|---|
+| 1630 km | 0.44 | 0.78 |
+| 815 km | 0.77 | 0.79 |
+| 407 km | 0.67 | 0.66 |
+| 204 km | 0.33 | 0.30 |
+
+: All continents: equal-area tiles, noise measured against MLI_SHA_2E. {#tbl-global}
+
+# Why the methods differ {#sec-why}
+
+- **At 200–800 km the data set the limit, not the method.** DF and CM recover the same over Australia, and GCM and
+  DF-GLC the same globally. Given the same truths, tiles and noise over Australia, GCM matches CM at 400–800 km and
+  trails it by 0.08 at 204 km. Better resolution needs better data (more of the field at high degree, or less
+  noise), not a different method.
+- **Broad patterns need a correlated field.** CM and DF-GLC model VIS as correlated over hundreds to thousands of
+  kilometres, which carries patterns that the data constrain only weakly below degree 16. DF shares DF-GLC's model
+  and should behave alike. GCM treats each cell as independent and pulls broad departures toward its one level.
+- **The s.d. is right only as far as the error model is.**
+  - GCM and DF-GLC weight the data by the full error model, so their s.d. is right whenever the truth is the kind of
+    field they assume.
+  - CM's weighting leaves weighted errors of unequal size, which it absorbs in one noise
+    scale, so its s.d. is slightly too small.
+  - DF fits 43 settings to 849 data, and the fitted settings make its s.d. too small. Sampling them helps only a
+    little.
+  - PD treats the errors as independent and each domain as uniform. Neither holds for real data, so its s.d. is the
+    least reliable: the refit s.d. corrects for the first assumption, not the second.
+- **The noise reference differs between the local and global fits.** The local fits measure the noise of LCS-1
+  against MF7, the global fits against MLI_SHA_2E, which gives about a third more noise over Australia. For CM this
+  alone costs 0.07 of the contrast at 204 km. Until one reference is chosen for both, local and global maps and
+  their s.d. are not directly comparable.
+
+# What applies to all of them
+
+- **A small s.d. can mean "nothing seen here".** Where a pattern is too small for the data, the methods return a flat
+  map with a small s.d., not a large one. This was shown for DF and CM; the global tests did not go to scales small
+  enough to show it.
+- **Sharp edges are blurred** unless the domains follow them, and the s.d. does not allow for the blur.
+- **The resolution belongs to the data.** These limits are for LCS-1 at degrees 16–133 with its present noise. A
+  model with more reliable high degrees would move them down; more noise would move them up.
+- **A wrong ocean model** (global fits) lowers the whole map by about 4% and changes some continental margins.
