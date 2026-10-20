@@ -1,0 +1,151 @@
+---
+title: "Inversion benchmarks: DF-GLC"
+subtitle: "Checking the global domain-fractal inversion with synthetic data for all continental crust"
+date: 2026-10-21
+date-format: "D MMMM YYYY"
+abstract: |
+  Draft prepared with Claude Code. The fifth part of the inversion benchmarks, after DF, CM, PD and GCM. It checks
+  DF-GLC, DF's model in the global fit to the Gauss coefficients, on the real global problem: whether it is coded
+  correctly, and what it can and cannot recover, side by side with GCM on the same truths.
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 2
+    number-sections: true
+    embed-resources: true
+    theme: cosmo
+    grid:
+      body-width: 1100px
+      sidebar-width: 260px
+    fig-cap-location: bottom
+    tbl-cap-location: top
+  typst:
+    papersize: a4
+    margin:
+      x: 2cm
+      y: 2cm
+    fontsize: 10pt
+    section-numbering: "1."
+    fig-format: png
+---
+
+<!-- Rebuild from the repository root (decompositions cached in benchmarks/verification/cache/df_glc, ~2.5 GB each):
+  export PYTHONPATH=benchmarks/verification:benchmarks:notebooks:$PYTHONPATH VECLIB_MAXIMUM_THREADS=3
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_glc_checks.py d1   # ~25 min
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_glc_checks.py d2   # ~3 h
+  nice -n 15 conda run -n curiesphere python benchmarks/verification/df_glc_checks.py d3   # ~2.5 h
+  conda run -n curiesphere python docs/verification/make_df_glc_figures.py
+  conda run -n riftsclimate quarto render docs/verification/inversion-df-glc.qmd
+-->
+
+# In brief {.unnumbered}
+
+**DF-GLC is coded correctly.** It agrees with an independent solver to rounding error, and its s.d. is exactly
+right when the data are as DF-GLC assumes them, with its settings known or fitted, including the search over the
+pattern's shape.
+
+**Its limitations:**
+
+1. **Its resolution matches GCM's at 200–800 km**: with noise, 79% of the contrast of 815 km tiles, 66% at 407 km
+   and 30% at 204 km.
+2. **Unlike GCM, it keeps very broad patterns**: 78% of the contrast of 1630 km tiles, against GCM's 44%. Its
+   correlated pattern carries them, as CM's smooth field does over Australia.
+3. **Its s.d. is too narrow for sharp edges.** For the checkerboards only 44–75% of cells are within 1 s.d.
+4. **Noise-free data do not help it**, because its noise level is held fixed rather than fitted.
+
+# What is checked, and how {#sec-method}
+
+DF-GLC uses DF's model (a level per domain, spread τ about one shared level, and a fractal pattern inside each
+domain, starting afresh at its boundary) in the global fit of GCM: the same 22,591 cells and 17,700 coefficients
+(degrees 16–133). The pattern's strength s is shared by all domains, and the data are weighted for the noise and for
+an error of the ocean model at 16 nT (ADR 0009). The real runs fit s and τ by the evidence on each of a few shapes
+(β 2, 2.5, 3 × ℓ 350, 700, 1400 km) and keep the best.
+
+Each shape takes 13–21 minutes to prepare (a decomposition of a 17,700 × 17,700 matrix); after that, a new data set
+costs seconds. The tests prepare each shape once and reuse it for every truth. The synthetic data are the truth's
+coefficients from the inversion's own cell columns plus noise as DF-GLC models it.
+
+# Correctness checks {#sec-correct}
+
+DF-GLC was checked at one shape (β 2, ℓ 700 km) with the groups layout of the real runs (437 domains), against an
+independent solver that builds the covariance block by block and solves the full system without the
+decomposition (@fig-df-glc-d1).
+
+| Check | Result |
+|---|---|
+| Log evidence | Equal to rounding (difference 0) |
+| The level v0 | Equal to 3×10⁻¹⁶ SI·km |
+| Map, every cell | Equal to 5×10⁻¹³ SI·km |
+| s.d., every cell | Equal to 1×10⁻¹³ (relative) |
+
+![DF-GLC against the independent solver, for a truth drawn from DF-GLC's own model (groups
+layout).](figures/df_glc_d1_maps.png){#fig-df-glc-d1}
+
+## Uncertainties
+
+Twenty truths were drawn from DF-GLC's own model with the groups layout (level 0.7, τ 0.1, s 0.4 SI·km, β 2, ℓ
+700 km, close to the real groups fit) and inverted three ways (@fig-df-glc-spread).
+
+| Settings | Error / s.d., spread (should be 1) | Within 1 s.d. (68%) | Within 2 s.d. (95%) |
+|---|---|---|---|
+| At the truth | 1.002 | 68.2% | 95.4% |
+| s and τ fitted at the true shape | 1.005 | 68.0% | 95.3% |
+| s, τ and the shape fitted, as the real runs do | 1.005 | 68.0% | 95.3% |
+
+The search found the true shape in 19 of 20 truths; in the other it chose ℓ 1400 km and put τ at its lower limit,
+the same trade-off between patch size and level spread as in DF for Australia. The strength came back at 0.396–0.404
+SI·km and τ at 0.063–0.119 (middle 68% of truths). With 17,700 data and three settings, fitting them costs nothing,
+unlike DF for Australia, whose s.d. becomes 1.2 times too small with its 43 settings fitted to 849 data.
+
+![DF-GLC's errors in units of its reported s.d., over all cells of 20 truths: settings at the truth, fitted at the
+true shape, and fitted with the shape searched.](figures/df_glc_d2_spread.png){#fig-df-glc-spread}
+
+# Limitations {#sec-limits}
+
+## How large and how small a pattern DF-GLC can see
+
+The equal-area checkerboards of the GCM part were inverted with DF-GLC as one domain (one pattern without breaks),
+with the shape searched, without noise and with the same noise draw as GCM (@fig-df-glc-shrink-maps,
+@fig-df-glc-shrink-contrast).
+
+| Tile size | DF-GLC, no noise | DF-GLC, noise | GCM, noise | Shape chosen (noise) |
+|---|---|---|---|---|
+| 1630 km | 0.75 | 0.78 | 0.44 | β 3, ℓ 700 km |
+| 815 km | 0.79 | 0.79 | 0.77 | β 2.5, ℓ 350 km |
+| 407 km | 0.66 | 0.66 | 0.67 | β 2.5, ℓ 350 km |
+| 204 km | 0.28 | 0.30 | 0.34 | β 2, ℓ 350 km |
+
+: The recovered contrast, as a fraction of the true contrast. {#tbl-df-glc-shrink}
+
+- **At 200–800 km DF-GLC and GCM recover the same contrast.** The data set the limit, not the method.
+- **At 1630 km DF-GLC keeps 78% of the contrast, GCM 44%.** This confirms the explanation in the GCM part: a pattern
+  correlated over hundreds of kilometres carries broad features that the data constrain only weakly below degree 16;
+  GCM's independent cells cannot.
+- **Its s.d. is too narrow for sharp edges**: 44–75% of cells within 1 s.d. A smooth pattern cannot draw square
+  edges, and its s.d. does not allow for that, as for DF with the wrong domains in Australia.
+- **Noise-free data do not help.** DF-GLC holds the noise at its measured level (the real runs' `noise = "fixed"`),
+  so it treats exact data as noisy; GCM fits the noise level and recovers 68–97% without noise.
+- **The shape grid limits the smallest tiles.** For tiles of 815 km and less the best ℓ was the smallest on the grid
+  (350 km). The real run then tries 175 km too; this test did not, so DF-GLC may do slightly better at 204–407 km than
+  shown.
+
+![Checkerboards of equal-area tiles of 1630, 815, 407 and 204 km (rows): the truth, then DF-GLC (one domain) without
+and with noise, with the shape it chose.](figures/df_glc_shrink_maps.png){#fig-df-glc-shrink-maps}
+
+![The recovered contrast against the tile size, DF-GLC and GCM on the same truths and the same
+noise.](figures/df_glc_shrink_contrast.png){#fig-df-glc-shrink-contrast}
+
+# What this means for real DF-GLC maps {#sec-meaning}
+
+- **The s.d. is right when the model is right**, but too narrow where VIS changes sharply inside a domain.
+- **Read features of about 400 km and larger**; broad features are better kept than in GCM.
+- **Small features (about 200 km) lose two-thirds of their contrast**, as in every method with these data.
+
+# Rerunning {#sec-rerun}
+
+The code is `benchmarks/verification/df_glc_checks.py` (tests `d1`, `d2`, `d3`), with the maps drawn by
+`docs/verification/make_df_glc_figures.py`; the commands are at the top of this document's source. The tests use the
+configuration `inversions/df_glc_lcs1_16-133.toml`, run in one process (20–40 GB of memory), keep the shape
+decompositions in `benchmarks/verification/cache/df_glc` (so a stopped run resumes), and write their results to
+`benchmarks/verification/results/df_glc_*`.
