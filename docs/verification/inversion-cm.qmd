@@ -7,6 +7,8 @@ abstract: |
   Draft prepared with Claude Code. The second part of the inversion benchmarks, after DF. It checks CM, the
   cell map, in the same two ways: whether it is coded correctly, and what it can and cannot recover. It uses the
   same Australian problem as the DF part and the same checkerboards, so the two methods compare directly.
+
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · CM · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
 format:
   html:
     toc: true

@@ -7,6 +7,8 @@ abstract: |
   Draft prepared with Claude Code. The fifth part of the inversion benchmarks, after DF, CM, PD and GCM. It checks
   DF-GLC, DF's model in the global fit to the Gauss coefficients, on the real global problem: whether it is coded
   correctly, and what it can and cannot recover, side by side with GCM on the same truths.
+
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · DF-GLC
 format:
   html:
     toc: true

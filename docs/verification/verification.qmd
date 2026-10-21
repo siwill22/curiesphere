@@ -8,8 +8,10 @@ abstract: |
   magnetic field gives the right answer. It compares the two forward models in curiesphere — remit's global
   spherical-harmonic transform, and the cell columns the inversions use — with a direct sum of point dipoles that
   shares no code with either. The test models run from single dipoles and checkerboards to the real ocean and
-  continental magnetisation models. Every comparison is shown as maps. Verification of the inversions
-  themselves comes next, in a later part of this document.
+  continental magnetisation models. Every comparison is shown as maps. The inversions are verified in companion
+  reports, summarised in the overview.
+
+  **Verification reports:** Forward models · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
 format:
   html:
     toc: true

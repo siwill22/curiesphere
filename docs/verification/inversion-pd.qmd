@@ -7,6 +7,8 @@ abstract: |
   Draft prepared with Claude Code. The third part of the inversion benchmarks, after DF and CM. It checks PD, one
   VIS per polygon domain, on the same Australian problem: whether it is coded correctly, and how far its reported
   s.d. can be trusted.
+
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · PD · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
 format:
   html:
     toc: true

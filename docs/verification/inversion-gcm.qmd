@@ -7,6 +7,8 @@ abstract: |
   Draft prepared with Claude Code. The fourth part of the inversion benchmarks, after DF, CM and PD, and the first
   for a global fit. It checks GCM, VIS per cell on all continental crust fitted to the Gauss coefficients of degrees
   16–133, in the same two ways: whether it is coded correctly, and what it can and cannot recover.
+
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · GCM · [DF-GLC](inversion-df-glc.html)
 format:
   html:
     toc: true

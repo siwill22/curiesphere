@@ -4,10 +4,11 @@ subtitle: "What the five inversion methods recover, how far to trust their uncer
 date: 2026-10-21
 date-format: "D MMMM YYYY"
 abstract: |
-  Draft prepared with Claude Code. A summary of the inversion benchmarks, with links to the
-  reports on each method: [DF](inversion-df.html), [CM](inversion-cm.html) and [PD](inversion-pd.html) for
-  Australia, and [GCM](inversion-gcm.html) and [DF-GLC](inversion-df-glc.html) for the global fit. The forward
-  models they rest on are verified [separately](verification.html).
+  Draft prepared with Claude Code. A summary of the inversion benchmarks: what each method recovers, how far to
+  trust its uncertainties, and why the methods differ. The full reports, and the verification of the forward models
+  they rest on, are linked below.
+
+  **Verification reports:** [Forward models](verification.html) · Inversions: overview · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
 format:
   html:
     toc: false

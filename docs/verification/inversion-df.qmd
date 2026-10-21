@@ -8,7 +8,9 @@ abstract: |
   "Verification of the forward models". It checks DF, the domain-fractal inversion, in two ways: whether it is coded
   correctly, by comparing it with independent calculations and with cases whose answer is known exactly; and what
   it can and cannot recover, with synthetic truths from simple checkerboards upwards. All tests use the Australian
-  problem of the real runs. The same framework will then be applied to the other methods.
+  problem of the real runs.
+
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · DF · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
 format:
   html:
     toc: true
