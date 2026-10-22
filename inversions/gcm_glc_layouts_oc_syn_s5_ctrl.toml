@@ -1,0 +1,10 @@
+# Check S5 (random smooth truth, blind to geology) with the ocean-model error (noise fixed), the controls, and the
+# ocean-error grid of the A3 runs
+inherit = "gcm_glc_layouts_oc_lcs1_16-133_ctrl.toml"
+
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "random_field", mean = 0.75, sd = 0.4, beta = 2.5, ell_km = 500.0, seed = 20261010 }
+seed = 20261007
+ocean_error = "HM05"

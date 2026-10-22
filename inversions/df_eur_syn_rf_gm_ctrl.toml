@@ -1,0 +1,6 @@
+# DF-EUR on the random smooth field (df_eur_syn_rf_gm.toml), the geology-blind control alone (random tiles as many as
+# the polygons), run beside it
+inherit = "df_eur_syn_rf_gm.toml"
+
+[method]
+layouts = { one = false, controls = true, polygons = false }

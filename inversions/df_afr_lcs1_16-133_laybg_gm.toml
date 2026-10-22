@@ -1,0 +1,8 @@
+# DF-AFR with Gaussian domain means, and the best global layout fit (ocean-model error, ADRs 0008-0009) as the background outside the target in place of GCM-GLC: does the GCM prior level stop leaking in?
+inherit = "df_afr_lcs1_16-133_gcmbg_gm.toml"
+
+[fit.background]
+outside = "results/gcm_glc_layouts_oc_lcs1_16-133.nc"
+
+[method]
+layouts = { one = true, controls = false }

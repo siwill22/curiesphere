@@ -1,0 +1,7 @@
+# A shared, content-addressed cache with cell columns for all continental crust
+
+Expensive intermediate results (cell columns, background coefficients, eigendecompositions, whitening) are stored in one cache shared by all inversions, outside the repository (default `~/.cache/curiesphere`), each under a hash of exactly the inputs that determine it. Cell columns are computed once for all continental crust at a given NSIDE and source geometry (about 6 GB at NSIDE 64, lmax 185), and every target area selects its cells from that store. This replaces per-region, per-variant directories, which duplicated identical columns (Australia's were computed separately from the global ones) and relied on the user to keep variants consistent; with content keys a changed input can never pick up a stale result, and clearing the cache is always safe.
+
+## Amendment (2026-10-08): target areas from outlines
+
+A target area drawn by an outline cuts HEALPix cells at its edge, and those partial cells hold only the nodes inside. Their columns differ from the whole cells of the continental-crust store, so a target area's columns are a separate cache entry, keyed by the outline file's content. Node sums make this cheap (Australia's 1406 cells: about 10 s), and keying by content keeps the guarantee that a changed input never reuses a stale result. Snapping target areas to whole cells, so they could select from the global store, was rejected: it would move the boundary of the area by up to a cell, and the background outside the area (Hemant & Maus allowed there) would move with it.

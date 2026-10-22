@@ -1,0 +1,49 @@
+key,id,prov_name,prov_type,crust_type,prov_group,param
+735,736,Andean Plateau,orogenic belt,continental,,Andean_Plateau
+736,737,Southern Andean Arc,volcanic arc,continental,Andean Volcanic Arc,Southern_Andean_Arc
+737,738,Eastern Cordillera,orogenic belt,continental,,Eastern_Cordillera
+738,739,Central Andean Arc,volcanic arc,continental,Andean Volcanic Arc,Central_Andean_Arc
+739,740,Chilenia,volcanic arc,continental,Andean Volcanic Arc,Chilenia
+740,741,Western Cordillera,volcanic arc,continental,Andean Volcanic Arc,Western_Cordillera
+741,742,Colombian Volcanic Arc,volcanic arc,continental,Andean Volcanic Arc,Colombian_Volcanic_Arc
+743,744,SaÃµ LuÃ­s Craton,craton,continental,,Sa_Lu_s_Craton
+744,745,Arequipa Province,accretionary complex,continental,,Arequipa_Province
+745,746,Colombian Forearc,accretionary complex,transitional,,Colombian_Forearc
+746,747,Amazonian Graben,narrow rift,continental,,Amazonian_Graben
+747,748,Northern Precordillera,accretionary complex,transitional,,Northern_Precordillera
+748,749,Central Precordillera,accretionary complex,transitional,,Central_Precordillera
+749,750,Southern Precordillera,accretionary complex,transitional,,Southern_Precordillera
+750,751,Southern Chilean Forearc,accretionary complex,transitional,,Southern_Chilean_Forearc
+753,754,North Central Andes,accretionary complex,continental,,North_Central_Andes
+754,755,East Malvinas Basin,passive margin,transitional,,East_Malvinas_Basin
+755,756,Argentina Volcanic Margin,passive margin,transitional,,Argentina_Volcanic_Margin
+758,759,Gurupi Belt,volcanic arc,continental,,Gurupi_Belt
+759,760,Media Coreau Domain,shield,continental,,Media_Coreau_Domain
+760,761,Borborema Province,shield,continental,,Borborema_Province
+761,762,Parnaiba Block,shield,continental,,Parnaiba_Block
+762,763,Central Amazonian Belt,shield,continental,Brazil Shield,Central_Amazonian_Belt
+763,764,SaÃµ Francisco Craton,craton,continental,,Sa_Francisco_Craton
+764,765,Ribeira Belt (south),volcanic arc,continental,Mantiqueira Province,Ribeira_Belt_south
+765,766,Rio Apa Craton,shield,continental,,Rio_Apa_Craton
+766,767,Nico PÃ©rez Terrane,orogenic belt,continental,,Nico_P_rez_Terrane
+767,768,Paranapanema Block,shield,continental,,Paranapanema_Block
+768,769,Paraguay-Tucavaca Belt,orogenic belt,continental,Brazil Shield,Paraguay_Tucavaca_Belt
+769,770,Tocantins Province,orogenic belt,continental,,Tocantins_Province
+770,771,Brazil Rifted Margin,passive margin,transitional,,Brazil_Rifted_Margin
+771,772,Fuegian Andes,accretionary complex,transitional,,Fuegian_Andes
+779,780,Ventuari-Tapajos Belt,volcanic arc,continental,Brazil Shield,Ventuari_Tapajos_Belt
+780,781,Maroni-Itacaiunas Belt,shield,continental,Brazil Shield,Maroni_Itacaiunas_Belt
+781,782,Rio Negro-Juruena,orogenic belt,continental,Brazil Shield,Rio_Negro_Juruena
+782,783,Rondonia-San Ignacio Belt,orogenic belt,continental,Brazil Shield,Rondonia_San_Ignacio_Belt
+783,784,Sierra del Ventana,accretionary complex,continental,Rio de la Plata Craton,Sierra_del_Ventana
+784,785,Falkland Block,orogenic belt,continental,,Falkland_Block
+785,786,Patagonia Platform,passive margin,continental,,Patagonia_Platform
+786,787,Cuyana Basin,accretionary complex,continental,,Cuyana_Basin
+787,788,Sierras Pampeanas,wide rift,continental,,Sierras_Pampeanas
+788,789,Rio de la Plata Craton,shield,continental,Rio de la Plata Craton,Rio_de_la_Plata_Craton
+818,819,AraÃ§uaÃ­ Belt (south),orogenic belt,continental,Mantiqueira Province,Ara_ua_Belt_south
+819,820,AraÃ§uaÃ­ Belt (north),orogenic belt,continental,Mantiqueira Province,Ara_ua_Belt_north
+820,821,Ribeira Belt (north),volcanic arc,continental,Mantiqueira Province,Ribeira_Belt_north
+898,899,Antilles Ridges,orogenic belt,continental,,Antilles_Ridges
+899,900,North Andean Orogen,orogenic belt,continental,,North_Andean_Orogen
+901,902,South Caribbean Deformation Belt,orogenic belt,continental,,South_Caribbean_Deformation_Belt

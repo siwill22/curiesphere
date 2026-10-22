@@ -1,0 +1,6 @@
+# DF-NAM with GCM-GLC as the background on the continental crust outside the target (instead of H&M + slabs); the oceans
+# keep the ocean model, as in GCM's own fit
+inherit = "df_nam_lcs1_16-133.toml"
+
+[fit.background]
+outside = "results/gcm_glc_lcs1_16-133.nc"

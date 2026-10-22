@@ -1,0 +1,3 @@
+# CR-AUS in explore mode (ADR 0006): NSIDE 32 cells summed from NSIDE 64, GPU float32 columns
+inherit = "cr_aus_lcs1_16-133.toml"
+mode = "explore"

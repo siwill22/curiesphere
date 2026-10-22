@@ -1,0 +1,16 @@
+# DF-GLC on synthetic data, check S3: group levels (s.d. 0.2 about 0.7 SI km) plus a fractal pattern (s 0.4 SI km,
+# beta 2.5, ell 500 km) drawn afresh in each group: breaks at the group boundaries. Groups should beat one pattern
+# without breaks and the random tiles. Fitted at the truth's shape only (one decomposition per layout).
+inherit = "df_glc_lcs1_16-133.toml"
+
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "layout_fractal", layout = "groups", mean = 0.7, sd = 0.2, s = 0.4, beta = 2.5, ell_km = 500.0, seed = 20261011 }
+seed = 20261007
+ocean_error = "HM05"
+
+[method]
+layouts = ["one", "groups", "voronoi_groups"]
+beta_grid = [2.5]
+ell_grid_km = [500.0]

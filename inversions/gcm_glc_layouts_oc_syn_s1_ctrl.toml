@@ -1,0 +1,15 @@
+# As gcm_glc_layouts_oc_lcs1_16-133.toml (ocean-model error, noise fixed) with the geology-blind controls, on gcm_glc_layouts_syn_s1.toml; ocean-error grid narrowed to the 3 values nearest the best of the full run
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[method]
+layouts = ["one", "groups", "provinces", "tiles8", "tiles16", "voronoi_groups", "voronoi_provinces"]
+
+[errors.background]
+rms_nT = [8.0, 16.0, 24.0]
+
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "uniform", value = 1.0 }
+seed = 20261007
+ocean_error = "HM05"

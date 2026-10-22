@@ -1,0 +1,6 @@
+# DF-GLC on synthetic data, check S5: a smooth random field without breaks (beta 2.5, ~500 km, s.d. 0.4 SI km), blind
+# to geology: one pattern without breaks should beat the groups and the random tiles. At the truth's shape only.
+inherit = "df_glc_syn_s3.toml"
+
+[data]
+truth = { kind = "random_field", mean = 0.75, sd = 0.4, beta = 2.5, ell_km = 500.0, seed = 20261010 }

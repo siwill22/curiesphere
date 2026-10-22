@@ -171,3 +171,40 @@ notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
 /notebooks/tuning/*basis*.npz
 /notebooks/tuning/points.npz
 /benchmarks/cache/
+/benchmarks/verification/cache/
+/benchmarks/verification/logs/
+/benchmarks/verification/results/*.nc
+/docs/verification/verification.html
+/docs/verification/verification.pdf
+/docs/verification/inversion-df.html
+/docs/verification/inversion-df.pdf
+/docs/verification/inversion-cm.html
+/docs/verification/inversion-cm.pdf
+/docs/verification/inversion-pd.html
+/docs/verification/inversion-pd.pdf
+/docs/verification/inversion-gcm.html
+/docs/verification/inversion-gcm.pdf
+/docs/verification/inversion-df-glc.html
+/docs/verification/inversion-df-glc.pdf
+/docs/verification/inversion-overview.html
+/docs/verification/inversion-overview.pdf
+/docs/verification/.quarto/
+/notebooks/inversion/*.npz
+/notebooks/inversion/*.log
+/notebooks/inversion_*/*.npz
+/notebooks/inversion_*/*.log
+/notebooks/inversion_*/cells/
+/notebooks/regions/*/cache/
+
+# inversion toolbox: results are reproducible from their configs (maps are kept for review)
+/inversions/results/*.nc
+/acceptance/*.out
+/inversions/results/index.html
+
+# GDAL side files and the inversion cell cache
+*.aux.xml
+/notebooks/inversion/cells/
+# run outputs: images regenerate from the runs; only figures shown in a doc are tracked
+/inversions/results/**/*.png
+/notebooks/regions/**/*.png
+/notebooks/inversion/*.png

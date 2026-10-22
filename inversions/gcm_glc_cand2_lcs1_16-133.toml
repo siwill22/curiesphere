@@ -1,0 +1,10 @@
+# Candidate geology maps (batch 2, detailed surface geology): NRCan surface geology (legend: rock type and age
+# range) and the CGMW Geological Map of the World (legend CODE_G), each connected patch of a legend unit its own
+# domain (candidates.py), against the Hasterok provinces. Ranked by the evidence.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "cand:nrcan", "cand:cgmw"]

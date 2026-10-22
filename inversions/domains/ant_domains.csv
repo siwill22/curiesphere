@@ -1,0 +1,57 @@
+key,id,prov_name,prov_type,crust_type,prov_group,param
+91,92,Amudsen Fold System,accretionary complex,transitional,,Amudsen_Fold_System
+92,93,Napier Complex,craton,continental,,Napier_Complex
+93,94,Lambert Rift,narrow rift,continental,,Lambert_Rift_93
+94,95,South Polar Basin,foredeep basin,continental,,South_Polar_Basin
+95,96,Ruker Rift,narrow rift,continental,,Ruker_Rift
+96,97,Robertson Bay Terrane,orogenic belt,continental,,Robertson_Bay_Terrane
+97,98,Ellsworth Province,volcanic arc,continental,Antarctandes,Ellsworth_Province
+98,99,West Antarctic Rift,wide rift,continental,,West_Antarctic_Rift
+99,100,South Shetland Arc,volcanic arc,continental,,South_Shetland_Arc
+100,101,Bransfield Strait Basin,back-arc basin,transitional,,Bransfield_Strait_Basin
+101,102,South Shetland Forearc,accretionary complex,transitional,,South_Shetland_Forearc
+102,103,Elan Bank,passive margin,transitional,,Elan_Bank
+103,104,Ronne Basin,wide rift,continental,,Ronne_Basin
+104,105,South Kerguelen Plateau,passive margin,transitional,,South_Kerguelen_Plateau
+105,106,Bowers Terrane,volcanic arc,continental,,Bowers_Terrane
+106,107,Banzare Province,shield,continental,Mawson Craton,Banzare_Province
+107,108,Southern Transantarctic Mountains,orogenic belt,continental,Ross Orogen,Southern_Transantarctic_Mountains
+108,109,Erebus Volcanic Province,magmatic province,continental,,Erebus_Volcanic_Province
+109,110,South Victoria Land,orogenic belt,continental,Ross Orogen,South_Victoria_Land
+110,111,Central Transantarctic Mountains,orogenic belt,continental,Ross Orogen,Central_Transantarctic_Mountains
+111,112,Vostok Shield,shield,continental,Mawson Craton,Vostok_Shield
+112,113,Vostok Rift,narrow rift,continental,,Vostok_Rift
+113,114,Discovery and Jane Banks,volcanic arc,transitional,Antarctandes,Discovery_and_Jane_Banks
+114,115,Ross Rift,wide rift,continental,,Ross_Rift
+115,116,Valkyrie Craton,shield,continental,,Valkyrie_Craton
+116,117,Nuyina Province,shield,continental,Mawson Craton,Nuyina_Province
+117,118,East Antarctica Rifted Margin,passive margin,transitional,,East_Antarctica_Rifted_Margin
+118,119,Napier Complex (reworked),orogenic belt,continental,,Napier_Complex_reworked
+119,120,Recovery Province,shield,continental,,Recovery_Province_119
+120,121,Cook Province,shield,continental,Mawson Craton,Cook_Province
+121,122,Lambert Rift,narrow rift,continental,,Lambert_Rift_121
+821,822,North Victoria Land,orogenic belt,continental,Ross Orogen,North_Victoria_Land
+863,864,Aurora Province,shield,continental,Mawson Craton,Aurora_Province
+864,865,Charcot Province,orogenic belt,continental,,Charcot_Province
+865,866,orogenic belt 865,orogenic belt,continental,,orogenic_belt_865
+866,867,Wilkes Orogen,shield,continental,,Wilkes_Orogen
+867,868,Grunehogna,craton,continental,,Grunehogna
+868,869,Maud Belt,orogenic belt,continental,,Maud_Belt
+869,870,Coats Land,orogenic belt,continental,,Coats_Land
+870,871,Recovery Province,shield,continental,,Recovery_Province_870
+871,872,Bancroft-Arnesen Province,craton,continental,,Bancroft_Arnesen_Province
+872,873,Ruker Craton,craton,continental,,Ruker_Craton
+873,874,Prydz Province,orogenic belt,continental,,Prydz_Province
+874,875,Rayner Complex,orogenic belt,continental,,Rayner_Complex
+875,876,Vestfold Craton,craton,continental,,Vestfold_Craton
+876,877,Mawson Craton,shield,continental,Mawson Craton,Mawson_Craton
+877,878,Antarctandes Forearc,accretionary complex,transitional,,Antarctandes_Forearc
+878,879,Antarctandes,volcanic arc,continental,Antarctandes,Antarctandes
+879,880,Dronning Maud Belt,orogenic belt,continental,,Dronning_Maud_Belt
+880,881,Antarctic Rifted Margin,passive margin,transitional,,Antarctic_Rifted_Margin_880
+881,882,Antarctic Rifted Margin,passive margin,transitional,,Antarctic_Rifted_Margin_881
+883,884,Tonian Oceanic Arc Terrane,volcanic arc,continental,,Tonian_Oceanic_Arc_Terrane
+886,887,LÃ¼tzow-Holm Complex,orogenic belt,continental,,L_tzow_Holm_Complex
+889,890,Western Prydz Province,volcanic arc,continental,,Western_Prydz_Province
+890,891,Fisher Province,volcanic arc,continental,,Fisher_Province
+891,892,Marie Byrd Land,magmatic province,continental,,Marie_Byrd_Land

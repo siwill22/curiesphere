@@ -1,0 +1,10 @@
+# GCM-GLC with layouts on synthetic data (docs/experiment-global-layouts.md). S4: 0.04 x Crust1.0, blind to the polygons; no layout should win strongly.
+# One seeded noise draw at the measured noise level, plus an ocean-model error (HM05 in the truth, GK07 fitted).
+inherit = "gcm_glc_layouts_lcs1_16-133.toml"
+
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "crust_thickness", chi = 0.04, grid = "~/Data/Moho/crust1.0/crust1_CrustalThickness.nc" }
+seed = 20261007
+ocean_error = "HM05"

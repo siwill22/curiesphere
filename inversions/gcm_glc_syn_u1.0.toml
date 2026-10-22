@@ -1,0 +1,7 @@
+inherit = "gcm_glc_lcs1_16-133.toml"
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "uniform", value = 1.0 }
+seed = 20261007
+

@@ -1,0 +1,10 @@
+# Ensemble of geology-blind controls for the provinces (draws 34-49): random Voronoi tilings with as many tiles
+# as provinces, and the provinces of each continent spun by a random angle about the continent's centre (spin test).
+# Ocean-model error at the chosen 16 nT (decomposition cached), noise fixed. Do the polygons beat every random draw?
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["voronoi_provinces:34", "voronoi_provinces:35", "voronoi_provinces:36", "voronoi_provinces:37", "voronoi_provinces:38", "voronoi_provinces:39", "voronoi_provinces:40", "voronoi_provinces:41", "voronoi_provinces:42", "voronoi_provinces:43", "voronoi_provinces:44", "voronoi_provinces:45", "voronoi_provinces:46", "voronoi_provinces:47", "voronoi_provinces:48", "voronoi_provinces:49", "rotated_provinces:34", "rotated_provinces:35", "rotated_provinces:36", "rotated_provinces:37", "rotated_provinces:38", "rotated_provinces:39", "rotated_provinces:40", "rotated_provinces:41", "rotated_provinces:42", "rotated_provinces:43", "rotated_provinces:44", "rotated_provinces:45", "rotated_provinces:46", "rotated_provinces:47", "rotated_provinces:48", "rotated_provinces:49"]

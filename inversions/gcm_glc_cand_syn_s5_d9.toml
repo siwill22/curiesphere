@@ -1,0 +1,16 @@
+# Candidate geology maps on S5 synthetic data, draw 9: the same spectrum as S5 (random field, beta 2.5,
+# ell 500 km), new truth and noise seeds. With draw 0 (gcm_glc_cand1/2_syn_s5) it gives each map's score on data
+# blind to geology, with its scatter, for the geometry-corrected score.
+inherit = "gcm_glc_layouts_oc_syn_s5_ctrl.toml"
+
+[data]
+seed = 20261016
+
+[data.truth]
+seed = 20261019
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "cand:sl2013_k4", "cand:sl2013_k6", "cand:sl2013_k8", "cand:sl2013_k12", "cand:tc1", "cand:ecm1", "cand:merdith", "cand:nrcan", "cand:cgmw"]

@@ -1,0 +1,17 @@
+continent,provinces,n,SL2013sv,SLNAAFSA,CAM2016,moho,curie,thick
+All continents,all types,717,0.16,0.16,0.19,0.03,0.19,0.13
+All continents,cratons + shields,157,0.25,0.24,0.22,-0.08,0.16,0.07
+Africa,all types,85,0.19,0.18,0.11,-0.18,0.19,0.04
+Africa,cratons + shields,36,0.14,0.13,0.08,-0.44,0.07,-0.04
+Antarctica,all types,56,-0.04,-0.05,-0.02,-0.14,0.06,-0.09
+Antarctica,cratons + shields,15,-0.62,-0.61,-0.42,-0.48,-0.38,-0.63
+Australia,all types,39,0.52,0.54,0.5,0.22,0.44,0.5
+Australia,cratons + shields,13,0.17,0.24,0.13,0.16,0.11,0.19
+Eurasia,all types,333,0.04,0.04,0.12,0.05,0.11,0.08
+Eurasia,cratons + shields,48,0.57,0.57,0.55,0.39,0.44,0.47
+North America,all types,131,0.35,0.35,0.34,0.17,0.32,0.29
+North America,cratons + shields,35,0.03,-0.05,-0.23,-0.21,0.01,-0.36
+South America,all types,48,0.21,0.24,0.18,-0.02,0.19,-0.04
+South America,cratons + shields,10,0.68,0.66,0.66,-0.36,0.82,0.25
+Zealandia,all types,25,-0.08,-0.08,-0.16,-0.06,-0.11,-0.0
+Zealandia,cratons + shields,0,,,,,,

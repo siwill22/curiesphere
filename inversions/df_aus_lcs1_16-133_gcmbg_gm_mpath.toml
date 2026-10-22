@@ -1,0 +1,9 @@
+# DF-AUS (GCM-GLC background, Gaussian domain means) with FD-merge's partitions as layouts: the merge path is run on
+# DF's own data (mu 0.1, no boundary penalty) and each of its partitions with K domains is scored by DF (a fractal
+# pattern inside each domain), so DF's evidence, not a calibrated penalty, picks the number of domains. Ranked against
+# the 39 polygons, one domain and random tiles as many as the polygons; the best layout is mapped.
+inherit = "df_aus_lcs1_16-133_gcmbg_gm.toml"
+
+[method]
+layouts = { one = true, controls = true, merge_path = { mu = 0.1, gamma = 0.0, K = [2, 3, 4, 5, 6, 8, 10, 12, 14, 17, 20, 25, 30, 40, 50, 70, 100] } }
+main = "best"

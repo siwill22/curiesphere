@@ -1,0 +1,14 @@
+# CM-AUS: cell map of Australia from LCS-1, degrees 16-133, as the first Australian build (run_linear_models.py
+# and run_map_sweep.py)
+inherit = "aus_lcs1_16-133.toml"
+
+[method]
+name = "cm"
+length = "evidence"
+reference = "hm_mean"
+bounds = [0.0, inf]
+maps = [
+    { label = "l2", penalty = "l2", length = "gmrf", beta = "discrepancy" },
+    { label = "tv", penalty = "tv", length = "gmrf", beta = "discrepancy" },
+    { label = "l2_200km", penalty = "l2", length = 200.0, beta = "discrepancy" },
+]

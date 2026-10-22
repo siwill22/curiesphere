@@ -1,0 +1,10 @@
+# Candidate geology maps (batch 1, the least detailed) against the magnetic field: SL2013sv clusters of continental
+# velocity profiles (k = 4, 6, 8, 12), TC1 tectono-thermal age, ECM1 crustal type, Merdith (2021) non-oceanic static
+# polygons, and the Hasterok provinces, each connected patch its own domain (candidates.py). Ranked by the evidence.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "provinces", "cand:hasterok", "cand:sl2013_k4", "cand:sl2013_k6", "cand:sl2013_k8", "cand:sl2013_k12", "cand:tc1", "cand:ecm1", "cand:merdith"]

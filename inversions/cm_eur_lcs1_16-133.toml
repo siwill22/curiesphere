@@ -1,0 +1,11 @@
+# CM-EUR: cell map of Eurasia (as CM-AUS)
+inherit = "eur_lcs1_16-133.toml"
+
+[method]
+name = "cm"
+length = "evidence"
+reference = "hm_mean"
+bounds = [0.0, inf]
+maps = [
+    { label = "l2", penalty = "l2", length = "gmrf", beta = "discrepancy" },
+]

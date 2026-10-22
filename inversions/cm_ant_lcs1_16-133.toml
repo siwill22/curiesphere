@@ -1,0 +1,11 @@
+# CM-ANT: cell map of Antarctica (as CM-AUS)
+inherit = "ant_lcs1_16-133.toml"
+
+[method]
+name = "cm"
+length = "evidence"
+reference = "hm_mean"
+bounds = [0.0, inf]
+maps = [
+    { label = "l2", penalty = "l2", length = "gmrf", beta = "discrepancy" },
+]

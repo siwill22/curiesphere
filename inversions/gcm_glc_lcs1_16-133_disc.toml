@@ -1,0 +1,5 @@
+inherit = "gcm_glc_lcs1_16-133.toml"
+[errors.noise]
+amplitude = "fixed"
+[method]
+damping = "discrepancy"

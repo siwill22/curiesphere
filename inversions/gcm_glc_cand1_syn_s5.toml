@@ -1,0 +1,9 @@
+# Candidate geology maps (batch 1) on the S5 synthetic data (random smooth truth, blind to geology): no map should
+# beat the others by much here. Same layouts as gcm_glc_cand1_lcs1_16-133.toml.
+inherit = "gcm_glc_layouts_oc_syn_s5_ctrl.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "provinces", "cand:hasterok", "cand:sl2013_k4", "cand:sl2013_k6", "cand:sl2013_k8", "cand:sl2013_k12", "cand:tc1", "cand:ecm1", "cand:merdith"]

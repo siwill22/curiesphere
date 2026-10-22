@@ -1,0 +1,6 @@
+# As gcm_glc_layouts_syn_s4.toml, with geology-blind control layouts (HEALPix tiles, random Voronoi tiles as many as the groups and
+# provinces): do the polygons beat patches of the same size? (docs/experiment-global-layouts.md)
+inherit = "gcm_glc_layouts_syn_s4.toml"
+
+[method]
+layouts = ["one", "groups", "provinces", "tiles8", "tiles16", "voronoi_groups", "voronoi_provinces"]

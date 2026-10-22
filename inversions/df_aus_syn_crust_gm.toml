@@ -1,0 +1,9 @@
+# DF-AUS on synthetic data: 0.04 x Crust1.0 (made without the polygons) + a noise draw; do the polygons beat random
+# tiles of the same number when the truth knows nothing of them? (the local version of the global check S4)
+inherit = "df_aus_lcs1_16-133_gcmbg_gm.toml"
+
+[data]
+model = "synthetic"
+based_on = "lcs1"
+truth = { kind = "crust_thickness", chi = 0.04, grid = "~/Data/Moho/crust1.0/crust1_CrustalThickness.nc" }
+seed = 20261010

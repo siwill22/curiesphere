@@ -1,0 +1,13 @@
+# GCM-GLC with layouts and the ocean-model error (ADRs 0008, 0009; docs/experiment-global-layouts.md step 3): as
+# gcm_glc_layouts_lcs1_16-133.toml, but with the noise held at its measured level and an error of the ocean model
+# confined to the oceans: each ocean cell's share of the background field (GK07 near-ridge remanence + H&M induced)
+# scaled by an independent error, its RMS Br in the band chosen by the evidence from the grid below.
+inherit = "gcm_glc_layouts_lcs1_16-133.toml"
+
+[errors.noise]
+amplitude = "fixed"
+
+[errors.background]
+kind = "ocean_cells"
+layer = { top = "basement", base = "basement+6" }
+rms_nT = [0.0, 8.0, 16.0, 24.0, 32.0, 48.0]

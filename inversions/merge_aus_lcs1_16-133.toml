@@ -1,0 +1,18 @@
+# FD-merge-AUS: free domains by merging, Australia, LCS-1 degrees 16-133, as the first Australian build
+# (run_merge.py, 'fine' mode, 'points' weighting = 'subspace' here: merge_points.npz). Null and bootstrap errors are
+# noise draws (no model error), as the first build's noise realisations.
+inherit = "aus_lcs1_16-133.toml"
+
+[compute]
+workers = 3
+
+[method]
+name = "merge"
+mode = "fine"
+mus = [0.03, 0.1, 0.3]
+lam_rels = [1.0, 0.333333]
+gamma_rels = [0.0, 0.001, 0.002, 0.005, 0.01]
+null_level = 0.6
+bootstrap = [[1.0, 0.002]]
+bounds = [0.0, 4.0]
+seed = 20261003

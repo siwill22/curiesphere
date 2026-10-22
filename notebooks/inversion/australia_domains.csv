@@ -1,0 +1,47 @@
+key,id,prov_name,prov_type,crust_type,prov_group,param
+363,364,East Thompson Orogen,orogenic belt,continental,Thompson Orogen,East_Thompson_Orogen
+364,365,Darling Orogen,orogenic belt,continental,,Darling_Orogen
+365,366,Kimberley Craton,shield,continental,North Australian Craton,Kimberley_Craton
+366,367,Mossman Orogen,orogenic belt,continental,,Mossman_Orogen
+367,368,Pilbara Craton,craton,continental,West Australian Craton,Pilbara_Craton
+368,369,Pine Creek Inlier,shield,continental,North Australian Craton,Pine_Creek_Inlier
+369,370,Sydney-Surat Basin,volcanic arc,continental,,Sydney-Surat_Basin
+370,371,Bass Straight,narrow rift,transitional,,margin_S
+371,372,West Thompson Orogen,orogenic belt,continental,Thompson Orogen,West_Thompson_Orogen
+372,373,Eastern Yilgarn Craton,craton,continental,West Australian Craton,Eastern_Yilgarn_Craton
+381,382,Wagga-Omeo Metamorphic Complex,orogenic belt,continental,Lachlan Fold Belt,Wagga-Omeo_Metamorphic_Complex
+382,383,Capricorn Orogen,orogenic belt,continental,West Australian Craton,Capricorn_Orogen
+384,385,Curnamona Province,shield,continental,South Australian Craton,Curnamona_Province
+385,386,Macquarie Arc,volcanic arc,continental,Macquarie Arc,Macquarie_Arc
+386,387,Hay-Booligal Zone,volcanic arc,continental,Macquarie Arc,Hay-Booligal_Zone
+387,388,Lachlan Fold Belt,orogenic belt,continental,,Lachlan_Fold_Belt
+388,389,Stalwell Zone,orogenic belt,continental,Lachlan Fold Belt,Stalwell_Zone
+389,390,Darling Basin,orogenic belt,continental,Lachlan Fold Belt,Darling_Basin
+390,391,Mount Isa Province,shield,continental,North Australian Craton,Mount_Isa_Province
+391,392,Georgetown and Coen Inliers,orogenic belt,continental,Delamerian Orogen,Georgetown_and_Coen_Inliers
+392,393,North Delamerian Orogen,orogenic belt,continental,Delamerian Orogen,North_Delamerian_Orogen
+393,394,Delamerian Orogen,orogenic belt,continental,Delamerian Orogen,Delamerian_Orogen
+396,397,Madura Province,shield,continental,South Australian Craton,Madura_Province
+397,398,Coompana Province,shield,continental,South Australian Craton,Coompana_Province
+398,399,Albany-Fraser Orogen,orogenic belt,continental,,Albany-Fraser_Orogen
+399,400,Arunta Block,orogenic belt,continental,,Arunta_Block
+400,401,Western Yilgarn Craton,craton,continental,West Australian Craton,Western_Yilgarn_Craton
+402,403,Tennant Creek Terrane,shield,continental,North Australian Craton,Tennant_Creek_Terrane
+403,404,Exmouth Plateau,passive margin,transitional,,margin_W
+404,405,Queensland-Marion Plateau,wide rift,transitional,,margin_E
+405,406,Batavia Knoll,passive margin,transitional,,margin_W
+406,407,North Australian Rifted Margin,passive margin,transitional,,margin_N
+412,413,MacArthur-Carpentaria Basin,shield,continental,North Australian Craton,MacArthur-Carpentaria_Basin
+413,414,Cape York Belt,shield,continental,North Australian Craton,Cape_York_Belt
+415,416,Gawler Craton,shield,continental,South Australian Craton,Gawler_Craton
+416,417,Muscgrave Ranges,orogenic belt,continental,,Muscgrave_Ranges
+417,418,Adelaide Rift Complex,orogenic belt,continental,South Australian Craton,Adelaide_Rift_Complex
+424,425,South Australia Rifted Margin,passive margin,transitional,,margin_S
+425,426,New England Orogen,orogenic belt,continental,,New_England_Orogen
+426,427,East Australian Rifted Margin,passive margin,transitional,,margin_E
+884,885,Eastern Tasmania,orogenic belt,continental,,Eastern_Tasmania
+885,886,Western Tasmania,orogenic belt,continental,,Western_Tasmania
+913,406,Gulden Draak,passive margin,transitional,,margin_W
+914,406,Zenith Plateau,passive margin,transitional,,margin_W
+915,406,Quokka Rise,passive margin,transitional,,margin_W
+916,406,Western Australian Rifted Margin,passive margin,transitional,,margin_W

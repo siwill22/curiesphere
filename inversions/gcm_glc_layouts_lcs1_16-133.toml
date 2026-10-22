@@ -1,0 +1,15 @@
+# GCM-GLC with layouts (ADR 0008, docs/experiment-global-layouts.md step 3): the cells damped toward a level per domain,
+# the domain levels scattering about one level with a spread fitted by the evidence. Five layouts ranked by the
+# evidence: one level, continents, groups, provinces, class (CR's 3 classes); cells outside every polygon form a rest
+# domain per continent. Noise amplitude fitted (the check variant; the ocean-model error of ADR 0009 is not in yet).
+inherit = "gcm_glc_lcs1_16-133.toml"
+
+[parameterisation]
+kind = "layouts"
+tables = ["domains/afr_domains.csv", "domains/ant_domains.csv", "domains/australia_domains.csv",
+          "domains/eur_domains.csv", "domains/nam_domains.csv", "domains/sam_domains.csv", "domains/zea_domains.csv"]
+
+[method]
+name = "gcm"
+damping = "evidence"
+layouts = ["one", "continents", "groups", "provinces", "class"]

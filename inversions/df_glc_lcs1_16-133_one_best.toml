@@ -1,0 +1,7 @@
+# DF-GLC on LCS-1, one pattern without breaks, at its best shape from df_glc_lcs1_16-133_one (beta 2.5, ell 350 km),
+# to write the map (the search run stopped at writing it)
+inherit = "df_glc_lcs1_16-133_one.toml"
+
+[method]
+beta_grid = [2.5]
+ell_grid_km = [350.0]

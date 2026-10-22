@@ -1,0 +1,15 @@
+# Batch-3 candidate maps on S5 synthetic data, draw 4 (the seeds of draw 4 of the earlier maps), for the
+# geometry-corrected score.
+inherit = "gcm_glc_layouts_oc_syn_s5_ctrl.toml"
+
+[data]
+seed = 20261011
+
+[data.truth]
+seed = 20261014
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["one", "cand:hasterok", "cand:glim", "cand:ee2025_plate", "cand:ee2025_poly", "cand:nrcan"]

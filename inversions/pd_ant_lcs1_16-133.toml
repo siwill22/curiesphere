@@ -1,0 +1,16 @@
+# PD-ANT: one VIS per Hasterok province of Antarctica (domains/ant_domains.csv), as PD-AUS
+inherit = "ant_lcs1_16-133.toml"
+
+[errors]
+weighting = "diagonal"
+model_error = { rms_nT = 0.0 }
+
+[parameterisation]
+kind = "domains"
+table = "domains/ant_domains.csv"
+
+[method]
+name = "pd"
+bounds = [0.0, inf]
+noise = "fixed"
+seed = 20261008

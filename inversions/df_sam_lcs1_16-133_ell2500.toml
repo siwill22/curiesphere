@@ -1,0 +1,6 @@
+# DF-SAM with the largest patch size capped at 2500 km (the scale of degree 16): above it the data see a domain's level
+# only through its edges, and a pattern larger than the domain trades freely against the domain's mean
+inherit = "df_sam_lcs1_16-133.toml"
+
+[method]
+ell_range = [50.0, 2500.0]

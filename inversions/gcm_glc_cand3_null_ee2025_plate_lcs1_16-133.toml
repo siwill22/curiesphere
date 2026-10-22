@@ -1,0 +1,9 @@
+# Spin test for the candidate map ee2025_plate (batch 3): its units on each continent turned by a random angle about
+# the continent's centre (20 draws, the same angles as rotated_provinces), then the same patch rule.
+inherit = "gcm_glc_layouts_oc_lcs1_16-133.toml"
+
+[errors.background]
+rms_nT = [16.0]
+
+[method]
+layouts = ["rotated_cand:ee2025_plate:0", "rotated_cand:ee2025_plate:1", "rotated_cand:ee2025_plate:2", "rotated_cand:ee2025_plate:3", "rotated_cand:ee2025_plate:4", "rotated_cand:ee2025_plate:5", "rotated_cand:ee2025_plate:6", "rotated_cand:ee2025_plate:7", "rotated_cand:ee2025_plate:8", "rotated_cand:ee2025_plate:9", "rotated_cand:ee2025_plate:10", "rotated_cand:ee2025_plate:11", "rotated_cand:ee2025_plate:12", "rotated_cand:ee2025_plate:13", "rotated_cand:ee2025_plate:14", "rotated_cand:ee2025_plate:15", "rotated_cand:ee2025_plate:16", "rotated_cand:ee2025_plate:17", "rotated_cand:ee2025_plate:18", "rotated_cand:ee2025_plate:19"]

@@ -1,0 +1,19 @@
+# PD-AUS: one VIS per Hasterok province domain of Australia (inversions/domains/australia_domains.csv) from LCS-1,
+# degrees 16-133, with the settings of the first polygon-domain inversion (notebooks/invert_domains.py): every data
+# point weighted by 1/RMS(LCS-1 - MF7), bounded least squares v >= 0, the noise s.d. from 100 noise draws.
+# Domains follow cell edges (ADR 0001), not the polygons' own edges.
+inherit = "aus_lcs1_16-133.toml"
+
+[errors]
+weighting = "diagonal"
+model_error = { rms_nT = 0.0 }          # noise only: the draws are the first inversion's noise s.d.
+
+[parameterisation]
+kind = "domains"
+table = "domains/australia_domains.csv"
+
+[method]
+name = "pd"
+bounds = [0.0, inf]
+noise = "fixed"
+seed = 20261008

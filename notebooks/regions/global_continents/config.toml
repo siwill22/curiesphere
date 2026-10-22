@@ -1,0 +1,24 @@
+# Global continental VIS from LCS-1 Gauss coefficients (run_global_continents.py): a simplified
+# Olsen, Ravat & Purucker (2023, EPSL). Unknowns: VIS of the HEALPix cells of all crust without an ocean
+# age; the oceans are the existing model (ocean VIS + slabs under ocean crust + GK07_NR), subtracted.
+nside_cell = 64          # ~100 km cells
+base_depth_km = 30.0     # slab base below the ellipsoid
+lmax_cell = 185          # G is cached to this degree; each run uses its own band
+n_workers = 3
+
+# data model, the second model for the noise spectrum (LCS-1 - F 2E, as build_bands.py 'lcs1-2e')
+data = "lcs1"
+noise_ref = "~/Library/CloudStorage/OneDrive-UniversityofTasmania/Data/StefanMausData/xDLFI/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901/SW_OPER_MLI_SHA_2E_00000000T000000_99999999T999999_0901.shc"
+
+# damping: toward a uniform level v0 (fitted); 'minimal': RMS Br misfit at the surface (unweighted, in the band)
+# within this much of its floor (the paper fits to 1 nT; continental sources alone cannot)
+minimal_rms_nT = 1.0
+
+# synthetic truths (cases of the same run): Crust1.0 thickness x chi (truth only, never the prior)
+crust = "~/Data/Moho/crust1.0/crust1_CrustalThickness.nc"
+synthetic_chi = 0.04
+seed = 20261007
+
+[bands]
+lcs1_16-133 = { lmin = 16, lmax = 133 }
+lcs1_16-185 = { lmin = 16, lmax = 185 }

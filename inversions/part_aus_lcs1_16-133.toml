@@ -1,0 +1,23 @@
+# FD-part-AUS: cell partitions sampled for Australia from LCS-1, degrees 16-133 (the sampler of
+# run_partition_synthetic.py on the real data): prior equivalent to the FD-merge penalties lambda_95/3 and
+# 0.01 lambda_95 at the noise level of the merging fit; chain 0 starts from that FD-merge partition, chain 1 from a
+# single unit (run merge_aus_lcs1_16-133.toml first)
+inherit = "aus_lcs1_16-133.toml"
+
+[compute]
+workers = 3
+
+[method]
+name = "partition"
+temps = [1.0, 50.0, 8]
+sweep = 50
+thin = 5
+u_max = 60
+chains = 2
+burn = 0.333333
+bounds = [0.0, 4.0]
+lambda_95 = "start"                    # from the FD-merge result
+lam_rel = 0.333333
+gamma_rel = 0.01
+start = ["results/merge_aus_lcs1_16-133.nc", 9]
+seed = 20261006
