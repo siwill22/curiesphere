@@ -12,6 +12,7 @@ abstract: |
   reports, summarised in the overview.
 
   **Verification reports:** Forward models · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
+filters: [colour-tables.lua]
 format:
   html:
     toc: true
@@ -47,17 +48,24 @@ format:
 
 # In brief {.unnumbered}
 
-- **Both forward models are right.** remit's global transform and the cell columns of the inversions give the
-  same field as an independent sum of point dipoles, for every test model: single dipoles, checkerboards, a
-  uniform shell, and the real ocean and continental models, with sources on the sphere or at their real depth.
-- **"The same" means rounding error**, about 10⁻¹² of the field or less. Where the sources are sharp, remit to a
-  given degree differs from the dipole sum by exactly the field above that degree, as it should, and that
-  difference vanishes as the degree rises.
-- **The awkward places of a spherical grid are fine**: the lon 0/360 seam, the dateline, and the rows next to
-  both poles.
-- **The columns the inversions read from disk** (all 22,591 continental cells) match remit to 5×10⁻¹⁴, and the
-  float32 GPU columns change the field by at most 10⁻⁵ of its size.
-- **One bug found and fixed**: the columns crashed for a cell containing the north pole. No result was affected.
+The inversions rest on two ways of computing the magnetic field of magnetised crust: **remit's global transform**
+(spherical harmonics, used for the ocean model, backgrounds and paper figures) and the **cell columns** (the field
+of 1 SI·km of VIS in one cell, from which every inversion is built). Both are checked against an independent **sum
+of point dipoles** that shares no code with either.
+
+| Question | Answer |
+|---|---|
+| remit's global transform right? | [Yes: equal to the dipole sum to about 10⁻¹² of the field]{.good} |
+| Cell columns right? | [Yes: equal to remit to 5×10⁻¹⁴, all 22,591 continental cells]{.good} |
+| Sources at their real depth right? | [Yes]{.good} |
+| Seam at lon 0/360, dateline, poles | [Fine]{.good} |
+| float32 GPU columns | [change the field by at most 10⁻⁵ of its size]{.good} |
+| Bugs found | [One, fixed: the columns crashed for a cell at the north pole. No result affected.]{.fair} |
+
+: The forward models in one table. {#tbl-forward-brief}
+
+Where sources are sharp, remit to a given degree differs from the dipole sum by exactly the field above that degree,
+as it should.
 
 # What is checked, and how {#sec-method}
 

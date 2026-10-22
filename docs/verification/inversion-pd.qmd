@@ -4,11 +4,11 @@ subtitle: "Checking the polygon-domain inversion with synthetic data for Austral
 date: 2026-10-19
 date-format: "D MMMM YYYY"
 abstract: |
-  Draft prepared with Claude Code. The third part of the inversion benchmarks, after DF and CM. It checks PD, one
-  VIS per polygon domain, on the same Australian problem: whether it is coded correctly, and how far its reported
-  s.d. can be trusted.
+  Draft prepared with Claude Code. Checks PD, the polygon-domain inversion, on the Australian problem: is it coded
+  correctly, and how far can its reported s.d. be trusted?
 
   **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · PD · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
+filters: [colour-tables.lua]
 format:
   html:
     toc: true
@@ -42,107 +42,88 @@ format:
 
 # In brief {.unnumbered}
 
-**PD is coded correctly.** It returns a truth with one level per domain exactly, its bounded least squares agrees
-with an independent solver, and its formal s.d. is exactly right when the data errors are as PD assumes them.
+**PD (polygon domains)** gives each of the 39 geological polygons over Australia **one VIS**, the same in all its
+cells, by least squares with VIS ≥ 0. It has no settings to fit. It reports a formal s.d. or, in final mode, the
+spread of 100 refits with fresh noise.
 
-**Its limitations:**
+![PD's map of Australia from the real data (left; white dots: polygon boundaries) and its s.d. (right), on the same
+s.d. scale as the other methods.](figures/method_pd.png){#fig-pd-real}
 
-1. **The formal s.d. is 3 times too small** with real, correlated noise. The s.d. from refits, which final mode
-   reports, is right in that case.
-2. **When VIS varies inside the domains, the errors of the domain means are 3 times the reported s.d.**, even the
-   s.d. from refits: only 30% of domain means are within 1 s.d. The same holds for the differences between domains.
-   The real data's misfit is twice that of this test, so on real data the s.d. is likely too small by more.
-3. **Large domains are no better than small ones** when VIS varies inside them. The s.d. falls with the domain's
-   area, but the error does not, so the larger domains are the more overconfident.
+| Question | Answer |
+|---|---|
+| Coded correctly? | [Yes: exact for one level per polygon, and agrees with scipy's solver]{.good} |
+| Formal s.d. right when errors are as PD assumes? | [Yes: 68% within 1 s.d.]{.good} |
+| Formal s.d. right with real, correlated noise? | [No: 3× too small (28% within 1 s.d.)]{.poor} |
+| Refit s.d. right with correlated noise? | [Yes: 66% within 1 s.d.]{.good} |
+| Refit s.d. right when VIS varies inside the polygons? | [No: 3× too small (30% within 1 s.d.)]{.poor} |
+| Are large polygons better known? | [No: the s.d. falls with area, the error does not]{.poor} |
 
-# What is checked, and how {#sec-method}
+: PD in one table. {#tbl-pd-brief}
 
-The aims and the test problem are those of the DF part, on the 1406 cells of Australia with data from degrees
-16–133.
+::: {.callout-warning title="Reading a real PD map"}
+- **Use the refit s.d., never the formal s.d.**
+- **Treat even the refit s.d. as a lower bound.** The real data's misfit says VIS varies inside the polygons more
+  than in these tests, so the true errors are likely more than 3× the s.d.
+- **For domain means with an honest s.d., use DF (domain fractal)**, which models the variation inside each domain.
+:::
 
-## PD in one paragraph
+# How it was tested {#sec-method}
 
-PD gives each of the 39 polygon domains one VIS, the same in all its cells, by least squares with VIS ≥ 0. Every
-data point is weighted by the noise RMS of the field model (20 nT), and the noise's correlations along the surface
-are left out. PD reports either a formal s.d. or, in final mode, the spread of 100 refits to its own prediction plus
-draws of the noise. There are no settings to fit.
+Same problem as the [DF report](inversion-df.html): 1406 cells over Australia, data from degrees 16–133. 200
+truths with one level per polygon (0.75 ± 0.3 SI·km), each with three kinds of data:
 
-## The truths and errors
+| Data | What it tests |
+|---|---|
+| **White errors**, as PD assumes | the formal s.d. under PD's own assumptions |
+| **Correlated noise**, as on real data | what PD's diagonal weighting misses |
+| **Correlated noise plus a pattern inside each polygon** (DF's fractal pattern) | what one value per polygon misses; the target is each polygon's mean |
 
-Two hundred truths were drawn with one level per domain, from N(0.75, 0.3²) SI·km and at least 0.05. Three kinds of
-data were made from each:
-
-- **Errors as PD assumes them**: white, with the noise RMS. These check the formal s.d.
-- **Field-model noise**: the same noise RMS, drawn with its correlations, as on real data.
-- **Noise and a pattern inside the domains**: DF's fractal pattern (s.d. 0.3 SI·km, β 2.25, ℓ 1000 km) added
-  inside each domain, as in DF's truths. PD cannot represent the pattern; the target is then each domain's mean.
+: The three kinds of synthetic data. {#tbl-pd-data}
 
 # Correctness checks {#sec-correct}
 
-| Check | Result |
+| Check | Agreement |
 |---|---|
-| One level per domain, no noise | Returned to 1.5×10⁻¹⁴ SI·km (@fig-pd-p1) |
-| Bounded least squares against scipy's solver (`lsq_linear`, bvls), noisy data with 8 levels at the bound | Equal to 5×10⁻¹⁵ SI·km |
-| Formal s.d., errors as PD assumes them | 68% of domain means within 1 s.d. (should be 68%) |
+| One level per polygon, no noise | [returned to 1.5×10⁻¹⁴ SI·km]{.good} |
+| Bounded least squares against scipy (8 levels at the bound) | [5×10⁻¹⁵ SI·km]{.good} |
+| Formal s.d., white errors | [68% within 1 s.d.]{.good} |
 
-![A truth with one level per domain (white boundaries), PD's map without noise, and their
+: PD against exact cases and an independent solver. {#tbl-pd-correct}
+
+![A truth with one level per polygon (white boundaries), PD's map without noise, and their
 difference.](figures/pd_p1_maps.png){#fig-pd-p1}
 
-# Limitations {#sec-limits}
+# How far to trust PD's s.d. {#sec-limits}
 
-## Correlated noise and the formal s.d.
+| Data | Formal s.d. | Refit s.d. |
+|---|---|---|
+| White errors | [68%]{.good} | [99% (too wide)]{.fair} |
+| Correlated noise | [28%]{.poor} | [66%]{.good} |
+| Correlated noise and a pattern inside the polygons | [11%]{.poor} | [30%]{.poor} |
 
-With the field-model noise drawn with its correlations, the errors of the domain means are 3.3 times the formal
-s.d.: only 28% of domain means are within it (@fig-pd-coverage). The noise is correlated over hundreds of
-kilometres, so neighbouring data points do not give independent information, as the formal s.d. assumes. Scaling
-the formal s.d. by the misfit does not help, because the misfit is as expected (χ²/N 0.96).
+: Polygon means within 1 s.d. of the truth (should be 68%). {#tbl-pd-coverage}
 
-The s.d. from refits uses noise draws with their correlations, and is right: 66% of domain means fall within it.
-Both explore mode (30 refits) and final mode (100) report it; the formal s.d. is also stored in the results.
+![The same as a chart: how often each s.d. covers the error of a polygon mean.](figures/pd_p2_coverage.png){#fig-pd-coverage}
 
-## Variation inside the domains
+- **Correlated noise.** Neighbouring data points are not independent, as the formal s.d. assumes. The refits draw
+  correlated noise and get it right.
+- **Variation inside the polygons.** The refits draw noise only, so this error is not in any s.d. Differences
+  between polygons are off nearly as much as the means.
+- **For comparison, DF on the same kind of truth** has 56–62% of domain means within 1 s.d.
 
-With a pattern inside each domain, PD's estimate of a domain's mean is off by 0.14 SI·km RMS, against a reported
-s.d. from refits of about 0.05 SI·km: only 30% of domain means are within 1 s.d. (@fig-pd-coverage,
-@fig-pd-maps). The refits draw noise only, so variation inside the domains is not in the s.d. Scaling the formal
-s.d. by the misfit (PD's `noise = "evidence"`) helps little (20%).
+![Top: one truth with a pattern inside the polygons, its polygon means, PD's map and its error. Bottom, per polygon
+over 200 truths: the error, PD's refit s.d., and their ratio.](figures/pd_p2_maps.png){#fig-pd-maps}
 
-The error is not a shift shared by all domains: the differences between a domain and the mean of all domains are
-off by 0.13 SI·km RMS, nearly as much.
+## Small and large polygons
 
-DF was built for this case. For truths of exactly this kind (the DF part, settings fitted and sampled), DF's
-domain averages fall within 1 s.d. in 56% of cases with its settings fitted and 62% with them sampled.
+![The error of each polygon mean against the polygon's area, with noise only and with a pattern inside the
+polygons, and PD's refit s.d.](figures/pd_p2_area.png){#fig-pd-area}
 
-These synthetic data leave a misfit of 3.4 times the noise. PD-AUS on real data leaves 6.5–7.5 times the noise, so
-the real domains vary inside more than these truths do, and the real s.d. is likely too small by more than a factor
-of 3.
-
-![How often the reported s.d. covers the error of a domain mean, for three kinds of data and three kinds of
-s.d.](figures/pd_p2_coverage.png){#fig-pd-coverage}
-
-![Top: one truth with a pattern inside the domains, its domain means, PD's map and its error. Bottom, per domain
-over 200 truths: the RMS error, PD's s.d. from refits, and their ratio.](figures/pd_p2_maps.png){#fig-pd-maps}
-
-## Small and large domains
-
-With noise only, the error of a domain mean grows from 0.02–0.05 SI·km for domains of about 10⁶ km² to about
-0.1 SI·km for domains of 3×10⁴ km², and the s.d. from refits follows it (@fig-pd-area). With a pattern inside the
-domains, the error stays at 0.1–0.2 SI·km whatever the size, while the s.d. still falls. The error is then about
-twice the s.d. for the smallest domains and 3–4 times it for most domains larger than 10⁵ km².
-
-![The RMS error of each domain mean against the domain's area, with noise only and with a pattern inside the
-domains, and PD's s.d. from refits.](figures/pd_p2_area.png){#fig-pd-area}
-
-# What this means for real PD maps {#sec-meaning}
-
-- **Use the s.d. from refits, never the formal s.d.** The formal s.d. is 3 times too small with real noise.
-- **Treat even the s.d. from refits as a lower bound.** It counts the noise only. Where VIS varies inside the
-  domains, as the real misfit shows it does, the errors of domain means and of differences between them are at
-  least 3 times larger.
-- **For domain means with an honest s.d., DF is the better method**: it models the variation inside each domain.
+With a pattern inside, the error stays at 0.1–0.2 SI·km whatever the size while the s.d. falls, so **the largest
+polygons are the most overconfident** (error 3–4× the s.d.).
 
 # Rerunning {#sec-rerun}
 
-The code is `benchmarks/verification/pd_checks.py` (tests `p1`, `p2`), with the maps drawn by
-`docs/verification/make_pd_figures.py`; the commands are at the top of this document's source. The tests use the
-configuration `inversions/pd_aus_lcs1_16-133.toml` and write their results to `benchmarks/verification/results/pd_*`.
+Code: `benchmarks/verification/pd_checks.py` (tests `p1`, `p2`); maps: `docs/verification/make_pd_figures.py` and
+`make_overview_figures.py`. Commands at the top of this document's source. Configuration
+`inversions/pd_aus_lcs1_16-133.toml`; results in `benchmarks/verification/results/pd_*`.
