@@ -204,3 +204,7 @@ notebooks/gis/CGMW_LipsSeamounts.shp.gplates.xml
 # GDAL side files and the inversion cell cache
 *.aux.xml
 /notebooks/inversion/cells/
+# run outputs: images regenerate from the runs; only figures shown in a doc are tracked
+/inversions/results/**/*.png
+/notebooks/regions/**/*.png
+/notebooks/inversion/*.png
