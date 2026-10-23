@@ -7,7 +7,7 @@ abstract: |
   Draft prepared with Claude Code. Checks CM, the cell-map inversion, on the Australian problem: is it coded
   correctly, and what can and can't it recover?
 
-  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · CM · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · CM · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [GCM-L](inversion-gcml.html) · [DF-GLC](inversion-df-glc.html)
 filters: [colour-tables.lua]
 format:
   html:

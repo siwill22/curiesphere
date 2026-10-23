@@ -1,13 +1,13 @@
 ---
 title: "Inversion benchmarks: overview"
-subtitle: "What the five inversion methods recover, how far to trust their uncertainties, and why they differ"
+subtitle: "What the inversion methods recover, how far to trust their uncertainties, and why they differ"
 date: 2026-10-21
 date-format: "D MMMM YYYY"
 abstract: |
   Draft prepared with Claude Code. A summary of the inversion benchmarks. The full reports, and the verification of
   the forward models they rest on, are linked below.
 
-  **Verification reports:** [Forward models](verification.html) · Inversions: overview · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
+  **Verification reports:** [Forward models](verification.html) · Inversions: overview · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [GCM-L](inversion-gcml.html) · [DF-GLC](inversion-df-glc.html)
 filters: [colour-tables.lua]
 format:
   html:
@@ -30,9 +30,9 @@ format:
        conda run -n curiesphere python docs/verification/make_overview_figures.py
      Render: conda run -n riftsclimate quarto render docs/verification/inversion-overview.qmd -->
 
-# The five methods
+# The methods
 
-All five map VIS (vertically integrated susceptibility of the crust, SI·km) from the satellite field model LCS-1,
+All map VIS (vertically integrated susceptibility of the crust, SI·km) from the satellite field model LCS-1,
 degrees 16–133.
 
 | | Method | What it maps | Fit |
@@ -41,6 +41,7 @@ degrees 16–133.
 | **CM** | Cell map | A smooth field, one value per cell, about one level | Australia |
 | **PD** | Polygon domains | One value per geological polygon | Australia |
 | **GCM** | Global cell map | One value per cell, pulled toward one level | All continents |
+| **GCM-L** | Global cell map with domain levels | GCM with a level per domain; used to rank polygon sets | All continents |
 | **DF-GLC** | Global domain fractal | DF's model, fitted to the whole globe | All continents |
 
 ![What each method's map looks like on the real data over Australia (top) and its s.d. (bottom). White dots:
@@ -56,6 +57,7 @@ domain boundaries.](figures/methods_aus.png){#fig-methods-aus}
 | **CM** | [Yes]{.good} | [1.08× too small]{.fair} | [0.82]{.score} (over Australia) |
 | **PD** | [Yes]{.good} | [about 3× too small]{.poor} | one value per domain |
 | **GCM** | [Yes]{.good} | [Yes, except at sharp edges]{.good} | [0.44]{.score} |
+| **GCM-L** | [Yes]{.good} | [province means 1.0–1.7× too small; cells too wide]{.fair} | not tested |
 | **DF-GLC** | [Yes]{.good} | [Yes, except at sharp edges]{.good} | [0.78]{.score} |
 
 : "Coded correctly": agrees with an independent solver to rounding error. "Realistic data": noise as in the real
@@ -85,6 +87,19 @@ The number in each corner is the fraction of the checkerboard's contrast that co
   and variation inside its polygons.
 - **Local and global fits measure the noise differently** (against MF7 and MLI_SHA_2E). Until one is chosen,
   local and global maps are not directly comparable.
+
+# Ranking polygon sets
+
+| Comparison | GCM-L | DF-GLC |
+|---|---|---|
+| Real provinces against random and rotated sets of the same size | [right in 20 of 20]{.good} | [right in 20 of 20]{.good} |
+| Provinces against one level | [false wins on the null]{.poor} | [no false wins; misses steps without breaks]{.fair} |
+| Province means within 1 s.d. (68%) | [50–68%]{.fair} | [52–71%]{.fair} |
+
+: Four synthetic truths, five draws each ([GCM-L report](inversion-gcml.html)). {#tbl-ranking}
+
+- **The candidate-set rankings (GCM-L against same-size controls) are sound.**
+- **Read only same-size comparisons with GCM-L**: it always prefers more domains.
 
 # What applies to all of them
 

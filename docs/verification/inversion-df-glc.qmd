@@ -7,7 +7,7 @@ abstract: |
   Draft prepared with Claude Code. Checks DF-GLC, the global domain-fractal inversion, on the real global
   problem: is it coded correctly, and what can and can't it recover, side by side with GCM (global cell map)?
 
-  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · DF-GLC
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [GCM-L](inversion-gcml.html) · DF-GLC
 filters: [colour-tables.lua]
 format:
   html:

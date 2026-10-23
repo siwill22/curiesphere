@@ -3,7 +3,7 @@ Figures shared by the inversion benchmark pages: what each method's map looks li
 the checkerboard tests with the methods side by side (score in the corner of each panel).
 
   method_df.png, method_cm.png, method_pd.png        the real Australian runs: VIS and its s.d.
-  method_gcm.png, method_df_glc.png                  the real global runs: VIS and its s.d.
+  method_gcm.png, method_gcml.png, method_df_glc.png the real global runs: VIS and its s.d.
   methods_aus.png, methods_global.png                the same, all methods of a region side by side
   gallery_aus.png                                    checkerboards over Australia: truth, DF, CM (with noise)
   gallery_global.png                                 equal-area checkerboards: truth, GCM, DF-GLC (with noise)
@@ -22,9 +22,9 @@ from make_gcm_figures import WG, global_grid
 
 RUNS = 'inversions/results'
 NAMES = dict(df='DF (domain fractal)', cm='CM (cell map)', pd='PD (polygon domains)', gcm='GCM (global cell map)',
-             df_glc='DF-GLC (global domain fractal)')
+             df_glc='DF-GLC (global domain fractal)', gcml='GCM-L (global cell map, domain levels)')
 AUS = dict(df='df_aus_lcs1_16-133', cm='cm_aus_lcs1_16-133', pd='pd_aus_lcs1_16-133')
-GLOBAL = dict(gcm='gcm_glc_lcs1_16-133', df_glc='df_glc_lcs1_16-133_groups')
+GLOBAL = dict(gcm='gcm_glc_lcs1_16-133', gcml='gcm_glc_layouts_oc_lcs1_16-133', df_glc='df_glc_lcs1_16-133_groups')
 SD_AUS, SD_GLOBAL = [0, 0.4], [0, 0.6]
 
 
@@ -101,7 +101,7 @@ def method_maps():
         for j, (m, (lon, lat, v, s, _)) in enumerate(data.items()):
             for k, (val, cpt, series, title, label, e) in enumerate(
                     [(v, 'batlow', [0, 2], NAMES[m], 'VIS (SI km)', edges[m]),
-                     (s, 'lajolla', sd, f'{m.upper().replace("_", "-")}: s.d.', 's.d. (SI km)', None)]):
+                     (s, 'lajolla', sd, f'{NAMES[m].split(" (")[0]}: s.d.', 's.d. (SI km)', None)]):
                 with fig.shift_origin(xshift=f'{j*dx}c', yshift=f'{BASE + (1 - k)*dy}c'):
                     panel(fig, lon, lat, val, cpt, series, title, label, e)
         fig.savefig(OUT / f'methods_{region}.png', dpi=170)
