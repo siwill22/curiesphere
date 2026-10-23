@@ -7,7 +7,7 @@ abstract: |
   Draft prepared with Claude Code. Checks PD, the polygon-domain inversion, on the Australian problem: is it coded
   correctly, and how far can its reported s.d. be trusted?
 
-  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · PD · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
+  **Verification reports:** [Forward models](verification.html) · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · PD · [GCM](inversion-gcm.html) · [GCM-L](inversion-gcml.html) · [DF-GLC](inversion-df-glc.html)
 filters: [colour-tables.lua]
 format:
   html:

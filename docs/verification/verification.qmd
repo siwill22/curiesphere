@@ -11,7 +11,7 @@ abstract: |
   continental magnetisation models. Every comparison is shown as maps. The inversions are verified in companion
   reports, summarised in the overview.
 
-  **Verification reports:** Forward models · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [DF-GLC](inversion-df-glc.html)
+  **Verification reports:** Forward models · [Inversions: overview](inversion-overview.html) · [DF](inversion-df.html) · [CM](inversion-cm.html) · [PD](inversion-pd.html) · [GCM](inversion-gcm.html) · [GCM-L](inversion-gcml.html) · [DF-GLC](inversion-df-glc.html)
 filters: [colour-tables.lua]
 format:
   html:
